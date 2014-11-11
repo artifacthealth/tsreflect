@@ -1,0 +1,46 @@
+@startuml
+
+    class Type {
+
+        flags: TypeFlags
+    }
+    Type *-- TypeFlags
+
+    class ObjectType extends Type {
+
+        signatures: Signature[]
+    }
+
+    class InterfaceType extends ObjectType {
+
+        symbol: Symbol
+        baseTypes: Type[]
+    }
+
+    class GenericType extends InterfaceType {
+
+        typeParameters: TypeParameter[]
+    }
+    GenericType *-- TypeParameter
+
+    enum TypeFlags {
+
+        Any
+        String
+        Number
+        Boolean
+        Void
+        Enum
+        TypeParameter
+        Class
+        Interface
+        Reference
+    }
+
+    class TypeParameter extends Type {
+
+        symbol: Symbol
+        constraint: Type
+    }
+    
+@enduml

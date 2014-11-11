@@ -1,0 +1,64 @@
+@startuml
+
+    interface Declaration {
+        kind: string
+    }
+
+    interface SignatureDeclaration extends Declaration {
+    
+        description?: string
+    }
+    
+    interface CallSignatureDeclaration extends SignatureDeclaration {
+
+        kind: "call"
+        typeParameters?: TypeParameterDeclaration[]
+        parameters?: ParameterDeclaration[]
+        returns?: TypeDeclaration
+    }
+    CallSignatureDeclaration *-- ParameterDeclaration
+    CallSignatureDeclaration *-- TypeParameterDeclaration
+
+    interface ParameterDeclaration {
+
+        name: string
+        type?: TypeDeclaration
+        optional?: boolean
+        rest?: boolean
+        description?: string
+    }
+
+    interface TypeParameterDeclaration {
+
+        name: string;
+        constraint?: TypeDeclaration;
+        description?: string;
+    }
+    
+    interface PropertySignatureDeclaration extends SignatureDeclaration {
+
+        kind: "property"
+        name: string
+        type?: TypeDeclaration
+        optional?: boolean
+    }
+    
+    interface MethodSignatureDeclaration extends CallSignatureDeclaration {
+
+        kind: "method"
+        name: string
+        optional?: boolean
+    }
+
+    interface ConstructSignatureDeclaration extends CallSignatureDeclaration {
+        kind: "constructor"
+    }
+    
+    interface IndexSignatureDeclaration extends SignatureDeclaration {
+
+        kind: "index"
+        parameter: ParameterDeclaration
+        returns: TypeDeclaration
+    }
+
+@enduml

@@ -1,0 +1,13 @@
+@startuml
+
+class Symbol {
+    name: String
+    flags: SymbolFlags
+    declarations: Declaration[]
+    type?: Type
+    parent: Symbol
+    exports: Symbol[]
+}
+
+
+@enduml
