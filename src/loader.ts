@@ -109,7 +109,7 @@ module reflect {
 
     function processImportedModules(file: SourceFile, basePath: string) {
         forEach(file.declares, node => {
-            if (node.kind === NodeKind.Import && (<ImportDeclaration>node).require) {
+            if (node.kind === NodeKind.ImportDeclaration && (<ImportDeclaration>node).require) {
                 var moduleName = (<ImportDeclaration>node).require;
                 if (moduleName) {
                     var searchPath = basePath;
@@ -127,14 +127,14 @@ module reflect {
                     }
                 }
             }
-            else if (node.kind === NodeKind.Module && (node.flags & NodeFlags.ExternalModule)) {
+            else if (node.kind === NodeKind.ModuleDeclaration && (node.flags & NodeFlags.ExternalModule)) {
                 // TypeScript 1.0 spec (April 2014): 12.1.6
                 // An AmbientExternalModuleDeclaration declares an external module.
                 // This type of declaration is permitted only in the global module.
                 // The StringLiteral must specify a top - level external module name.
                 // Relative external module names are not permitted
                 forEachChild(node, node => {
-                    if (node.kind === NodeKind.Import && (<ImportDeclaration>node).require) {
+                    if (node.kind === NodeKind.ImportDeclaration && (<ImportDeclaration>node).require) {
                         var moduleName = (<ImportDeclaration>node).require;
                         if (moduleName) {
                             // TypeScript 1.0 spec (April 2014): 12.1.6
@@ -187,7 +187,7 @@ module reflect {
 
         function scanInterfaceDeclaration(node: InterfaceDeclaration): void {
 
-            node.kind = NodeKind.Interface;
+            node.kind = NodeKind.InterfaceDeclaration;
             scanFlags(node);
             scanTypeParameterDeclarations(node.typeParameters);
             scanTypeReferenceNodes(node.extends);
@@ -208,7 +208,7 @@ module reflect {
 
         function scanClassDeclaration(node: ClassDeclaration): void {
 
-            node.kind = NodeKind.Class;
+            node.kind = NodeKind.ClassDeclaration;
             scanFlags(node);
             scanTypeParameterDeclarations(node.typeParameters);
             scanChildTypeReferenceNode(node, "extends");
@@ -218,7 +218,7 @@ module reflect {
 
         function scanEnumDeclaration(node: EnumDeclaration): void {
 
-            node.kind = NodeKind.Enum;
+            node.kind = NodeKind.EnumDeclaration;
             scanFlags(node);
             forEach(node.members, scanEnumMemberDeclaration);
         }
@@ -231,14 +231,14 @@ module reflect {
 
         function scanModuleDeclaration(node: ModuleDeclaration): void {
 
-            node.kind = NodeKind.Module;
+            node.kind = NodeKind.ModuleDeclaration;
             scanFlags(node);
             forEach(node.declares, scanModuleElementDeclaration);
         }
 
         function scanFunctionDeclaration(node: FunctionDeclaration): void {
 
-            node.kind = NodeKind.Function;
+            node.kind = NodeKind.FunctionDeclaration;
             scanCallSignatureDeclaration(node);
         }
 
@@ -253,14 +253,14 @@ module reflect {
 
         function scanVariableDeclaration(node: VariableDeclaration): void {
 
-            node.kind = NodeKind.Variable;
+            node.kind = NodeKind.VariableDeclaration;
             scanFlags(node);
             scanChildTypeNode(node, "type");
         }
 
         function scanImportDeclaration(node: ImportDeclaration): void {
 
-            node.kind = NodeKind.Import;
+            node.kind = NodeKind.ImportDeclaration;
             scanFlags(node);
         }
 
@@ -393,7 +393,7 @@ module reflect {
             if(!typeNode) return;
 
             if(typeof typeNode === "string") {
-                (<any>node)[typeNodeName] = createTypeReferenceNode(typeNode);
+                (<any>node)[typeNodeName] = createTypeNodeFromString(typeNode);
             }
             else {
                 switch (<any>typeNode.kind) {
@@ -414,6 +414,20 @@ module reflect {
                         break;
                 }
             }
+        }
+
+        function createTypeNodeFromString(text: string): TypeNode {
+
+            if(isStringLiteral(text)) {
+                return createStringLiteralTypeNode(text);
+            }
+
+            return createTypeReferenceNode(text);
+        }
+
+        function isStringLiteral(text: string): boolean {
+
+            return /^"[^"]+"$/.test(text);
         }
 
         function scanFunctionTypeNode(node: FunctionTypeNode): void {
@@ -467,6 +481,15 @@ module reflect {
                 kind: NodeKind.TypeReference,
                 flags: NodeFlags.None,
                 type: typeName
+            }
+        }
+
+        function createStringLiteralTypeNode(stringLiteral: string): StringLiteralTypeNode {
+
+            return {
+                kind: NodeKind.StringLiteral,
+                flags: NodeFlags.None,
+                text: stringLiteral.replace(/^"|"$/g,"")
             }
         }
 

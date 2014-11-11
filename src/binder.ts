@@ -21,15 +21,15 @@ module reflect {
     export function isInstantiated(node: Node): boolean {
         // A module is uninstantiated if it contains only
         // 1. interface declarations
-        if (node.kind === NodeKind.Interface) {
+        if (node.kind === NodeKind.InterfaceDeclaration) {
             return false;
         }
         // 2. non - exported import declarations
-        else if (node.kind === NodeKind.Import && !(node.flags & NodeFlags.Export)) {
+        else if (node.kind === NodeKind.ImportDeclaration && !(node.flags & NodeFlags.Export)) {
             return false;
         }
         // 3. other uninstantiated module declarations.
-        else if (node.kind === NodeKind.Module && !forEachChild(node, isInstantiated)) {
+        else if (node.kind === NodeKind.ModuleDeclaration && !forEachChild(node, isInstantiated)) {
             return false;
         }
         else {
@@ -61,7 +61,7 @@ module reflect {
 
         function getDeclarationName(node: Declaration): string {
             if (node.name) {
-                if (node.kind === NodeKind.Module && node.flags & NodeFlags.ExternalModule) {
+                if (node.kind === NodeKind.ModuleDeclaration && node.flags & NodeFlags.ExternalModule) {
                     return '"' + node.name + '"';
                 }
                 return node.name;
@@ -93,7 +93,7 @@ module reflect {
             addDeclarationToSymbol(symbol, node, includes);
             symbol.parent = parent;
 
-            if (node.kind === NodeKind.Class && symbol.exports) {
+            if (node.kind === NodeKind.ClassDeclaration && symbol.exports) {
                 // TypeScript 1.0 spec (April 2014): 8.4
                 // Every class automatically contains a static property member named 'prototype',
                 // the type of which is an instantiation of the class type with type Any supplied as a type argument for each type parameter.
@@ -131,7 +131,7 @@ module reflect {
             if (symbolKind & SymbolFlags.Namespace) {
                 exportKind |= SymbolFlags.ExportNamespace;
             }
-            if (node.flags & NodeFlags.Export || node.kind !== NodeKind.Import) {
+            if (node.flags & NodeFlags.Export || node.kind !== NodeKind.ImportDeclaration) {
                 if (exportKind) {
                     var local = declareSymbol(container.locals, undefined, node, exportKind, symbolExcludes);
                     local.exportSymbol = declareSymbol(container.symbol.exports, container.symbol, node, symbolKind, symbolExcludes);
@@ -172,7 +172,7 @@ module reflect {
 
         function bindDeclaration(node: Declaration, symbolKind: SymbolFlags, symbolExcludes: SymbolFlags) {
             switch (container.kind) {
-                case NodeKind.Module:
+                case NodeKind.ModuleDeclaration:
                     declareModuleMember(node, symbolKind, symbolExcludes);
                     break;
                 case NodeKind.SourceFile:
@@ -191,19 +191,19 @@ module reflect {
                 case NodeKind.Constructor:
                 case NodeKind.GetAccessor:
                 case NodeKind.SetAccessor:
-                case NodeKind.Function:
+                case NodeKind.FunctionDeclaration:
                     declareSymbol(container.locals, undefined, node, symbolKind, symbolExcludes);
                     break;
-                case NodeKind.Class:
+                case NodeKind.ClassDeclaration:
                     if (node.flags & NodeFlags.Static) {
                         declareSymbol(container.symbol.exports, container.symbol, node, symbolKind, symbolExcludes);
                         break;
                     }
                 case NodeKind.ObjectType:
-                case NodeKind.Interface:
+                case NodeKind.InterfaceDeclaration:
                     declareSymbol(container.symbol.members, container.symbol, node, symbolKind, symbolExcludes);
                     break;
-                case NodeKind.Enum:
+                case NodeKind.EnumDeclaration:
                     declareSymbol(container.symbol.exports, container.symbol, node, symbolKind, symbolExcludes);
                     break;
             }
@@ -246,7 +246,7 @@ module reflect {
                 case NodeKind.Parameter:
                     bindDeclaration(<Declaration>node, SymbolFlags.Variable, SymbolFlags.ParameterExcludes);
                     break;
-                case NodeKind.Variable:
+                case NodeKind.VariableDeclaration:
                     bindDeclaration(<Declaration>node, SymbolFlags.Variable, SymbolFlags.VariableExcludes);
                     break;
                 case NodeKind.Field:
@@ -269,7 +269,7 @@ module reflect {
                 case NodeKind.IndexSignature:
                     bindDeclaration(<Declaration>node, SymbolFlags.IndexSignature, 0);
                     break;
-                case NodeKind.Function:
+                case NodeKind.FunctionDeclaration:
                     bindDeclaration(<Declaration>node, SymbolFlags.Function, SymbolFlags.FunctionExcludes);
                     break;
                 case NodeKind.Constructor:
@@ -287,19 +287,19 @@ module reflect {
                 case NodeKind.ObjectType:
                     bindAnonymousDeclaration(node, SymbolFlags.TypeLiteral, "__type");
                     break;
-                case NodeKind.Class:
+                case NodeKind.ClassDeclaration:
                     bindDeclaration(<Declaration>node, SymbolFlags.Class, SymbolFlags.ClassExcludes);
                     break;
-                case NodeKind.Interface:
+                case NodeKind.InterfaceDeclaration:
                     bindDeclaration(<Declaration>node, SymbolFlags.Interface, SymbolFlags.InterfaceExcludes);
                     break;
-                case NodeKind.Enum:
+                case NodeKind.EnumDeclaration:
                     bindDeclaration(<Declaration>node, SymbolFlags.Enum, SymbolFlags.EnumExcludes);
                     break;
-                case NodeKind.Module:
+                case NodeKind.ModuleDeclaration:
                     bindModuleDeclaration(<ModuleDeclaration>node);
                     break;
-                case NodeKind.Import:
+                case NodeKind.ImportDeclaration:
                     bindDeclaration(<Declaration>node, SymbolFlags.Import, SymbolFlags.ImportExcludes);
                     break;
                 case NodeKind.SourceFile:
@@ -350,32 +350,32 @@ module reflect {
         switch(node.kind) {
             case NodeKind.SourceFile:
                 return children((<SourceFile>node).declares);
-            case NodeKind.Interface:
+            case NodeKind.InterfaceDeclaration:
                 return children((<InterfaceDeclaration>node).typeParameters) ||
                     children((<InterfaceDeclaration>node).extends) ||
                     children((<InterfaceDeclaration>node).signatures);
-            case NodeKind.Class:
+            case NodeKind.ClassDeclaration:
                 return children((<ClassDeclaration>node).typeParameters) ||
                     child((<ClassDeclaration>node).extends) ||
                     children((<ClassDeclaration>node).implements) ||
                     children((<ClassDeclaration>node).members);
-            case NodeKind.Enum:
+            case NodeKind.EnumDeclaration:
                 return children((<EnumDeclaration>node).members);
-            case NodeKind.Module:
+            case NodeKind.ModuleDeclaration:
                 return children((<ModuleDeclaration>node).declares);
             case NodeKind.CallSignature:
             case NodeKind.ConstructSignature:
             case NodeKind.MethodSignature:
             case NodeKind.Constructor:
             case NodeKind.Method:
-            case NodeKind.Function:
+            case NodeKind.FunctionDeclaration:
             case NodeKind.ConstructorType:
             case NodeKind.FunctionType:
                 return children((<FunctionDeclaration>node).typeParameters) ||
                     children((<FunctionDeclaration>node).parameters) ||
                     child((<FunctionDeclaration>node).returns);
             case NodeKind.Field:
-            case NodeKind.Variable:
+            case NodeKind.VariableDeclaration:
             case NodeKind.PropertySignature:
                 return child((<VariableDeclaration>node).type);
             case NodeKind.Index:

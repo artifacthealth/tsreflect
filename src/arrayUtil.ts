@@ -39,6 +39,12 @@ module reflect {
         return result;
     }
 
+    export function concatenate<T>(array1: T[], array2: T[]): T[] {
+        if (!array2 || !array2.length) return array1;
+        if (!array1 || !array1.length) return array2;
+        return array1.concat(array2);
+    }
+
     export function contains<T>(array: T[], value: T): boolean {
         if (array) {
             var len = array.length;

@@ -6,13 +6,13 @@ module reflect {
 
         SourceFile,
 
-        Interface,
-        Class,
-        Enum,
-        Module,
-        Function,
-        Variable,
-        Import,
+        InterfaceDeclaration,
+        ClassDeclaration,
+        EnumDeclaration,
+        ModuleDeclaration,
+        FunctionDeclaration,
+        VariableDeclaration,
+        ImportDeclaration,
 
         EnumMember,
 
@@ -34,6 +34,7 @@ module reflect {
         ConstructorType,
         ObjectType,
         TypeReference,
+        StringLiteral,
 
         Parameter,
         TypeParameter

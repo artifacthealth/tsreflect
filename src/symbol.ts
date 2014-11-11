@@ -8,10 +8,10 @@ module reflect {
         id: number;
         declarations: Declaration[];
         parent: Symbol;
-        exports: SymbolTable;
         members: SymbolTable;
-        valueDeclaration: Declaration;
+        exports: SymbolTable;
         exportSymbol: Symbol;
+        valueDeclaration: Declaration;
 
         constructor(public flags: SymbolFlags, public name: string) {
 
@@ -22,9 +22,15 @@ module reflect {
         target?: Symbol;               // Resolved (non-alias) target of an alias
         type?: Type;                   // Type of value symbol
         declaredType?: Type;           // Type of class, interface, enum, or type parameter
-//        mapper?: TypeMapper;           // Type mapper for instantiation alias
+        mapper?: TypeMapper;           // Type mapper for instantiation alias
         referenced?: boolean;          // True if alias symbol has been referenced as a value
         exportAssignSymbol?: Symbol;   // Symbol exported from external module
+    }
+
+    export interface TransientSymbol extends Symbol, SymbolLinks { }
+
+    export interface TypeMapper {
+        (t: Type): Type;
     }
 
     export interface SymbolTable {

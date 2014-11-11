@@ -29,5 +29,10 @@ module reflect {
         type: string;
         arguments?: TypeNode[];
     }
+
+    export interface StringLiteralTypeNode extends TypeNode {
+
+        text: string;
+    }
 }
 
