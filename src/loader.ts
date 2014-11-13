@@ -1,8 +1,10 @@
 /// <reference path="pathUtil.ts"/>
+/// <reference path="nodes.ts"/>
 
 module reflect {
 
     var options = {
+
         noLib: false,
         noResolve: false,
         charset: "utf8"
@@ -12,18 +14,58 @@ module reflect {
     var filesByName: Map<SourceFile> = {};
     var errors: Diagnostic[] = [];
     var seenNoDefaultLib = options.noLib;
+    var initializedGlobals = false;
+
+    var flagMap: { [name: string]: NodeFlags } = {
+
+        "external": NodeFlags.ExternalModule,
+        "export": NodeFlags.Export,
+        "private": NodeFlags.Private,
+        "static": NodeFlags.Static,
+        "optional": NodeFlags.QuestionMark,
+        "rest": NodeFlags.Rest
+    }
+
+    var flags = Object.keys(flagMap);
 
     var fs = require("fs");
 
     export function getLoadedSourceFile(filename: string) {
+
+        // TODO: do I need to normalize this?
         filename = getCanonicalFileName(filename);
         return hasProperty(filesByName, filename) ? filesByName[filename] : undefined;
     }
 
-    export function processRootFile(filename: string, isDefaultLib: boolean = false): SourceFile[] {
+    export function processRootFile(filename: string): SourceFile {
 
-        processSourceFile(normalizePath(filename), isDefaultLib);
-        return files;
+        var sourceFile = processSourceFile(filename, false);
+
+        if(!seenNoDefaultLib) {
+            processSourceFile(normalizePath(getDefaultLibFilename()), true);
+        }
+
+        // TODO: propagate binding errors for source files
+        /*   forEach(program.getSourceFiles(), file => {
+         bindSourceFile(file);
+         forEach(file.errors, addDiagnostic);
+         });*/
+
+        forEach(files, bindSourceFile);
+        files = [];
+
+        if(!initializedGlobals) {
+            initializeGlobalTypes();
+            initializedGlobals = true;
+        }
+
+        return sourceFile;
+    }
+
+    // TODO: move to host
+    function getDefaultLibFilename(): string {
+
+        return combinePaths(normalizePath(__dirname), "lib.d.json");
     }
 
     function processSourceFile(filename: string, isDefaultLib: boolean, refFile?: SourceFile): SourceFile {
@@ -81,7 +123,7 @@ module reflect {
                 errors.push(new Diagnostic(refFile, Diagnostics.Cannot_read_file_0_Colon_1, filename, hostErrorMessage));
             });
             if (file) {
-                seenNoDefaultLib = seenNoDefaultLib || file.hasNoDefaultLib;
+                seenNoDefaultLib = seenNoDefaultLib || file.noDefaultLib;
                 if (!options.noResolve) {
                     var basePath = getDirectoryPath(filename);
                     processReferencedFiles(file, basePath);
@@ -161,25 +203,25 @@ module reflect {
         function scanModuleElementDeclaration(node: ModuleElementDeclaration): void {
 
             switch(<any>node.kind) {
-                case DeclarationKind.Interface:
+                case "interface":
                     scanInterfaceDeclaration(<InterfaceDeclaration>node);
                     break;
-                case DeclarationKind.Class:
+                case "class":
                     scanClassDeclaration(<ClassDeclaration>node);
                     break;
-                case DeclarationKind.Enum:
+                case "enum":
                     scanEnumDeclaration(<EnumDeclaration>node);
                     break;
-                case DeclarationKind.Module:
+                case "module":
                     scanModuleDeclaration(<ModuleElementDeclaration>node);
                     break;
-                case DeclarationKind.Function:
+                case "function":
                     scanFunctionDeclaration(<FunctionDeclaration>node);
                     break;
-                case DeclarationKind.Variable:
+                case "variable":
                     scanVariableDeclaration(<VariableDeclaration>node);
                     break;
-                case DeclarationKind.Import:
+                case "import":
                     scanImportDeclaration(<ImportDeclaration>node);
                     break;
             }
@@ -238,8 +280,7 @@ module reflect {
 
         function scanFunctionDeclaration(node: FunctionDeclaration): void {
 
-            node.kind = NodeKind.FunctionDeclaration;
-            scanCallSignatureDeclaration(node);
+            scanCallSignature(node, NodeKind.FunctionDeclaration);
         }
 
         function scanParameterDeclaration(node: ParameterDeclaration): void {
@@ -267,22 +308,22 @@ module reflect {
         function scanClassMemberDeclaration(node: MemberDeclaration): void {
 
             switch(<any>node.kind) {
-                case DeclarationKind.Index:
+                case "index":
                     scanIndexDeclaration(<IndexMemberDeclaration>node);
                     break;
-                case DeclarationKind.Field:
+                case "field":
                     scanFieldDeclaration(<FieldMemberDeclaration>node);
                     break;
-                case DeclarationKind.Method:
+                case "method":
                     scanMethodDeclaration(<MethodMemberDeclaration>node);
                     break;
-                case DeclarationKind.Constructor:
+                case "constructor":
                     scanConstructorDeclaration(<ConstructorMemberDeclaration>node);
                     break;
-                case DeclarationKind.GetAccessor:
+                case "get":
                     scanGetAccessorDeclaration(<GetAccessorMemberDeclaration>node);
                     break;
-                case DeclarationKind.SetAccessor:
+                case "set":
                     scanSetAccessorDeclaration(<SetAccessorMemberDeclaration>node);
                     break;
             }
@@ -330,19 +371,19 @@ module reflect {
         function scanSignatureDeclaration(node: SignatureDeclaration): void {
 
             switch(<any>node.kind) {
-                case DeclarationKind.PropertySignature:
+                case "property":
                     scanPropertySignatureDeclaration(<PropertySignatureDeclaration>node);
                     break;
-                case DeclarationKind.ConstructSignature:
+                case "constructor":
                     scanConstructSignatureDeclaration(<ConstructSignatureDeclaration>node);
                     break;
-                case DeclarationKind.MethodSignature:
+                case "method":
                     scanMethodSignatureDeclaration(<MethodSignatureDeclaration>node);
                     break;
-                case DeclarationKind.IndexSignature:
+                case "index":
                     scanIndexSignatureDeclaration(<IndexSignatureDeclaration>node);
                     break;
-                case DeclarationKind.CallSignature:
+                case "call":
                     scanCallSignatureDeclaration(<CallSignatureDeclaration>node);
                     break;
             }
@@ -397,19 +438,19 @@ module reflect {
             }
             else {
                 switch (<any>typeNode.kind) {
-                    case DeclarationKind.FunctionType:
+                    case "function":
                         scanFunctionTypeNode(<FunctionTypeNode>typeNode);
                         break;
-                    case DeclarationKind.ArrayType:
+                    case "array":
                         scanArrayTypeNode(<ArrayTypeNode>typeNode);
                         break;
-                    case DeclarationKind.ConstructorType:
+                    case "constructor":
                         scanConstructorTypeNode(<ConstructorTypeNode>typeNode);
                         break;
-                    case DeclarationKind.TypeReference:
+                    case "reference":
                         scanTypeReferenceNode(<TypeReferenceNode>typeNode);
                         break;
-                    case DeclarationKind.ObjectType:
+                    case "object":
                         scanObjectTypeNode(<ObjectTypeNode>typeNode);
                         break;
                 }
@@ -525,6 +566,7 @@ module reflect {
             file = JSON.parse(text);
         }
         catch(e) {
+            errors.push(new Diagnostic(undefined, Diagnostics.File_0_has_invalid_json_format_1, filename, e.message));
             // TODO: add error to errors list
         }
 
@@ -534,44 +576,5 @@ module reflect {
         }
 
         return file;
-    }
-
-    var flagMap: { [name: string]: NodeFlags } = {
-
-        "external": NodeFlags.ExternalModule,
-        "export": NodeFlags.Export,
-        "private": NodeFlags.Private,
-        "static": NodeFlags.Static,
-        "optional": NodeFlags.QuestionMark,
-        "rest": NodeFlags.Rest
-    }
-
-    var flags = Object.keys(flagMap);
-
-    module DeclarationKind {
-
-        export var Interface = "interface";
-        export var Class = "class";
-        export var Enum = "enum";
-        export var Module = "module";
-        export var Function = "function";
-        export var Variable = "variable";
-        export var Import = "import";
-        export var Index = "index";
-        export var Field = "field";
-        export var Method = "method";
-        export var Constructor = "constructor";
-        export var GetAccessor = "get";
-        export var SetAccessor = "set";
-        export var PropertySignature = "property";
-        export var ConstructSignature = "constructor";
-        export var MethodSignature = "method";
-        export var IndexSignature = "index";
-        export var CallSignature = "call";
-        export var FunctionType = "function";
-        export var ArrayType = "array";
-        export var ConstructorType = "constructor";
-        export var TypeReference = "reference";
-        export var ObjectType = "object";
     }
 }

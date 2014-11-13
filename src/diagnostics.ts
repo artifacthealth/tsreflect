@@ -33,6 +33,23 @@ module reflect {
                 this.code = message.code;
             }
         }
+
+        static chain(next: DiagnosticMessageChain, message: DiagnosticMessage, ...args: any[]): DiagnosticMessageChain;
+        static chain(next: DiagnosticMessageChain, message: DiagnosticMessage): DiagnosticMessageChain {
+            var text = getLocaleSpecificMessage(message.key);
+
+            if (arguments.length > 2) {
+                text = formatStringFromArgs(text, arguments, 2);
+            }
+
+            var ret = new DiagnosticMessageChain();
+            ret.messageText = text;
+            ret.category = message.category;
+            ret.code = message.code;
+            ret.next = next;
+
+            return ret;
+        }
     }
 
     // A linked list of formatted diagnostic messages to be used as part of a multiline message.
@@ -69,23 +86,6 @@ module reflect {
 
             return new Diagnostic(file, code, category, messageText);
         }
-
-        static chain(next: DiagnosticMessageChain, message: DiagnosticMessage, ...args: any[]): DiagnosticMessageChain;
-        static chain(next: DiagnosticMessageChain, message: DiagnosticMessage): DiagnosticMessageChain {
-            var text = getLocaleSpecificMessage(message.key);
-
-            if (arguments.length > 2) {
-                text = formatStringFromArgs(text, arguments, 2);
-            }
-
-            var ret = new DiagnosticMessageChain();
-            ret.messageText = text;
-            ret.category = message.category;
-            ret.code = message.code;
-            ret.next = next;
-
-            return ret;
-        }
     }
 
     export enum DiagnosticCategory {
@@ -104,18 +104,17 @@ module reflect {
 
     export var Diagnostics = {
 
-        Duplicate_identifier_0: { code: 1000, category: DiagnosticCategory.Error, key: "Duplicate identifier '{0}'." },
-        File_0_not_found: { code: 1001, category: DiagnosticCategory.Error, key: "File '{0}' not found." },
-        File_0_must_have_extension_d_json: { code: 1002, category: DiagnosticCategory.Error, key: "File '{0}' must have extension '.d.json'." },
-        Filename_0_differs_from_already_included_filename_1_only_in_casing: { code: 1003, category: DiagnosticCategory.Error, key: "Filename '{0}' differs from already included filename '{1}' only in casing" },
-        Cannot_read_file_0_Colon_1: { code: 1003, category: DiagnosticCategory.Error, key: "Cannot read file '{0}': {1}" },
-        Circular_definition_of_import_alias_0: { code: 1004, category: DiagnosticCategory.Error, key: "Circular definition of import alias '{0}'." },
-        Cannot_find_name_0: { code: 1005, category: DiagnosticCategory.Error, key: "Cannot find name '{0}'." },
-        Module_0_has_no_exported_member_1: { code: 1006, category: DiagnosticCategory.Error, key: "Module '{0}' has no exported member '{1}'." },
-        File_0_is_not_an_external_module: { code: 1007, category: DiagnosticCategory.Error, key: "File '{0}' is not an external module." },
-        Cannot_find_external_module_0: { code: 1008, category: DiagnosticCategory.Error, key: "Cannot find external module '{0}'." },
-        Generic_type_0_requires_1_type_argument_s: { code: 1009, category: DiagnosticCategory.Error, key: "Generic type '{0}' requires {1} type argument(s)." },
-        Type_0_is_not_generic: { code: 1010, category: DiagnosticCategory.Error, key: "Type '{0}' is not generic." },
+        Duplicate_identifier_0: { code: 2300, category: DiagnosticCategory.Error, key: "Duplicate identifier '{0}'." },
+        File_0_not_found: { code: 6053, category: DiagnosticCategory.Error, key: "File '{0}' not found." },
+        Filename_0_differs_from_already_included_filename_1_only_in_casing: { code: 1149, category: DiagnosticCategory.Error, key: "Filename '{0}' differs from already included filename '{1}' only in casing" },
+        Cannot_read_file_0_Colon_1: { code: 5012, category: DiagnosticCategory.Error, key: "Cannot read file '{0}': {1}" },
+        Circular_definition_of_import_alias_0: { code: 2303, category: DiagnosticCategory.Error, key: "Circular definition of import alias '{0}'." },
+        Cannot_find_name_0: { code: 2304, category: DiagnosticCategory.Error, key: "Cannot find name '{0}'." },
+        Module_0_has_no_exported_member_1: { code: 2305, category: DiagnosticCategory.Error, key: "Module '{0}' has no exported member '{1}'." },
+        File_0_is_not_an_external_module: { code: 2306, category: DiagnosticCategory.Error, key: "File '{0}' is not an external module." },
+        Cannot_find_external_module_0: { code: 2307, category: DiagnosticCategory.Error, key: "Cannot find external module '{0}'." },
+        Generic_type_0_requires_1_type_argument_s: { code: 2314, category: DiagnosticCategory.Error, key: "Generic type '{0}' requires {1} type argument(s)." },
+        Type_0_is_not_generic: { code: 2315, category: DiagnosticCategory.Error, key: "Type '{0}' is not generic." },
         Index_signatures_are_incompatible_Colon: { code: 2330, category: DiagnosticCategory.Error, key: "Index signatures are incompatible:" },
         Index_signature_is_missing_in_type_0: { code: 2329, category: DiagnosticCategory.Error, key: "Index signature is missing in type '{0}'." },
         Types_of_parameters_0_and_1_are_incompatible_Colon: { code: 2328, category: DiagnosticCategory.Error, key: "Types of parameters '{0}' and '{1}' are incompatible:" },
@@ -130,6 +129,10 @@ module reflect {
         Type_0_recursively_references_itself_as_a_base_type: { code: 2310, category: DiagnosticCategory.Error, key: "Type '{0}' recursively references itself as a base type." },
         A_class_may_only_extend_another_class: { code: 2311, category: DiagnosticCategory.Error, key: "A class may only extend another class." },
         An_interface_may_only_extend_a_class_or_another_interface: { code: 2312, category: DiagnosticCategory.Error, key: "An interface may only extend a class or another interface." },
+
+        // Custom Errors
+        File_0_must_have_extension_d_json: { code: 10009, category: DiagnosticCategory.Error, key: "File '{0}' must have extension '.d.json'." },
+        File_0_has_invalid_json_format_1: { code: 10010, category: DiagnosticCategory.Error, key: "File '{0}' has invalid JSON format: {1}" }
     }
 
     var localizedDiagnosticMessages: Map<string> = undefined;

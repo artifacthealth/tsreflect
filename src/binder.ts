@@ -13,29 +13,10 @@
  and limitations under the License.
  ***************************************************************************** */
 
-/// <reference path="declaration.ts"/>
+/// <reference path="nodes.ts"/>
 /// <reference path="diagnostics.ts"/>
 
 module reflect {
-
-    export function isInstantiated(node: Node): boolean {
-        // A module is uninstantiated if it contains only
-        // 1. interface declarations
-        if (node.kind === NodeKind.InterfaceDeclaration) {
-            return false;
-        }
-        // 2. non - exported import declarations
-        else if (node.kind === NodeKind.ImportDeclaration && !(node.flags & NodeFlags.Export)) {
-            return false;
-        }
-        // 3. other uninstantiated module declarations.
-        else if (node.kind === NodeKind.ModuleDeclaration && !forEachChild(node, isInstantiated)) {
-            return false;
-        }
-        else {
-            return true;
-        }
-    }
 
     export function bindSourceFile(file: SourceFile) {
 
@@ -43,10 +24,40 @@ module reflect {
         var container: Declaration;
         var lastContainer: Declaration;
 
+        var moduleExtensions = [".d.ts", ".ts", ".js"];
+
+        function getModuleNameFromFilename(filename: string) {
+            for (var i = 0; i < moduleExtensions.length; i++) {
+                var ext = moduleExtensions[i];
+                var len = filename.length - ext.length;
+                if (len > 0 && filename.substr(len) === ext) return filename.substr(0, len);
+            }
+            return filename;
+        }
+
         if (!file.locals) {
             file.locals = {};
             container = file;
             bind(file);
+        }
+
+        function isInstantiated(node: Node): boolean {
+            // A module is uninstantiated if it contains only
+            // 1. interface declarations
+            if (node.kind === NodeKind.InterfaceDeclaration) {
+                return false;
+            }
+            // 2. non - exported import declarations
+            else if (node.kind === NodeKind.ImportDeclaration && !(node.flags & NodeFlags.Export)) {
+                return false;
+            }
+            // 3. other uninstantiated module declarations.
+            else if (node.kind === NodeKind.ModuleDeclaration && !forEachChild(node, isInstantiated)) {
+                return false;
+            }
+            else {
+                return true;
+            }
         }
 
         function addDeclarationToSymbol(symbol: Symbol, node: Declaration, symbolKind: SymbolFlags) {
@@ -313,17 +324,6 @@ module reflect {
                     forEachChild(node, bind);
                     parent = saveParent;
             }
-        }
-
-        var moduleExtensions = [".d.ts", ".ts", ".js"];
-
-        function getModuleNameFromFilename(filename: string) {
-            for (var i = 0; i < moduleExtensions.length; i++) {
-                var ext = moduleExtensions[i];
-                var len = filename.length - ext.length;
-                if (len > 0 && filename.substr(len) === ext) return filename.substr(0, len);
-            }
-            return filename;
         }
     }
 

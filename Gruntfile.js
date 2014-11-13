@@ -19,7 +19,7 @@ module.exports = function(grunt) {
             },
             lib: {
                 src: [
-                    "lib/"
+                    "lib/tsreflect.js"
                 ]
             }
         },
@@ -27,23 +27,23 @@ module.exports = function(grunt) {
         typescript: {
             build: {
                 options: {
-                    target: "es5",
+                    target: "es3",
                     sourceMap: true,
                     declaration: false,
                     noImplicitAny: true
                 },
-                src: ['src/tsreflect.ts'],
+                src: ['src/reflect.ts'],
                 dest: 'build/tsreflect.js'
             },
             tests: {
                 options: {
-                    target: "es5",
+                    target: "es3",
                     module: "commonjs",
                     sourceMap: true,
                     noImplicitAny: true,
                     basePath: 'tests/'
                 },
-                src: ['tests/run.ts'],
+                src: ['tests/**/*.ts'],
                 dest: 'build/'
             }
         },
@@ -67,7 +67,7 @@ module.exports = function(grunt) {
                         expand: true,
                         cwd: 'lib/',
                         src: [
-                            'lib.d.ts'
+                            'lib.d.json'
                         ],
                         dest: 'build/'
                     }
@@ -115,14 +115,14 @@ module.exports = function(grunt) {
                 options: {
                     reporter: 'spec'
                 },
-                src: ['build/run.js']
+                src: ['build/**/*.tests.js']
             }
         }
     });
 
     // Default task(s).
     grunt.registerTask("default", [ "build", "lib", "tests" ]);
-    grunt.registerTask("build", [ "clean:build", "typescript:build" ]);
+    grunt.registerTask("build", [ "clean:build", "typescript:build", "copy:build" ]);
     grunt.registerTask("lib", [ "clean:lib", "concat:lib" ]);
     grunt.registerTask("tests", [ "typescript:tests", "mochaTest:tests" ]);
 };

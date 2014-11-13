@@ -1,22 +1,7 @@
-/// <reference path="declaration.ts"/>
+/// <reference path="nodes.ts"/>
 /// <reference path="type.ts"/>
 
 module reflect {
-
-    export class Symbol {
-
-        id: number;
-        declarations: Declaration[];
-        parent: Symbol;
-        members: SymbolTable;
-        exports: SymbolTable;
-        exportSymbol: Symbol;
-        valueDeclaration: Declaration;
-
-        constructor(public flags: SymbolFlags, public name: string) {
-
-        }
-    }
 
     export interface SymbolLinks {
         target?: Symbol;               // Resolved (non-alias) target of an alias
@@ -108,4 +93,43 @@ module reflect {
         Export                  = ExportNamespace | ExportType | ExportValue,
     }
 
+    export class Symbol {
+
+        id: number;
+        declarations: Declaration[];
+        parent: Symbol;
+        members: SymbolTable;
+        exports: SymbolTable;
+        exportSymbol: Symbol;
+        valueDeclaration: Declaration;
+
+        constructor(public flags: SymbolFlags, public name: string) {
+
+        }
+
+        resolve (name: string, meaning: SymbolFlags = SymbolFlags.Namespace | SymbolFlags.Type | SymbolFlags.Value): Symbol {
+
+            if (!name) {
+                throw new Error("Missing required argument 'name'.")
+            }
+
+            if(!this.declarations || this.declarations.length == 0) {
+                // If this symbol does not have any declarations then the resolved symbol is undefined
+                return undefined;
+            }
+
+            return resolveEntityName(this.declarations[0], name, meaning);
+        }
+
+        getType(): Type {
+
+            // TODO: return unknown type as undefined?
+            return getTypeOfSymbol(this);
+        }
+
+        getDeclaredType(): Type {
+
+            return getDeclaredTypeOfSymbol(this);
+        }
+    }
 }
