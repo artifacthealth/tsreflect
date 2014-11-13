@@ -17,13 +17,14 @@ module reflect {
         Class              = 0x00000400,  // Class
         Interface          = 0x00000800,  // Interface
         Reference          = 0x00001000,  // Generic type reference
-        Anonymous          = 0x00002000,  // Anonymous
-        FromSignature      = 0x00004000,  // Created for signature assignment check
+        Tuple              = 0x00002000,  // Tuple
+        Anonymous          = 0x00004000,  // Anonymous
+        FromSignature      = 0x00008000,  // Created for signature assignment check
 
         Intrinsic = Any | String | Number | Boolean | Void | Undefined | Null,
         StringLike = String | StringLiteral,
         NumberLike = Number | Enum,
-        ObjectType = Class | Interface | Reference | Anonymous
+        ObjectType = Class | Interface | Reference | Tuple | Anonymous
     }
 
     // Properties common to all types
@@ -80,6 +81,11 @@ module reflect {
         openReferenceChecks: Map<boolean>;    // Open type reference check cache
     }
 
+    export interface TupleType extends ObjectType {
+        elementTypes: Type[];          // Element types
+        baseArrayType: TypeReference;  // Array<T> where T is best common type of element types
+    }
+
     // Resolved object type
     export interface ResolvedObjectType extends ObjectType {
         members: SymbolTable;              // Properties by name
@@ -97,7 +103,6 @@ module reflect {
         mapper?: TypeMapper;     // Instantiation mapper
     }
 
-    // Signature
     export enum SignatureKind {
         Call,
         Construct,
@@ -110,7 +115,7 @@ module reflect {
         resolvedReturnType: Type;           // Resolved return type
         minArgumentCount: number;           // Number of non-optional parameters
         hasRestParameter: boolean;          // True if last parameter is rest parameter
-        hasStringLiterals: boolean;         // True if instantiated
+        hasStringLiterals: boolean;         // True if specialized
         target: Signature;                 // Instantiation target
         mapper: TypeMapper;                // Instantiation mapper
         erasedSignatureCache: Signature;   // Erased version of signature (deferred)
@@ -119,5 +124,9 @@ module reflect {
     export enum IndexKind {
         String,
         Number,
+    }
+
+    export interface TypeMapper {
+        (t: Type): Type;
     }
 }

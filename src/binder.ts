@@ -224,7 +224,7 @@ module reflect {
         function bindConstructorDeclaration(node: ConstructorMemberDeclaration) {
             bindDeclaration(node, SymbolFlags.Constructor, 0);
             forEach(node.parameters, p => {
-                if (p.flags & (NodeFlags.Public | NodeFlags.Private)) {
+                if (p.flags & (NodeFlags.Public | NodeFlags.Private | NodeFlags.Protected)) {
                     bindDeclaration(p, SymbolFlags.Property, SymbolFlags.PropertyExcludes);
                 }
             });
@@ -315,7 +315,7 @@ module reflect {
                     break;
                 case NodeKind.SourceFile:
                     if (node.flags & NodeFlags.ExternalModule) {
-                        bindAnonymousDeclaration(node, SymbolFlags.ValueModule, '"' + getModuleNameFromFilename((<SourceFile>node).filename) + '"');
+                        bindAnonymousDeclaration(node, SymbolFlags.ValueModule, '"' + removeFileExtension((<SourceFile>node).filename) + '"');
                         break;
                     }
                 default:

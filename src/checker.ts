@@ -1,6 +1,8 @@
 /// <reference path="arrayUtil.ts"/>
 /// <reference path="nodes.ts"/>
 /// <reference path="diagnostics.ts"/>
+/// <reference path="symbol.ts"/>
+/// <reference path="type.ts"/>
 
 module reflect {
 
@@ -40,6 +42,7 @@ module reflect {
     var globalNumberType: ObjectType;
     var globalBooleanType: ObjectType;
 
+    var tupleTypes: Map<TupleType> = {};
     var stringLiteralTypes: Map<StringLiteralType> = {};
 
     var symbolLinks: SymbolLinks[] = [];
@@ -51,6 +54,7 @@ module reflect {
 
     var errors: Diagnostic[] = [];
 
+    // TODO: get rid of this and finalize how we are going to handle errors
     export function printTypeErrors(): void {
 
         forEach(errors, x => {
@@ -398,16 +402,15 @@ module reflect {
             members, callSignatures, constructSignatures, stringIndexType, numberIndexType);
     }
 
-    function isOptionalProperty(propertySymbol: Symbol): boolean {
-        if (propertySymbol.flags & SymbolFlags.Prototype) {
-            return false;
-        }
+    function isOptionalProperty(propertySymbol:Symbol):boolean {
         //  class C {
         //      constructor(public x?) { }
         //  }
         //
         // x is an optional parameter, but it is a required property.
-        return (propertySymbol.valueDeclaration.flags & NodeFlags.QuestionMark) && propertySymbol.valueDeclaration.kind !== NodeKind.Parameter;
+        return propertySymbol.valueDeclaration &&
+            propertySymbol.valueDeclaration.flags & NodeFlags.QuestionMark &&
+            propertySymbol.valueDeclaration.kind !== NodeKind.Parameter;
     }
 
     function getApparentType(type: Type): ApparentType {
@@ -602,7 +605,7 @@ module reflect {
 
     function hasBaseType(type: InterfaceType, checkBase: InterfaceType) {
         return check(type);
-        function check(type: InterfaceType) {
+        function check(type: InterfaceType): boolean {
             var target = <InterfaceType>getTargetType(type);
             return target === checkBase || forEach(target.baseTypes, check);
         }
@@ -864,6 +867,23 @@ module reflect {
         return [createSignature(undefined, classType.typeParameters, emptyArray, classType, 0, false, false)];
     }
 
+    function createTupleTypeMemberSymbols(memberTypes: Type[]): SymbolTable {
+        var members: SymbolTable = {};
+        for (var i = 0; i < memberTypes.length; i++) {
+            var symbol = <TransientSymbol>createSymbol(SymbolFlags.Property | SymbolFlags.Transient, "" + i);
+            symbol.type = memberTypes[i];
+            members[i] = symbol;
+        }
+        return members;
+    }
+
+    function resolveTupleTypeMembers(type: TupleType) {
+        var arrayType = resolveObjectTypeMembers(createArrayType(getBestCommonType(type.elementTypes)));
+        var members = createTupleTypeMemberSymbols(type.elementTypes);
+        addInheritedMembers(members, arrayType.properties);
+        setObjectTypeMembers(type, members, arrayType.callSignatures, arrayType.constructSignatures, arrayType.stringIndexType, arrayType.numberIndexType);
+    }
+
     function resolveAnonymousTypeMembers(type: ObjectType) {
         var symbol = type.symbol;
         if (symbol.flags & SymbolFlags.TypeLiteral) {
@@ -908,6 +928,9 @@ module reflect {
             }
             else if (type.flags & TypeFlags.Anonymous) {
                 resolveAnonymousTypeMembers(<ObjectType>type);
+            }
+            else if (type.flags & TypeFlags.Tuple) {
+                resolveTupleTypeMembers(<TupleType>type);
             }
             else {
                 resolveTypeReferenceMembers(<TypeReference>type);
@@ -1252,6 +1275,24 @@ module reflect {
         return links.resolvedType;
     }
 
+    function createTupleType(elementTypes: Type[]) {
+        var id = getTypeListId(elementTypes);
+        var type = tupleTypes[id];
+        if (!type) {
+            type = tupleTypes[id] = <TupleType>createObjectType(TypeFlags.Tuple);
+            type.elementTypes = elementTypes;
+        }
+        return type;
+    }
+
+    function getTypeFromTupleTypeNode(node: TupleTypeNode): Type {
+        var links = getNodeLinks(node);
+        if (!links.resolvedType) {
+            links.resolvedType = createTupleType(map(node.types, getTypeFromTypeNode));
+        }
+        return links.resolvedType;
+    }
+
     function getTypeFromTypeLiteralNode(node: TypeNode): Type {
         var links = getNodeLinks(node);
         if (!links.resolvedType) {
@@ -1284,6 +1325,8 @@ module reflect {
                 return getTypeFromTypeReferenceNode(<TypeReferenceNode>node);
             case NodeKind.ArrayType:
                 return getTypeFromArrayTypeNode(<ArrayTypeNode>node);
+            case NodeKind.TupleType:
+                return getTypeFromTupleTypeNode(<TupleTypeNode>node);
             case NodeKind.FunctionType:
             case NodeKind.ConstructorType:
             case NodeKind.ObjectType:
@@ -1430,6 +1473,9 @@ module reflect {
             if (type.flags & TypeFlags.Reference) {
                 return createTypeReference((<TypeReference>type).target, instantiateList((<TypeReference>type).typeArguments, mapper, instantiateType));
             }
+            if (type.flags & TypeFlags.Tuple) {
+                return createTupleType(instantiateList((<TupleType>type).elementTypes, mapper, instantiateType));
+            }
         }
         return type;
     }
@@ -1525,8 +1571,8 @@ module reflect {
         }
         return result;
 
-        function reportError(message: DiagnosticMessage, arg0?: string, arg1?: string): void {
-            errorInfo = Diagnostic.chain(errorInfo, message, arg0, arg1);
+        function reportError(message: DiagnosticMessage, arg0?: string, arg1?: string, arg2?: string): void {
+            errorInfo = Diagnostic.chain(errorInfo, message, arg0, arg1, arg2);
         }
 
         function isRelatedTo(source: Type, target: Type, reportErrors: boolean): boolean {
@@ -1721,50 +1767,72 @@ module reflect {
             for (var i = 0; i < properties.length; i++) {
                 var targetProp = properties[i];
                 var sourceProp = getPropertyOfApparentType(source, targetProp.name);
-                if (sourceProp === targetProp) {
-                    continue;
-                }
-
-                var targetPropIsOptional = isOptionalProperty(targetProp);
-                if (!sourceProp) {
-                    if (!targetPropIsOptional) {
-                        if (reportErrors) {
-                            reportError(Diagnostics.Property_0_is_missing_in_type_1, symbolToString(targetProp), typeToString(source));
-                        }
-                        return false;
-                    }
-                }
-                else if (sourceProp !== targetProp) {
-                    if (targetProp.flags & SymbolFlags.Prototype) {
-                        continue;
-                    }
-
-                    if (getDeclarationFlagsFromSymbol(sourceProp) & NodeFlags.Private || getDeclarationFlagsFromSymbol(targetProp) & NodeFlags.Private) {
-                        if (sourceProp.valueDeclaration !== targetProp.valueDeclaration) {
+                if (sourceProp !== targetProp) {
+                    if (!sourceProp) {
+                        if (!isOptionalProperty(targetProp)) {
                             if (reportErrors) {
-                                reportError(Diagnostics.Private_property_0_cannot_be_reimplemented, symbolToString(targetProp));
+                                reportError(Diagnostics.Property_0_is_missing_in_type_1, symbolToString(targetProp), typeToString(source));
                             }
                             return false;
                         }
                     }
-                    if (!isRelatedTo(getTypeOfSymbol(sourceProp), getTypeOfSymbol(targetProp), reportErrors)) {
-                        if (reportErrors) {
-                            reportError(Diagnostics.Types_of_property_0_are_incompatible_Colon, symbolToString(targetProp));
+                    else if (!(targetProp.flags & SymbolFlags.Prototype)) {
+                        var sourceFlags = getDeclarationFlagsFromSymbol(sourceProp);
+                        var targetFlags = getDeclarationFlagsFromSymbol(targetProp);
+                        if (sourceFlags & NodeFlags.Private || targetFlags & NodeFlags.Private) {
+                            if (sourceProp.valueDeclaration !== targetProp.valueDeclaration) {
+                                if (reportErrors) {
+                                    if (sourceFlags & NodeFlags.Private && targetFlags & NodeFlags.Private) {
+                                        reportError(Diagnostics.Types_have_separate_declarations_of_a_private_property_0, symbolToString(targetProp));
+                                    }
+                                    else {
+                                        reportError(Diagnostics.Property_0_is_private_in_type_1_but_not_in_type_2, symbolToString(targetProp),
+                                            typeToString(sourceFlags & NodeFlags.Private ? source : target),
+                                            typeToString(sourceFlags & NodeFlags.Private ? target : source));
+                                    }
+                                }
+                                return false;
+                            }
                         }
-                        return false;
-                    }
-                    else if (isOptionalProperty(sourceProp) && !targetPropIsOptional) {
-                        // TypeScript 1.0 spec (April 2014): 3.8.3
-                        // S is a subtype of a type T, and T is a supertype of S if ...
-                        // S' and T are object types and, for each member M in T..
-                        // M is a property and S' contains a property N where
-                        // if M is a required property, N is also a required property
-                        // (M - property in T)
-                        // (N - property in S)
-                        if (reportErrors) {
-                            reportError(Diagnostics.Required_property_0_cannot_be_reimplemented_with_optional_property_in_1, targetProp.name, typeToString(source));
+                        else if (targetFlags & NodeFlags.Protected) {
+                            var sourceDeclaredInClass = sourceProp.parent && sourceProp.parent.flags & SymbolFlags.Class;
+                            var sourceClass = sourceDeclaredInClass ? <InterfaceType>getDeclaredTypeOfSymbol(sourceProp.parent) : undefined;
+                            var targetClass = <InterfaceType>getDeclaredTypeOfSymbol(targetProp.parent);
+                            if (!sourceClass || !hasBaseType(sourceClass, targetClass)) {
+                                if (reportErrors) {
+                                    reportError(Diagnostics.Property_0_is_protected_but_type_1_is_not_a_class_derived_from_2,
+                                        symbolToString(targetProp), typeToString(sourceClass || <Type>source), typeToString(targetClass));
+                                }
+                                return false;
+                            }
                         }
-                        return false;
+                        else if (sourceFlags & NodeFlags.Protected) {
+                            if (reportErrors) {
+                                reportError(Diagnostics.Property_0_is_protected_in_type_1_but_public_in_type_2,
+                                    symbolToString(targetProp), typeToString(source), typeToString(target));
+                            }
+                            return false;
+                        }
+                        if (!isRelatedTo(getTypeOfSymbol(sourceProp), getTypeOfSymbol(targetProp), reportErrors)) {
+                            if (reportErrors) {
+                                reportError(Diagnostics.Types_of_property_0_are_incompatible_Colon, symbolToString(targetProp));
+                            }
+                            return false;
+                        }
+                        if (isOptionalProperty(sourceProp) && !isOptionalProperty(targetProp)) {
+                            // TypeScript 1.0 spec (April 2014): 3.8.3
+                            // S is a subtype of a type T, and T is a supertype of S if ...
+                            // S' and T are object types and, for each member M in T..
+                            // M is a property and S' contains a property N where
+                            // if M is a required property, N is also a required property
+                            // (M - property in T)
+                            // (N - property in S)
+                            if (reportErrors) {
+                                reportError(Diagnostics.Property_0_is_optional_in_type_1_but_required_in_type_2,
+                                    symbolToString(targetProp), typeToString(source), typeToString(target));
+                            }
+                            return false;
+                        }
                     }
                 }
             }
@@ -1987,6 +2055,18 @@ module reflect {
             var sourceType = getIndexTypeOfType(source, indexKind);
             return (!sourceType && !targetType) || (sourceType && targetType && isRelatedTo(sourceType, targetType, reportErrors));
         }
+    }
+
+    function isSupertypeOfEach(candidate: Type, types: Type[]): boolean {
+        for (var i = 0, len = types.length; i < len; i++) {
+            if (candidate !== types[i] && !isTypeSubtypeOf(types[i], candidate)) return false;
+        }
+        return true;
+    }
+
+    function getBestCommonType(types: Type[], contextualType?: Type, candidatesOnly?: boolean): Type {
+        if (contextualType && isSupertypeOfEach(contextualType, types)) return contextualType;
+        return forEach(types, t => isSupertypeOfEach(t, types) ? t : undefined) || (candidatesOnly ? undefined : emptyObjectType);
     }
 
     function getAncestor(node: Node, kind: NodeKind): Node {

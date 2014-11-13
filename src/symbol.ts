@@ -14,10 +14,6 @@ module reflect {
 
     export interface TransientSymbol extends Symbol, SymbolLinks { }
 
-    export interface TypeMapper {
-        (t: Type): Type;
-    }
-
     export interface SymbolTable {
 
         [index: string]: Symbol;

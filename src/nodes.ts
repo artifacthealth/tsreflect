@@ -35,13 +35,13 @@ module reflect {
         ObjectType,
         TypeReference,
         StringLiteral,
+        TupleType,
 
         Parameter,
         TypeParameter
     }
 
     export enum NodeFlags {
-
         None             = 0,
         Export           = 0x00000001,  // Declarations
         Ambient          = 0x00000002,  // Declarations
@@ -49,13 +49,14 @@ module reflect {
         Rest             = 0x00000008,  // Parameter
         Public           = 0x00000010,  // Property/Method
         Private          = 0x00000020,  // Property/Method
-        Static           = 0x00000040,  // Property/Method
-        MultiLine        = 0x00000080,  // Multi-line array or object literal
-        Synthetic        = 0x00000100,  // Synthetic node (for full fidelity)
-        DeclarationFile  = 0x00000200,  // Node is a .d.ts file
-        ExternalModule   = 0x00000400,  // External module declaration
+        Protected        = 0x00000040,  // Property/Method
+        Static           = 0x00000080,  // Property/Method
+        MultiLine        = 0x00000100,  // Multi-line array or object literal
+        Synthetic        = 0x00000200,  // Synthetic node (for full fidelity)
+        ExternalModule   = 0x00000400,  // External module flag
 
-        Modifier = Export | Ambient | Public | Private | Static
+        Modifier = Export | Ambient | Public | Private | Protected | Static,
+        AccessibilityModifier = Public | Private | Protected
     }
 
     export interface Node {
@@ -256,6 +257,11 @@ module reflect {
     export interface ArrayTypeNode extends TypeNode {
 
         type: TypeNode;
+    }
+
+    export interface TupleTypeNode extends TypeNode {
+
+        types: TypeNode[];
     }
 
     export interface ConstructorTypeNode extends FunctionTypeNode {

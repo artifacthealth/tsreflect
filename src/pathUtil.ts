@@ -11,6 +11,19 @@ module reflect {
         return useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
     }
 
+    var supportedExtensions = [".d.json"];
+
+    export function removeFileExtension(path: string): string {
+        for (var i = 0; i < supportedExtensions.length; i++) {
+            var ext = supportedExtensions[i];
+
+            if (fileExtensionIs(path, ext)) {
+                return path.substr(0, path.length - ext.length);
+            }
+        }
+
+        return path;
+    }
 
     export function fileExtensionIs(path: string, extension: string): boolean {
         var pathLen = path.length;

@@ -129,6 +129,11 @@ module reflect {
         Type_0_recursively_references_itself_as_a_base_type: { code: 2310, category: DiagnosticCategory.Error, key: "Type '{0}' recursively references itself as a base type." },
         A_class_may_only_extend_another_class: { code: 2311, category: DiagnosticCategory.Error, key: "A class may only extend another class." },
         An_interface_may_only_extend_a_class_or_another_interface: { code: 2312, category: DiagnosticCategory.Error, key: "An interface may only extend a class or another interface." },
+        Types_have_separate_declarations_of_a_private_property_0: { code: 2442, category: DiagnosticCategory.Error, key: "Types have separate declarations of a private property '{0}'." },
+        Property_0_is_private_in_type_1_but_not_in_type_2: { code: 2325, category: DiagnosticCategory.Error, key: "Property '{0}' is private in type '{1}' but not in type '{2}'." },
+        Property_0_is_protected_but_type_1_is_not_a_class_derived_from_2: { code: 2443, category: DiagnosticCategory.Error, key: "Property '{0}' is protected but type '{1}' is not a class derived from '{2}'." },
+        Property_0_is_protected_in_type_1_but_public_in_type_2: { code: 2444, category: DiagnosticCategory.Error, key: "Property '{0}' is protected in type '{1}' but public in type '{2}'." },
+        Property_0_is_optional_in_type_1_but_required_in_type_2: { code: 2327, category: DiagnosticCategory.Error, key: "Property '{0}' is optional in type '{1}' but required in type '{2}'." },
 
         // Custom Errors
         File_0_must_have_extension_d_json: { code: 10009, category: DiagnosticCategory.Error, key: "File '{0}' must have extension '.d.json'." },

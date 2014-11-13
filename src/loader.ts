@@ -437,23 +437,47 @@ module reflect {
                 (<any>node)[typeNodeName] = createTypeNodeFromString(typeNode);
             }
             else {
-                switch (<any>typeNode.kind) {
-                    case "function":
-                        scanFunctionTypeNode(<FunctionTypeNode>typeNode);
-                        break;
-                    case "array":
-                        scanArrayTypeNode(<ArrayTypeNode>typeNode);
-                        break;
-                    case "constructor":
-                        scanConstructorTypeNode(<ConstructorTypeNode>typeNode);
-                        break;
-                    case "reference":
-                        scanTypeReferenceNode(<TypeReferenceNode>typeNode);
-                        break;
-                    case "object":
-                        scanObjectTypeNode(<ObjectTypeNode>typeNode);
-                        break;
+                scanTypeNode(<TypeNode>typeNode);
+            }
+        }
+
+        function scanTypeNodes(nodes: TypeNode[]): void {
+
+            if(!nodes) return;
+
+            for(var i = 0, l = nodes.length; i < l; i++) {
+
+                var typeNode = nodes[i];
+                if(typeof typeNode === "string") {
+                    nodes.splice(i, 1, createTypeNodeFromString(<any>typeNode));
                 }
+                else {
+                    scanTypeNode(<TypeNode>typeNode);
+                }
+            }
+        }
+
+        function scanTypeNode(node: TypeNode) {
+
+            switch (<any>node.kind) {
+                case "function":
+                    scanFunctionTypeNode(<FunctionTypeNode>node);
+                    break;
+                case "array":
+                    scanArrayTypeNode(<ArrayTypeNode>node);
+                    break;
+                case "constructor":
+                    scanConstructorTypeNode(<ConstructorTypeNode>node);
+                    break;
+                case "reference":
+                    scanTypeReferenceNode(<TypeReferenceNode>node);
+                    break;
+                case "object":
+                    scanObjectTypeNode(<ObjectTypeNode>node);
+                    break;
+                case "tuple":
+                    scanTupleTypeNode(<TupleTypeNode>node);
+                    break;
             }
         }
 
@@ -480,6 +504,12 @@ module reflect {
 
             node.kind = NodeKind.ArrayType;
             scanChildTypeNode(node, "type");
+        }
+
+        function scanTupleTypeNode(node: TupleTypeNode): void {
+
+            node.kind = NodeKind.TupleType;
+            scanTypeNodes(node.types);
         }
 
         function scanConstructorTypeNode(node: ConstructorTypeNode): void {
@@ -567,7 +597,7 @@ module reflect {
         }
         catch(e) {
             errors.push(new Diagnostic(undefined, Diagnostics.File_0_has_invalid_json_format_1, filename, e.message));
-            // TODO: add error to errors list
+            return;
         }
 
         if(file) {
