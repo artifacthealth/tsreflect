@@ -6,6 +6,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks("grunt-contrib-concat");
     grunt.loadNpmTasks("grunt-contrib-copy");
     grunt.loadNpmTasks("grunt-mocha-test");
+    grunt.loadNpmTasks("grunt-tsreflect");
 
     // Project configuration.
     grunt.initConfig({
@@ -43,7 +44,9 @@ module.exports = function(grunt) {
                     noImplicitAny: true,
                     basePath: 'tests/'
                 },
-                src: ['tests/**/*.ts'],
+                src: [
+                    'tests/*.ts'
+                ],
                 dest: 'build/'
             }
         },
@@ -67,36 +70,12 @@ module.exports = function(grunt) {
                         expand: true,
                         cwd: 'lib/',
                         src: [
-                            'lib.d.json'
+                            'lib.d.json',
+                            'lib.core.d.json'
                         ],
                         dest: 'build/'
                     }
                 ]
-            },
-            bin: {
-                files: [
-                    {
-                        expand: true,
-                        cwd: 'lib/',
-                        src: [
-                            'tsreflect-compiler.d.ts',
-                            'lib.d.ts'
-                        ],
-                        dest: 'bin/'
-                    }
-                ]
-            }
-        },
-
-        // Use built compiler to generated .d.json for lib.d.ts
-        shell: {
-            bin: {
-                options: {
-                    execOptions: {
-                        cwd: 'bin/'
-                    }
-                },
-                command: 'node tsreflect-compiler.js lib.d.ts'
             }
         },
 
@@ -107,6 +86,21 @@ module.exports = function(grunt) {
                     "typings/**/*.ts"
                 ],
                 tasks: [ "typescript:build" ]
+            }
+        },
+
+        tsreflect: {
+            tests: {
+                options: {
+                    noLib: false,
+                    accessors: true,
+                    annotations: true,
+                    typePrivates: true
+                },
+                src: [
+                    "tests/fixtures/**/*.ts"
+                ],
+                dest: "tests/fixtures/json/"
             }
         },
 
@@ -124,5 +118,5 @@ module.exports = function(grunt) {
     grunt.registerTask("default", [ "build", "lib", "tests" ]);
     grunt.registerTask("build", [ "clean:build", "typescript:build", "copy:build" ]);
     grunt.registerTask("lib", [ "clean:lib", "concat:lib" ]);
-    grunt.registerTask("tests", [ "typescript:tests", "mochaTest:tests" ]);
+    grunt.registerTask("tests", [ "typescript:tests", "tsreflect:tests", "mochaTest:tests" ]);
 };

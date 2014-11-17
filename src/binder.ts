@@ -24,17 +24,6 @@ module reflect {
         var container: Declaration;
         var lastContainer: Declaration;
 
-        var moduleExtensions = [".d.ts", ".ts", ".js"];
-
-        function getModuleNameFromFilename(filename: string) {
-            for (var i = 0; i < moduleExtensions.length; i++) {
-                var ext = moduleExtensions[i];
-                var len = filename.length - ext.length;
-                if (len > 0 && filename.substr(len) === ext) return filename.substr(0, len);
-            }
-            return filename;
-        }
-
         if (!file.locals) {
             file.locals = {};
             container = file;
@@ -60,6 +49,11 @@ module reflect {
             }
         }
 
+        function createSymbol(flags: SymbolFlags, name: string): Symbol {
+
+            return new SymbolImpl(flags, name);
+        }
+        
         function addDeclarationToSymbol(symbol: Symbol, node: Declaration, symbolKind: SymbolFlags) {
             symbol.flags |= symbolKind;
             if (!symbol.declarations) symbol.declarations = [];
@@ -92,14 +86,14 @@ module reflect {
         function declareSymbol(symbols: SymbolTable, parent: Symbol, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags): Symbol {
             var name = getDeclarationName(node);
             if (name !== undefined) {
-                var symbol = hasProperty(symbols, name) ? symbols[name] : (symbols[name] = new Symbol(0, name));
+                var symbol = hasProperty(symbols, name) ? symbols[name] : (symbols[name] = createSymbol(0, name));
                 if (symbol.flags & excludes) {
-                    file.errors.push(new Diagnostic(file, Diagnostics.Duplicate_identifier_0, getDisplayName(node)));
-                    symbol = new Symbol(0, name);
+                    addDiagnostic(new Diagnostic(file, Diagnostics.Duplicate_identifier_0, getDisplayName(node)));
+                    symbol = createSymbol(0, name);
                 }
             }
             else {
-                symbol = new Symbol(0, "__missing");
+                symbol = createSymbol(0, "__missing");
             }
             addDeclarationToSymbol(symbol, node, includes);
             symbol.parent = parent;
@@ -109,9 +103,9 @@ module reflect {
                 // Every class automatically contains a static property member named 'prototype',
                 // the type of which is an instantiation of the class type with type Any supplied as a type argument for each type parameter.
                 // It is an error to explicitly declare a static property member with the name 'prototype'.
-                var prototypeSymbol = new Symbol(SymbolFlags.Property | SymbolFlags.Prototype, "prototype");
+                var prototypeSymbol = createSymbol(SymbolFlags.Property | SymbolFlags.Prototype, "prototype");
                 if (hasProperty(symbol.exports, prototypeSymbol.name)) {
-                    file.errors.push(new Diagnostic(file, Diagnostics.Duplicate_identifier_0, prototypeSymbol.name));
+                    addDiagnostic(new Diagnostic(file, Diagnostics.Duplicate_identifier_0, prototypeSymbol.name));
                 }
                 symbol.exports[prototypeSymbol.name] = prototypeSymbol;
                 prototypeSymbol.parent = symbol;
@@ -243,7 +237,7 @@ module reflect {
         }
 
         function bindAnonymousDeclaration(node: Node, symbolKind: SymbolFlags, name: string) {
-            var symbol = new Symbol(symbolKind, name);
+            var symbol = createSymbol(symbolKind, name);
             addDeclarationToSymbol(symbol, node, symbolKind);
             bindChildren(node, symbolKind);
         }

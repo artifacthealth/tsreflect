@@ -1,8 +1,10 @@
 /// <reference path="arrayUtil.ts"/>
 /// <reference path="nodes.ts"/>
 /// <reference path="diagnostics.ts"/>
-/// <reference path="symbol.ts"/>
-/// <reference path="type.ts"/>
+/// <reference path="types.ts"/>
+/// <reference path="typeImpl.ts"/>
+/// <reference path="symbolImpl.ts"/>
+/// <reference path="signatureImpl.ts"/>
 
 module reflect {
 
@@ -52,19 +54,9 @@ module reflect {
         _ = 0x5F
     }
 
-    var errors: Diagnostic[] = [];
-
-    // TODO: get rid of this and finalize how we are going to handle errors
-    export function printTypeErrors(): void {
-
-        forEach(errors, x => {
-            console.log(x);
-        });
-    }
-
     function error(location: Node, message: DiagnosticMessage, arg0?: any, arg1?: any, arg2?: any): void {
 
-        errors.push(new Diagnostic(getSourceFile(location), message, arg0, arg1, arg2));
+        addDiagnostic(new Diagnostic(getSourceFile(location), message, arg0, arg1, arg2));
     }
 
     function getDeclarationOfKind(symbol: Symbol, kind: NodeKind): Declaration {
@@ -80,7 +72,7 @@ module reflect {
     }
 
     function createSymbol(flags: SymbolFlags, name: string): Symbol {
-        return new Symbol(flags, name);
+        return new SymbolImpl(flags, name);
     }
 
     function getSymbolLinks(symbol: Symbol): SymbolLinks {
@@ -135,7 +127,7 @@ module reflect {
 
         function returnResolvedSymbol(s: Symbol) {
             if (!s) {
-                error(location, Diagnostics.Cannot_find_name_0, name);
+                error(errorLocation, Diagnostics.Cannot_find_name_0, name);
             }
             return s;
         }
@@ -234,7 +226,7 @@ module reflect {
 
             var symbol = getSymbol(namespace.exports, rightName, meaning);
             if (!symbol) {
-                error(location, Diagnostics.Module_0_has_no_exported_member_1, name.join('.'), rightName);
+                error(location, Diagnostics.Module_0_has_no_exported_member_1, symbolToString(namespace), rightName);
                 return;
             }
         }
@@ -349,7 +341,7 @@ module reflect {
     }
 
     function createType(flags: TypeFlags): Type {
-        var result = new Type(flags);
+        var result = new TypeImpl(flags);
         result.id = typeCount++;
         return result;
     }
@@ -836,7 +828,7 @@ module reflect {
 
     function createSignature(declaration: SignatureDeclaration, typeParameters: TypeParameter[], parameters: Symbol[],
                              resolvedReturnType: Type, minArgumentCount: number, hasRestParameter: boolean, hasStringLiterals: boolean): Signature {
-        var sig = new Signature();
+        var sig = new SignatureImpl();
         sig.declaration = declaration;
         sig.typeParameters = typeParameters;
         sig.parameters = parameters;
@@ -939,14 +931,14 @@ module reflect {
         return <ResolvedObjectType>type;
     }
 
-    function getPropertiesOfType(type: Type): Symbol[] {
+    export function getPropertiesOfType(type: Type): Symbol[] {
         if (type.flags & TypeFlags.ObjectType) {
             return resolveObjectTypeMembers(<ObjectType>type).properties;
         }
         return emptyArray;
     }
 
-    function getPropertyOfType(type: Type, name: string): Symbol {
+    export function getPropertyOfType(type: Type, name: string): Symbol {
         if (type.flags & TypeFlags.ObjectType) {
             var resolved = resolveObjectTypeMembers(<ObjectType>type);
             if (hasProperty(resolved.members, name)) {
@@ -975,7 +967,7 @@ module reflect {
         }
     }
 
-    function getSignaturesOfType(type: Type, kind: SignatureKind): Signature[] {
+    export function getSignaturesOfType(type: Type, kind: SignatureKind): Signature[] {
         if (type.flags & TypeFlags.ObjectType) {
             var resolved = resolveObjectTypeMembers(<ObjectType>type);
             return kind === SignatureKind.Call ? resolved.callSignatures : resolved.constructSignatures;
@@ -983,7 +975,7 @@ module reflect {
         return emptyArray;
     }
 
-    function getIndexTypeOfType(type: Type, kind: IndexKind): Type {
+    export function getIndexTypeOfType(type: Type, kind: IndexKind): Type {
         if (type.flags & TypeFlags.ObjectType) {
             var resolved = resolveObjectTypeMembers(<ObjectType>type);
             return kind === IndexKind.String ? resolved.stringIndexType : resolved.numberIndexType;
@@ -1079,7 +1071,7 @@ module reflect {
         return result;
     }
 
-    function getReturnTypeOfSignature(signature: Signature): Type {
+    export function getReturnTypeOfSignature(signature: Signature): Type {
         if (!signature.resolvedReturnType) {
             signature.resolvedReturnType = resolvingType;
             if (signature.target) {
@@ -1480,29 +1472,76 @@ module reflect {
         return type;
     }
 
+    function typeToString(type: Type, fallback?: string): string {
+
+        if(type.symbol) {
+            return symbolToString(type.symbol);
+        }
+
+        return fallback || "Anonymous";
+    }
+
+    export function symbolToString(symbol: Symbol): string {
+
+        var name = "";
+        var parentSymbol: Symbol;
+
+        function writeSymbolName(symbol: Symbol): void {
+            if (parentSymbol) {
+                name += ".";
+            }
+            parentSymbol = symbol;
+            if (symbol.declarations && symbol.declarations.length > 0) {
+                var declaration = symbol.declarations[0];
+                if (declaration.name) {
+                    name += declaration.name;
+                    return;
+                }
+            }
+
+            name += symbol.name;
+        }
+
+        function walkSymbol(symbol: Symbol): void {
+            if (symbol) {
+
+                // Go up and add our parent.
+                walkSymbol(symbol.parent);
+
+                // If we didn't find accessible symbol chain for this symbol, break if this is external module
+                if (!parentSymbol && forEach(symbol.declarations, declaration => (declaration.flags & NodeFlags.ExternalModule))) {
+                    return;
+                }
+
+                // if this is anonymous type break
+                if (symbol.flags & SymbolFlags.TypeLiteral || symbol.flags & SymbolFlags.ObjectLiteral) {
+                    return;
+                }
+
+                writeSymbolName(symbol);
+            }
+        }
+
+        walkSymbol(symbol);
+
+        return name;
+    }
+
     // TYPE CHECKING
     var subtypeRelation: Map<boolean> = {};
     var assignableRelation: Map<boolean> = {};
     var identityRelation: Map<boolean> = {};
 
-    function isTypeIdenticalTo(source: Type, target: Type): boolean {
-        return checkTypeRelatedTo(source, target, identityRelation);
+    export function isTypeIdenticalTo(source: Type, target: Type, diagnostics?: Diagnostic[]): boolean {
+        return checkTypeRelatedTo(source, target, identityRelation, diagnostics);
     }
 
-    function isTypeSubtypeOf(source: Type, target: Type): boolean {
-        return checkTypeSubtypeOf(source, target);
+    export function isTypeSubtypeOf(source: Type, target: Type, diagnostics?: Diagnostic[]): boolean {
+        return checkTypeRelatedTo(source, target, subtypeRelation, diagnostics);
     }
 
-    function checkTypeSubtypeOf(source: Type, target: Type): boolean {
-        return checkTypeRelatedTo(source, target, subtypeRelation);
-    }
-
-    export function isTypeAssignableTo(source: Type, target: Type): boolean {
-        return checkTypeAssignableTo(source, target);
-    }
-
-    function checkTypeAssignableTo(source: Type, target: Type): boolean {
-        return checkTypeRelatedTo(source, target, assignableRelation);
+    export function isTypeAssignableTo(source: Type, target: Type, diagnostics?: Diagnostic[]): boolean {
+        return checkTypeRelatedTo(source, target, assignableRelation, diagnostics);
     }
 
     function isPropertyIdenticalToRecursive(sourceProp: Symbol, targetProp: Symbol, reportErrors: boolean, relate: (source: Type, target: Type, reportErrors: boolean) => boolean): boolean {
@@ -1534,27 +1573,7 @@ module reflect {
         return s.flags & SymbolFlags.Instantiated ? getSymbolLinks(s).target : s;
     }
 
-    function typeToString(type: Type): string {
-
-        if(type.symbol) {
-            return symbolToString(type.symbol);
-        }
-
-        return "Anonymous";
-    }
-
-    function symbolToString(symbol: Symbol): string {
-
-        if (symbol.declarations && symbol.declarations.length > 0) {
-            var declaration = symbol.declarations[0];
-            if (declaration.name) {
-                return declaration.name;
-            }
-        }
-        return symbol.name;
-    }
-
-    function checkTypeRelatedTo(source: Type, target: Type, relation: Map<boolean>): boolean {
+    function checkTypeRelatedTo(source: Type, target: Type, relation: Map<boolean>, diagnostics: Diagnostic[]): boolean {
         var errorInfo: DiagnosticMessageChain;
         var sourceStack: ObjectType[];
         var targetStack: ObjectType[];
@@ -1566,13 +1585,28 @@ module reflect {
         if (overflow) {
             error(undefined, Diagnostics.Excessive_stack_depth_comparing_types_0_and_1, typeToString(source), typeToString(target));
         }
-        else if (errorInfo) {
-            errors.push(errorInfo.flatten());
+        else if (errorInfo && diagnostics) {
+
+            // push all diagnostics in the chain into the diagnostics array
+            var chain = errorInfo;
+            while (chain) {
+                diagnostics.push(chain.diagnostic);
+                chain = chain.next;
+            }
         }
         return result;
 
+        function sourceTypeString() {
+            return typeToString(source, "source");
+        }
+
+        function targetTypeString() {
+            return typeToString(target, "target");
+        }
+
         function reportError(message: DiagnosticMessage, arg0?: string, arg1?: string, arg2?: string): void {
-            errorInfo = Diagnostic.chain(errorInfo, message, arg0, arg1, arg2);
+
+            errorInfo = chainDiagnosticMessages(errorInfo, new Diagnostic(undefined, message, arg0, arg1, arg2));
         }
 
         function isRelatedTo(source: Type, target: Type, reportErrors: boolean): boolean {
@@ -1626,7 +1660,7 @@ module reflect {
                 var terminalMessage = Diagnostics.Type_0_is_not_assignable_to_type_1;
                 var diagnosticKey = errorInfo ? chainedMessage : terminalMessage;
 
-                reportError(diagnosticKey, typeToString(source), typeToString(target));
+                reportError(diagnosticKey, sourceTypeString(), targetTypeString());
             }
             return false;
         }
@@ -1771,7 +1805,7 @@ module reflect {
                     if (!sourceProp) {
                         if (!isOptionalProperty(targetProp)) {
                             if (reportErrors) {
-                                reportError(Diagnostics.Property_0_is_missing_in_type_1, symbolToString(targetProp), typeToString(source));
+                                reportError(Diagnostics.Property_0_is_missing_in_type_1, symbolToString(targetProp), sourceTypeString());
                             }
                             return false;
                         }
@@ -1787,8 +1821,8 @@ module reflect {
                                     }
                                     else {
                                         reportError(Diagnostics.Property_0_is_private_in_type_1_but_not_in_type_2, symbolToString(targetProp),
-                                            typeToString(sourceFlags & NodeFlags.Private ? source : target),
-                                            typeToString(sourceFlags & NodeFlags.Private ? target : source));
+                                            sourceFlags & NodeFlags.Private ? sourceTypeString() : targetTypeString(),
+                                            sourceFlags & NodeFlags.Private ? targetTypeString() : sourceTypeString());
                                     }
                                 }
                                 return false;
@@ -1801,7 +1835,7 @@ module reflect {
                             if (!sourceClass || !hasBaseType(sourceClass, targetClass)) {
                                 if (reportErrors) {
                                     reportError(Diagnostics.Property_0_is_protected_but_type_1_is_not_a_class_derived_from_2,
-                                        symbolToString(targetProp), typeToString(sourceClass || <Type>source), typeToString(targetClass));
+                                        symbolToString(targetProp), typeToString(sourceClass || <Type>source, "source"), typeToString(targetClass, "target"));
                                 }
                                 return false;
                             }
@@ -1809,7 +1843,7 @@ module reflect {
                         else if (sourceFlags & NodeFlags.Protected) {
                             if (reportErrors) {
                                 reportError(Diagnostics.Property_0_is_protected_in_type_1_but_public_in_type_2,
-                                    symbolToString(targetProp), typeToString(source), typeToString(target));
+                                    symbolToString(targetProp), sourceTypeString(), targetTypeString());
                             }
                             return false;
                         }
@@ -1829,7 +1863,7 @@ module reflect {
                             // (N - property in S)
                             if (reportErrors) {
                                 reportError(Diagnostics.Property_0_is_optional_in_type_1_but_required_in_type_2,
-                                    symbolToString(targetProp), typeToString(source), typeToString(target));
+                                    symbolToString(targetProp), sourceTypeString(), targetTypeString());
                             }
                             return false;
                         }
@@ -2002,7 +2036,7 @@ module reflect {
                     var sourceType = getIndexTypeOfType(source, IndexKind.String);
                     if (!sourceType) {
                         if (reportErrors) {
-                            reportError(Diagnostics.Index_signature_is_missing_in_type_0, typeToString(source));
+                            reportError(Diagnostics.Index_signature_is_missing_in_type_0, sourceTypeString());
                         }
                         return false;
                     }
@@ -2028,7 +2062,7 @@ module reflect {
                     var sourceNumberType = getIndexTypeOfType(source, IndexKind.Number);
                     if (!(sourceStringType || sourceNumberType)) {
                         if (reportErrors) {
-                            reportError(Diagnostics.Index_signature_is_missing_in_type_0, typeToString(source));
+                            reportError(Diagnostics.Index_signature_is_missing_in_type_0, sourceTypeString());
                         }
                         return false;
                     }

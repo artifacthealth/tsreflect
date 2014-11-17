@@ -3,56 +3,42 @@
 /// <reference path="nodes.ts"/>
 /// <reference path="loader.ts"/>
 /// <reference path="binder.ts"/>
-/// <reference path="type.ts"/>
+/// <reference path="types.ts"/>
 /// <reference path="checker.ts"/>
+/// <reference path="pathUtil.ts"/>
 
 module reflect {
 
-    exports.SymbolFlags = SymbolFlags;
+    export var hasDiagnosticErrors = false;
+    var errors: Diagnostic[] = [];
 
-    function require(moduleName:string):Symbol {
+    exports.SymbolFlags = SymbolFlags;
+    exports.TypeFlags = TypeFlags;
+
+    function require(moduleName: string): Symbol {
 
         if (!moduleName) {
-            throw new Error("Missing required argument 'moduleName'.")
+            throw new Error("Missing required argument 'moduleName'.");
         }
 
-        var isRelative = isExternalModuleNameRelative(moduleName);
-        if (!isRelative) {
-            var symbol = getSymbol(globals, '"' + moduleName + '"', SymbolFlags.ValueModule);
-            if (symbol) {
-                return getResolvedExportSymbol(symbol);
-            }
+        var ret = processExternalModule(moduleName, getBasePath());
+        if(hasDiagnosticErrors) {
+            throwDiagnosticError();
         }
-
-        var searchPath = getBasePath();
-        while (true) {
-            var filename = normalizePath(combinePaths(searchPath, moduleName));
-            var sourceFile = processRootFile(filename + ".d.json");
-            if (sourceFile || isRelative) break;
-            var parentPath = getDirectoryPath(searchPath);
-            if (parentPath === searchPath) break;
-            searchPath = parentPath;
-        }
-
-        if (sourceFile) {
-            if (sourceFile.symbol) {
-                return getResolvedExportSymbol(sourceFile.symbol);
-            }
-
-            throw new Error("File '" + sourceFile.filename + "' is not an external module.");
-        }
-
-        throw new Error("Cannot find external module '" + moduleName + "'.");
+        return ret;
     }
     exports.require = require;
 
-    function reference(filename:string):void {
+    function reference(filename: string): void {
 
         if (!filename) {
             throw new Error("Missing required argument 'filename'.")
         }
 
         processRootFile(normalizePath(combinePaths(getBasePath(), filename)));
+        if(hasDiagnosticErrors) {
+            throwDiagnosticError();
+        }
     }
     exports.reference = reference;
 
@@ -62,7 +48,7 @@ module reflect {
      * @param meaning Optional. Kind of symbol to retrieve. By default looks for namespace, type, or value symbols.
      * @returns The symbol.
      */
-    function resolve(name:string, meaning:SymbolFlags = SymbolFlags.Namespace | SymbolFlags.Type | SymbolFlags.Value):Symbol {
+    function resolve(name: string, meaning: SymbolFlags = SymbolFlags.Namespace | SymbolFlags.Type | SymbolFlags.Value): Symbol {
 
         if (!name) {
             throw new Error("Missing required argument 'name'.")
@@ -72,10 +58,89 @@ module reflect {
     }
     exports.resolve = resolve;
 
-
     function getBasePath(): string {
 
-        return getDirectoryPath(module.parent.filename);
+        return getDirectoryPath(relativePath(module.parent.filename));
+    }
+
+    export function addDiagnostic(diagnostic: Diagnostic): void {
+
+        hasDiagnosticErrors = true;
+        errors.push(diagnostic);
+    }
+
+    // TODO: error handling is a little funny when symbol is not found b/c it just returns an 'any' symbol and keeps on working
+    // so on the first call you get an error but then there are not errors on subsequent calls
+
+    export function throwDiagnosticError(): void {
+
+        if(hasDiagnosticErrors) {
+            var diagnostics = getSortedDiagnostics();
+
+            // clear errors
+            hasDiagnosticErrors = false;
+            errors = [];
+
+            throw new Error(getDiagnosticErrorMessage(diagnostics));
+        }
+    }
+
+    function getDiagnosticErrorMessage(diagnostics: Diagnostic[]): string {
+
+        var ret = "";
+
+        forEach(diagnostics, diagnostic => {
+
+            if(diagnostic.filename) {
+                ret += diagnostic.filename + ": ";
+            }
+
+            ret += diagnostic.messageText + "\n";
+
+        });
+
+        return ret;
+    }
+
+    function getSortedDiagnostics(): Diagnostic[] {
+
+        errors.sort(compareDiagnostics);
+        errors = deduplicateSortedDiagnostics(errors);
+
+        return errors;
+    }
+
+    function compareDiagnostics(d1: Diagnostic, d2: Diagnostic): number {
+        return compareValues(d1.filename, d2.filename) ||
+            compareValues(d1.code, d2.code) ||
+            compareValues(d1.messageText, d2.messageText) ||
+            0;
+    }
+
+    function compareValues<T>(a: T, b: T): number {
+        if (a === b) return 0;
+        if (a === undefined) return -1;
+        if (b === undefined) return 1;
+        return a < b ? -1 : 1;
+    }
+
+    function deduplicateSortedDiagnostics(diagnostics: Diagnostic[]): Diagnostic[] {
+        if (diagnostics.length < 2) {
+            return diagnostics;
+        }
+
+        var newDiagnostics = [diagnostics[0]];
+        var previousDiagnostic = diagnostics[0];
+        for (var i = 1; i < diagnostics.length; i++) {
+            var currentDiagnostic = diagnostics[i];
+            var isDupe = compareDiagnostics(currentDiagnostic, previousDiagnostic) === 0;
+            if (!isDupe) {
+                newDiagnostics.push(currentDiagnostic);
+                previousDiagnostic = currentDiagnostic;
+            }
+        }
+
+        return newDiagnostics;
     }
 }
 

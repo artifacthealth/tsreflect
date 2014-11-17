@@ -1,0 +1,1 @@
+var SimpleTuple: [string, number];

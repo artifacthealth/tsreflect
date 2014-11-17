@@ -1,3 +1,5 @@
+/// <reference path="../typings/node.d.ts"/>
+
 /// <reference path="pathUtil.ts"/>
 /// <reference path="nodes.ts"/>
 
@@ -12,7 +14,6 @@ module reflect {
 
     var files: SourceFile[] = [];
     var filesByName: Map<SourceFile> = {};
-    var errors: Diagnostic[] = [];
     var seenNoDefaultLib = options.noLib;
     var initializedGlobals = false;
 
@@ -40,16 +41,48 @@ module reflect {
     export function processRootFile(filename: string): SourceFile {
 
         var sourceFile = processSourceFile(filename, false);
+        bindPendingFiles();
+        return sourceFile;
+    }
+
+    export function processExternalModule(moduleName: string, searchPath: string): Symbol {
+
+        var isRelative = isExternalModuleNameRelative(moduleName);
+        if (!isRelative) {
+            var symbol = getSymbol(globals, '"' + moduleName + '"', SymbolFlags.ValueModule);
+            if (symbol) {
+                return getResolvedExportSymbol(symbol);
+            }
+        }
+
+        while (true) {
+            var filename = normalizePath(combinePaths(searchPath, moduleName));
+            var sourceFile = findSourceFile(filename + ".d.json", false);
+            if (sourceFile || isRelative) break;
+            var parentPath = getDirectoryPath(searchPath);
+            if (parentPath === searchPath) break;
+            searchPath = parentPath;
+        }
+
+        if (sourceFile) {
+            bindPendingFiles();
+
+            if (sourceFile.symbol) {
+                return getResolvedExportSymbol(sourceFile.symbol);
+            }
+
+            addDiagnostic(new Diagnostic(undefined, Diagnostics.File_0_is_not_an_external_module, sourceFile.filename));
+            return;
+        }
+
+        addDiagnostic(new Diagnostic(undefined, Diagnostics.Cannot_find_external_module_0, moduleName));
+    }
+
+    function bindPendingFiles(): void {
 
         if(!seenNoDefaultLib) {
             processSourceFile(normalizePath(getDefaultLibFilename()), true);
         }
-
-        // TODO: propagate binding errors for source files
-        /*   forEach(program.getSourceFiles(), file => {
-         bindSourceFile(file);
-         forEach(file.errors, addDiagnostic);
-         });*/
 
         forEach(files, bindSourceFile);
         files = [];
@@ -58,14 +91,13 @@ module reflect {
             initializeGlobalTypes();
             initializedGlobals = true;
         }
-
-        return sourceFile;
     }
 
     // TODO: move to host
+    // TODO: make configurable
     function getDefaultLibFilename(): string {
 
-        return combinePaths(normalizePath(__dirname), "lib.d.json");
+        return combinePaths(normalizePath(__dirname), "lib.core.d.json");
     }
 
     function processSourceFile(filename: string, isDefaultLib: boolean, refFile?: SourceFile): SourceFile {
@@ -88,22 +120,9 @@ module reflect {
         }
 
         if (diagnostic) {
-            errors.push(new Diagnostic(refFile, diagnostic, filename));
+            addDiagnostic(new Diagnostic(refFile, diagnostic, filename));
         }
         return ret;
-    }
-
-    function getSourceFile(filename:string, onError?:(message:string) => void): SourceFile {
-        try {
-            var text = fs.readFileSync(filename, options.charset);
-        }
-        catch (e) {
-            if (onError) {
-                onError(e.message);
-            }
-            text = "";
-        }
-        return text ? createSourceFile(filename, text) : undefined;
     }
 
     // Get source file from normalized filename
@@ -113,15 +132,18 @@ module reflect {
             // We've already looked for this file, use cached result
             var file = filesByName[canonicalName];
             if (file && useCaseSensitiveFileNames && canonicalName !== file.filename) {
-                errors.push(new Diagnostic(refFile,
+                addDiagnostic(new Diagnostic(refFile,
                     Diagnostics.Filename_0_differs_from_already_included_filename_1_only_in_casing, filename, file.filename));
             }
         }
         else {
             // We haven't looked for this file, do so now and cache result
-            var file = filesByName[canonicalName] = getSourceFile(filename, hostErrorMessage => {
-                errors.push(new Diagnostic(refFile, Diagnostics.Cannot_read_file_0_Colon_1, filename, hostErrorMessage));
-            });
+            try {
+                var file = filesByName[canonicalName] = readSourceFile(filename);
+            }
+            catch(e) {
+                addDiagnostic(new Diagnostic(refFile, Diagnostics.Cannot_read_file_0_Colon_1, filename, e.message));
+            }
             if (file) {
                 seenNoDefaultLib = seenNoDefaultLib || file.noDefaultLib;
                 if (!options.noResolve) {
@@ -135,12 +157,21 @@ module reflect {
                 else {
                     files.push(file);
                 }
-                forEach(file.errors, e => {
-                    errors.push(e);
-                });
             }
         }
         return file;
+    }
+
+    function readSourceFile(filename: string): SourceFile {
+
+        if (!fs.existsSync(filename)) {
+            return undefined;
+        }
+
+        var text = fs.readFileSync(filename, options.charset);
+        if(text) {
+            return createSourceFile(filename, text);
+        }
     }
 
     function processReferencedFiles(file: SourceFile, basePath: string) {
@@ -596,7 +627,7 @@ module reflect {
             file = JSON.parse(text);
         }
         catch(e) {
-            errors.push(new Diagnostic(undefined, Diagnostics.File_0_has_invalid_json_format_1, filename, e.message));
+            addDiagnostic(new Diagnostic(undefined, Diagnostics.File_0_has_invalid_json_format_1, filename, e.message));
             return;
         }
 

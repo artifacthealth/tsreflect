@@ -2,89 +2,39 @@ module reflect {
 
     export class Diagnostic {
 
-        file: SourceFile;
+        filename: string;
         messageText: string;
         category: DiagnosticCategory;
         code: number;
 
         constructor(file: SourceFile, message: DiagnosticMessage, ...args: any[]);
-        constructor(file: SourceFile, message: DiagnosticMessage);
-        constructor(file: SourceFile, code: number, category: DiagnosticCategory, messageText: string);
-        constructor(file: SourceFile, codeOrMessage: any, category?: DiagnosticCategory, messageText?: string) {
+        constructor(file: SourceFile, message: DiagnosticMessage) {
 
-            this.file = file;
-
-            if(typeof codeOrMessage === "number") {
-
-                this.messageText = messageText;
-                this.category = category;
-                this.code = codeOrMessage;
-            }
-            else {
-                var message: DiagnosticMessage = codeOrMessage;
-                var text = getLocaleSpecificMessage(message.key);
-
-                if (arguments.length > 2) {
-                    text = formatStringFromArgs(text, arguments, 2);
-                }
-
-                this.messageText = text;
-                this.category = message.category;
-                this.code = message.code;
-            }
-        }
-
-        static chain(next: DiagnosticMessageChain, message: DiagnosticMessage, ...args: any[]): DiagnosticMessageChain;
-        static chain(next: DiagnosticMessageChain, message: DiagnosticMessage): DiagnosticMessageChain {
             var text = getLocaleSpecificMessage(message.key);
-
             if (arguments.length > 2) {
                 text = formatStringFromArgs(text, arguments, 2);
             }
 
-            var ret = new DiagnosticMessageChain();
-            ret.messageText = text;
-            ret.category = message.category;
-            ret.code = message.code;
-            ret.next = next;
-
-            return ret;
+            if(file) {
+                this.filename = file.filename;
+            }
+            this.messageText = text;
+            this.category = message.category;
+            this.code = message.code;
         }
     }
 
-    // A linked list of formatted diagnostic messages to be used as part of a multiline message.
-    // It is built from the bottom up, leaving the head to be the "main" diagnostic.
-    // While it seems that DiagnosticMessageChain is structurally similar to DiagnosticMessage,
-    // the difference is that messages are all preformatted in DMC.
-    export class DiagnosticMessageChain {
+    export interface DiagnosticMessageChain {
 
-        messageText: string;
-        category: DiagnosticCategory;
-        code: number;
-        next: DiagnosticMessageChain;
+        diagnostic: Diagnostic;
+        next?: DiagnosticMessageChain;
+    }
 
-        flatten(file?: SourceFile): Diagnostic {
+    export function chainDiagnosticMessages(details: DiagnosticMessageChain, diagnostic: Diagnostic): DiagnosticMessageChain {
 
-            var code = this.code;
-            var category = this.category;
-            var messageText = "";
-
-            var indent = 0;
-            var diagnosticChain = this;
-            while (diagnosticChain) {
-                if (indent) {
-                    messageText += "\n";
-
-                    for (var i = 0; i < indent; i++) {
-                        messageText += "  ";
-                    }
-                }
-                messageText += diagnosticChain.messageText;
-                indent++;
-                diagnosticChain = diagnosticChain.next;
-            }
-
-            return new Diagnostic(file, code, category, messageText);
+        return {
+            diagnostic: diagnostic,
+            next: details
         }
     }
 
@@ -137,7 +87,8 @@ module reflect {
 
         // Custom Errors
         File_0_must_have_extension_d_json: { code: 10009, category: DiagnosticCategory.Error, key: "File '{0}' must have extension '.d.json'." },
-        File_0_has_invalid_json_format_1: { code: 10010, category: DiagnosticCategory.Error, key: "File '{0}' has invalid JSON format: {1}" }
+        File_0_has_invalid_json_format_1: { code: 10010, category: DiagnosticCategory.Error, key: "File '{0}' has invalid JSON format: {1}" },
+        Missing_required_argument_0: { code: 10011, category: DiagnosticCategory.Error, key: "Missing required argument '{0}'." }
     }
 
     var localizedDiagnosticMessages: Map<string> = undefined;

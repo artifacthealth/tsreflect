@@ -1,5 +1,6 @@
 module reflect {
 
+    var path = require("path");
     var os = require("os");
     var platform: string = os.platform();
     // win32\win64 are case insensitive platforms, MacOS (darwin) by default is also case insensitive
@@ -97,6 +98,10 @@ module reflect {
 
     export function getDirectoryPath(path: string) {
         return path.substr(0, Math.max(getRootLength(path), path.lastIndexOf(directorySeparator)));
+    }
+
+    export function relativePath(to: string): string {
+        return path.relative(process.cwd(), to);
     }
 
     enum CharacterCodes {

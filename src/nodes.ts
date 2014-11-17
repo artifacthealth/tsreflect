@@ -1,4 +1,4 @@
-/// <reference path="symbol.ts"/>
+/// <reference path="types.ts"/>
 
 module reflect {
 
@@ -102,14 +102,20 @@ module reflect {
 
         filename: string;
         references?: string[];
-        errors?: Diagnostic[];
         noDefaultLib?: boolean;
+    }
+
+    export interface Annotation {
+
+        name: string;
+        value: any;
     }
 
     export interface Declaration extends Node {
 
         name?: string;
         description?: string;
+        annotations?: Annotation[];   // Array of custom annotations
     }
 
 

@@ -2,4 +2,5 @@
 tsreflect.iml
 build
 node_modules
+tests/fixtures/json/
 
