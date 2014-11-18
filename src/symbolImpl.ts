@@ -22,7 +22,11 @@ module reflect {
                 return undefined;
             }
 
-            return resolveEntityName(this.declarations[0], name, meaning);
+            var ret = resolveEntityName(this.declarations[0], name, meaning);
+            if(hasDiagnosticErrors) {
+                throwDiagnosticError();
+            }
+            return ret;
         }
 
         getFullName(): string {

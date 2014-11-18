@@ -54,7 +54,11 @@ module reflect {
             throw new Error("Missing required argument 'name'.")
         }
 
-        return resolveEntityName(undefined, name, meaning);
+        var ret = resolveEntityName(undefined, name, meaning);
+        if(hasDiagnosticErrors) {
+            throwDiagnosticError();
+        }
+        return ret;
     }
     exports.resolve = resolve;
 

@@ -45,11 +45,13 @@ describe('reflect', () => {
             assert.equal(reflect.resolve("internalModule.B.c").getName(), "c");
         });
 
-        it('correctly resolves name relative to symbol', () => {
+        it('throw when it cannot resolve name', () => {
 
-            helpers.referenceFixture("internalModule");
-            var symbol = reflect.resolve("internalModule");
-            assert.equal(symbol.resolve("B.c").getName(), "c");
+            var moduleSymbol = helpers.requireFixture("simpleExternalModule");
+
+            assert.throws(() => {
+                moduleSymbol.resolve("C")
+            }, Error, "Cannot find name 'C'.");
         });
     });
 });

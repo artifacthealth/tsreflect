@@ -27,6 +27,13 @@ describe('Symbol', () => {
 
     describe('resolve', () => {
 
+        it('correctly resolves name relative to symbol', () => {
+
+            helpers.referenceFixture("internalModule");
+            var symbol = reflect.resolve("internalModule");
+            assert.equal(symbol.resolve("B.c").getName(), "c");
+        });
+
         it('finds type parameter on function', () => {
 
             helpers.referenceFixture("functionWithTypeParameters");
