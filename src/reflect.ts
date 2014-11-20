@@ -15,7 +15,7 @@ module reflect {
     exports.SymbolFlags = SymbolFlags;
     exports.TypeFlags = TypeFlags;
 
-    function require(moduleName: string): Symbol {
+    function requireModule(moduleName: string): Symbol {
 
         if (!moduleName) {
             throw new Error("Missing required argument 'moduleName'.");
@@ -27,7 +27,7 @@ module reflect {
         }
         return ret;
     }
-    exports.require = require;
+    exports.require = requireModule;
 
     function reference(filename: string): void {
 
@@ -61,6 +61,62 @@ module reflect {
         return ret;
     }
     exports.resolve = resolve;
+
+    var cachedPrototypes: any[] = [];
+
+    function createObject(classType: Type): any {
+
+        var prototype = cachedPrototypes[classType.id];
+        if(prototype) {
+            return Object.create(prototype);
+        }
+
+        if(!(classType.flags & TypeFlags.Class)) {
+            throw new Error("Argument 'classType' must be a class type.");
+        }
+
+        // find the external module containing this class
+        var moduleSymbol = findContainingExternalModule(classType.symbol);
+        if(!moduleSymbol) {
+            throw new Error("Class must be contained in an external module.");
+        }
+
+        // load the javascript module
+        var moduleName =  moduleSymbol.name.replace(/^"|"$/g,"");
+        if(isExternalModuleNameRelative(moduleName)) {
+            var obj = module.require(absolutePath(moduleName));
+        }
+        else {
+            var obj = module.require(moduleName);
+        }
+
+        // find the constructor based on the type name
+        var name = symbolToString(classType.symbol, getResolvedExportSymbol(moduleSymbol));
+        if(name) {
+            var path = name.split('.');
+            for (var i = 0, l = path.length; i < l; i++) {
+                if (i != 0 || path[0] !== (<Block>moduleSymbol.valueDeclaration).exportName) {
+                    obj = obj[path[i]];
+                }
+                if (!obj) {
+                    throw new Error("Could not find '" + name + "' in module '" + moduleName + "'.");
+                }
+            }
+        }
+
+        return Object.create(cachedPrototypes[classType.id] = obj.prototype);
+    }
+    exports.createObject = createObject;
+
+    function findContainingExternalModule(symbol: Symbol): Symbol {
+
+        while(symbol) {
+            if(symbol.valueDeclaration && symbol.valueDeclaration.flags & NodeFlags.ExternalModule) {
+                return symbol;
+            }
+            symbol = symbol.parent;
+        }
+    }
 
     function getBasePath(): string {
 

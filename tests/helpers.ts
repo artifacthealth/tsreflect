@@ -5,7 +5,7 @@
 import path = require("path");
 import reflect = require("./tsreflect");
 
-var fixtureDir = "../tests/fixtures/json/";
+var fixtureDir = "../tests/fixtures/compiled/";
 
 export function referenceFixture(filename: string): void {
 
@@ -14,7 +14,15 @@ export function referenceFixture(filename: string): void {
 
 export function getRelativeExternalModuleName(filename: string): string {
 
-    return '"' + relativePath(path.join(__dirname, fixtureDir, filename)) + '"';
+    var filePath = relativePath(path.join(__dirname, fixtureDir, filename));
+    if(!isRelativePath(filePath)) {
+        filePath = "./" + filePath;
+    }
+    return '"' + filePath + '"';
+}
+
+export function isRelativePath(path: string): boolean {
+    return path.substr(0, 2) === "./" || path.substr(0, 3) === "../" || path.substr(0, 2) === ".\\" || path.substr(0, 3) === "..\\";
 }
 
 export function requireFixture(filename: string): reflect.Symbol {

@@ -48,6 +48,18 @@ module.exports = function(grunt) {
                     'tests/*.ts'
                 ],
                 dest: 'build/'
+            },
+            fixtures: {
+                options: {
+                    target: "es5",
+                    module: "commonjs",
+                    noImplicitAny: true,
+                    basePath: 'tests/fixtures/'
+                },
+                src: [
+                    "tests/fixtures/*.ts"
+                ],
+                dest: "tests/fixtures/compiled/"
             }
         },
 
@@ -100,7 +112,7 @@ module.exports = function(grunt) {
                 src: [
                     "tests/fixtures/**/*.ts"
                 ],
-                dest: "tests/fixtures/json/"
+                dest: "tests/fixtures/compiled/"
             }
         },
 
@@ -118,5 +130,5 @@ module.exports = function(grunt) {
     grunt.registerTask("default", [ "build", "lib", "tests" ]);
     grunt.registerTask("build", [ "clean:build", "typescript:build", "copy:build" ]);
     grunt.registerTask("lib", [ "clean:lib", "concat:lib" ]);
-    grunt.registerTask("tests", [ "typescript:tests", "tsreflect:tests", "mochaTest:tests" ]);
+    grunt.registerTask("tests", [ "typescript:tests", "typescript:fixtures", "tsreflect:tests", "mochaTest:tests" ]);
 };

@@ -54,4 +54,52 @@ describe('reflect', () => {
             }, Error, "Cannot find name 'C'.");
         });
     });
+
+    describe('createObject', () => {
+
+        it('creates object with prototype matching declared class type', () => {
+
+            var moduleSymbol = helpers.requireFixture("classExportedInExternalModule");
+            var testClassType = moduleSymbol.resolve("TestClass").getDeclaredType();
+
+            var obj = reflect.createObject(testClassType);
+            assert.equal(3, obj.add(1,2));
+        });
+
+        it('creates object for class exported as export assignment', () => {
+
+            var moduleSymbol = helpers.requireFixture("classAsExportAssignment");
+            var testClassType = moduleSymbol.getDeclaredType();
+
+            var obj = reflect.createObject(testClassType);
+            assert.equal(3, obj.add(1,2));
+        });
+
+        it('creates object for class in nested internal module exported as export assignment', () => {
+
+            var moduleSymbol = helpers.requireFixture("classInInternalModuleAsExportAssignment");
+            var testClassType = moduleSymbol.getDeclaredType();
+
+            var obj = reflect.createObject(testClassType);
+            assert.equal(3, obj.add(1,2));
+        });
+
+        it('creates object for class in nested internal module where internal module is exported as export assignment', () => {
+
+            var moduleSymbol = helpers.requireFixture("classInExportedInternalModule");
+            var testClassType = moduleSymbol.resolve("B.TestClass").getDeclaredType();
+
+            var obj = reflect.createObject(testClassType);
+            assert.equal(3, obj.add(1,2));
+        });
+
+        it('creates object for class in ambient external module', () => {
+
+            reflect.reference("../typings/node.d.json");
+
+            var bufferType = reflect.require("cluster").resolve("Worker").getDeclaredType();
+            var obj = reflect.createObject(bufferType);
+            assert.ok(obj.kill);
+        });
+    });
 });

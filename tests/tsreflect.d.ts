@@ -1,6 +1,7 @@
 export declare function require (moduleName: string): Symbol;
 export declare function reference (filename: string): void;
 export declare function resolve (entityName: string): Symbol;
+export declare function createObject(classType: Type): any;
 
 export declare enum SymbolFlags {
 

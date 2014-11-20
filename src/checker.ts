@@ -86,7 +86,7 @@ module reflect {
         return nodeLinks[node.id] || (nodeLinks[node.id] = {});
     }
 
-    function getSourceFile(node: Node): SourceFile {
+    export function getSourceFile(node: Node): SourceFile {
         return <SourceFile>getAncestor(node, NodeKind.SourceFile);
     }
 
@@ -1481,7 +1481,7 @@ module reflect {
         return fallback || "Anonymous";
     }
 
-    export function symbolToString(symbol: Symbol): string {
+    export function symbolToString(symbol: Symbol, containingSymbol?: Symbol): string {
 
         var name = "";
         var parentSymbol: Symbol;
@@ -1503,12 +1503,14 @@ module reflect {
         }
 
         function walkSymbol(symbol: Symbol): void {
+            if (containingSymbol && containingSymbol == symbol) {
+                return;
+            }
             if (symbol) {
 
                 // Go up and add our parent.
                 walkSymbol(symbol.parent);
 
-                // If we didn't find accessible symbol chain for this symbol, break if this is external module
                 if (!parentSymbol && forEach(symbol.declarations, declaration => (declaration.flags & NodeFlags.ExternalModule))) {
                     return;
                 }

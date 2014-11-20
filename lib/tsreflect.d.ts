@@ -3,6 +3,7 @@ declare module "tsreflect" {
     function require (moduleName: string): Symbol;
     function reference (fileName: string): void;
     function resolve (entityName: string): Symbol;
+    function createObject(classType: Type): any;
 
     enum SymbolFlags {
 

@@ -36,6 +36,10 @@ module reflect {
         return getBaseFilename(filename).indexOf(".") >= 0;
     }
 
+    export function isRelativePath(path: string): boolean {
+        return path.substr(0, 2) === "./" || path.substr(0, 3) === "../" || path.substr(0, 2) === ".\\" || path.substr(0, 3) === "..\\";
+    }
+
     export function getBaseFilename(path: string) {
         var i = path.lastIndexOf(directorySeparator);
         return i < 0 ? path : path.substring(i + 1);
@@ -102,6 +106,10 @@ module reflect {
 
     export function relativePath(to: string): string {
         return path.relative(process.cwd(), to);
+    }
+
+    export function absolutePath(relativePath: string): string {
+        return path.join(process.cwd(), relativePath);
     }
 
     enum CharacterCodes {

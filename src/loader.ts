@@ -170,6 +170,9 @@ module reflect {
 
         var text = fs.readFileSync(filename, options.charset);
         if(text) {
+            if(!isRelativePath(filename)) {
+                filename = "./" + filename;
+            }
             return createSourceFile(filename, text);
         }
     }

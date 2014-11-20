@@ -152,6 +152,5 @@ describe('Type', () => {
             var signatures = reflect.resolve("ClassWithPrivateMembers").getDeclaredType().getCallSignatures();
             assert.lengthOf(signatures, 0);
         });
-
     });
 });
