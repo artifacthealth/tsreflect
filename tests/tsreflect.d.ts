@@ -132,6 +132,7 @@ export interface Type {
 
     getEnumValue(value: string, ignoreCase?: boolean): number;
     getEnumName(value: number): string;
+    getReferenceTarget(): Type;
 }
 
 export interface Signature {

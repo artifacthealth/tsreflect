@@ -137,6 +137,7 @@ declare module "tsreflect" {
 
         getEnumValue(value: string, ignoreCase?: boolean): number;
         getEnumName(value: number): string;
+        getReferenceTarget(): Type;
     }
 
     interface Signature {

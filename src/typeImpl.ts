@@ -196,5 +196,13 @@ module reflect {
             return enumImplementation[value];
         }
 
+        getReferenceTarget(): Type {
+
+            if(!this.isReference()) {
+                throw new Error("Type must be a reference");
+            }
+
+            return (<TypeReference><any>this).target;
+        }
     }
 }
