@@ -153,4 +153,30 @@ describe('Type', () => {
             assert.lengthOf(signatures, 0);
         });
     });
+
+    describe('getEnumName', () => {
+
+        it('returns the name of the enum constant for the given value', () => {
+
+            var enumType = helpers.requireFixture("enumInExternalModule").getDeclaredType();
+            assert.equal(enumType.getEnumName(1), "value2");
+        });
+    });
+
+    describe('getEnumValue', () => {
+
+        it('returns the value of the given enum constant name', () => {
+
+            var enumType = helpers.requireFixture("enumInExternalModule").getDeclaredType();
+            assert.equal(enumType.getEnumValue("value3"), 2);
+        });
+
+        it('should ignore case when ignoreCase parameter is true', () => {
+
+            var enumType = helpers.requireFixture("enumInExternalModule").getDeclaredType();
+
+            assert.isUndefined(enumType.getEnumValue("VALUE3"), "should not have found VALUE3");
+            assert.equal(enumType.getEnumValue("VALUE3", true), 2);
+        });
+    });
 });

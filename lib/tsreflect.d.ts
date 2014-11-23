@@ -5,6 +5,9 @@ declare module "tsreflect" {
     function resolve (entityName: string): Symbol;
     function createObject(classType: Type): any;
 
+    function parse(enumType: Type, value: string, ignoreCase?: boolean);
+    function getName(enumType: Type, value: number);
+
     enum SymbolFlags {
 
         Variable,
@@ -131,6 +134,9 @@ declare module "tsreflect" {
         isVoid(): boolean;
         isIntrinsic(): boolean;
         isObjectType(): boolean;
+
+        getEnumValue(value: string, ignoreCase?: boolean): number;
+        getEnumName(value: number): string;
     }
 
     interface Signature {

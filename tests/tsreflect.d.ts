@@ -129,6 +129,9 @@ export interface Type {
     isVoid(): boolean;
     isIntrinsic(): boolean;
     isObjectType(): boolean;
+
+    getEnumValue(value: string, ignoreCase?: boolean): number;
+    getEnumName(value: number): string;
 }
 
 export interface Signature {

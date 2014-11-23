@@ -101,5 +101,12 @@ describe('reflect', () => {
             var obj = reflect.createObject(bufferType);
             assert.ok(obj.kill);
         });
+
+        it('creates object for global class', () => {
+
+            var dateType = reflect.resolve("Date").getDeclaredType();
+            var obj = reflect.createObject(dateType);
+            assert.ok(obj.getHours);
+        });
     });
 });

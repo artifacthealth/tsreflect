@@ -62,51 +62,61 @@ module reflect {
     }
     exports.resolve = resolve;
 
-    var cachedPrototypes: any[] = [];
+    function createObject(classType: TypeImpl): any {
 
-    function createObject(classType: Type): any {
+        var obj = getImplementationOfType(classType);
 
-        var prototype = cachedPrototypes[classType.id];
-        if(prototype) {
-            return Object.create(prototype);
+        if(!obj.prototype) {
+            throw new Error("Constructor '" + classType.getFullName() + "' does not have a prototype.");
         }
 
-        if(!(classType.flags & TypeFlags.Class)) {
-            throw new Error("Argument 'classType' must be a class type.");
+        return Object.create(obj.prototype);
+    }
+    exports.createObject = createObject;
+
+
+    var cachedImplementation: any[] = [];
+
+    export function getImplementationOfType(classType: Type): any {
+
+        var obj = cachedImplementation[classType.id];
+        if(obj) {
+            return obj;
         }
 
-        // find the external module containing this class
+        // find the module containing this class
         var moduleSymbol = findContainingExternalModule(classType.symbol);
         if(!moduleSymbol) {
-            throw new Error("Class must be contained in an external module.");
-        }
-
-        // load the javascript module
-        var moduleName =  moduleSymbol.name.replace(/^"|"$/g,"");
-        if(isExternalModuleNameRelative(moduleName)) {
-            var obj = module.require(absolutePath(moduleName));
+            // class is in the global namespace
+            var obj = global;
+            var moduleName = "globals"; // for error reporting
+            var name = symbolToString(classType.symbol);
         }
         else {
-            var obj = module.require(moduleName);
-        }
+            // class is in an external module, load the javascript module
+            var moduleName = moduleSymbol.name.replace(/^"|"$/g, "");
+            if (isExternalModuleNameRelative(moduleName)) {
+                var obj = module.require(absolutePath(moduleName));
+            }
+            else {
+                var obj = module.require(moduleName);
+            }
 
-        // find the constructor based on the type name
-        var name = symbolToString(classType.symbol, getResolvedExportSymbol(moduleSymbol));
+            // find the name of the symbol in the module
+            var name = symbolToString(classType.symbol, getResolvedExportSymbol(moduleSymbol));
+        }
         if(name) {
             var path = name.split('.');
             for (var i = 0, l = path.length; i < l; i++) {
-                if (i != 0 || path[0] !== (<Block>moduleSymbol.valueDeclaration).exportName) {
-                    obj = obj[path[i]];
-                }
+                obj = obj[path[i]];
                 if (!obj) {
                     throw new Error("Could not find '" + name + "' in module '" + moduleName + "'.");
                 }
             }
         }
 
-        return Object.create(cachedPrototypes[classType.id] = obj.prototype);
+        return cachedImplementation[classType.id] = obj;
     }
-    exports.createObject = createObject;
 
     function findContainingExternalModule(symbol: Symbol): Symbol {
 

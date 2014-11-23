@@ -163,5 +163,38 @@ module reflect {
             return (this.flags & TypeFlags.ObjectType) !== 0;
         }
 
+        getEnumValue(value: string, ignoreCase = false): number {
+
+            if(!this.isEnum()) {
+                throw new Error("Type must be an Enum type.");
+            }
+
+            var enumImplementation = getImplementationOfType(this);
+
+            if(!ignoreCase) {
+                return enumImplementation[value];
+            }
+
+            value = value.toLowerCase();
+
+            for(var name in enumImplementation) {
+                if(enumImplementation.hasOwnProperty(name) && typeof name === "string") {
+                    if(name.toLowerCase() === value) {
+                        return enumImplementation[name];
+                    }
+                }
+            }
+        }
+
+        getEnumName(value: number): string {
+
+            if(!this.isEnum()) {
+                throw new Error("Type must be an Enum type.");
+            }
+
+            var enumImplementation = getImplementationOfType(this);
+            return enumImplementation[value];
+        }
+
     }
 }
