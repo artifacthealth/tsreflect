@@ -179,4 +179,85 @@ describe('Type', () => {
             assert.equal(enumType.getEnumValue("VALUE3", true), 2);
         });
     });
+
+    describe('hasBaseType', () => {
+
+        it('should return true for generic interface as base type of concrete of interface', () => {
+
+            helpers.referenceFixture("arrayAsGeneric");
+
+            var type = reflect.resolve("ArrayAsGeneric").getDeclaredType();
+            assert.ok(type.hasBaseType(reflect.resolve("Array").getDeclaredType()));
+        });
+    });
+
+    describe('isSubclassOf', () => {
+
+        var fixture = helpers.requireFixture("classInheritance");
+        var classA = fixture.resolve("ClassA").getDeclaredType();
+        var classB = fixture.resolve("ClassB").getDeclaredType();
+        var classC = fixture.resolve("ClassC").getDeclaredType();
+        var genericA = fixture.resolve("GenericA").getDeclaredType();
+        var genericB = fixture.resolve("GenericB").getDeclaredType();
+        var concreteB = fixture.resolve("ConcreteB").getDeclaredType();
+        var referenceB = fixture.resolve("ReferenceB").getType();
+
+        it('should return true if target is a direct base class', () => {
+            assert.ok(classB.isSubclassOf(classA));
+        });
+
+        it('should return true if target is an ancestor', () => {
+            assert.ok(classC.isSubclassOf(classA));
+        });
+
+        it('should return false if target is not a base class', () => {
+           assert.notOk(classC.isSubclassOf(genericB));
+        });
+
+        it('should return true if target is open generic base class of open generic', () => {
+            assert.ok(genericB.isSubclassOf(genericA));
+            assert.notOk(genericA.isSubclassOf(genericB));
+        });
+
+        it('should return true if target is open generic base class of concrete generic base class', () => {
+            assert.ok(concreteB.isSubclassOf(genericB));
+            assert.notOk(genericB.isSubclassOf(concreteB));
+        });
+
+        it('should return true if target is open generic ancestor of concrete generic base class', () => {
+            assert.ok(concreteB.isSubclassOf(genericA));
+            assert.notOk(genericA.isSubclassOf(concreteB));
+        });
+
+        it('should return true if target is open generic base class of concrete generic reference ', () => {
+            assert.ok(referenceB.isSubclassOf(genericB));
+        });
+    });
 });
+
+
+/*
+ export class ClassA {
+
+ }
+
+ export class ClassB extends ClassA {
+
+ }
+
+ export class ClassC extends ClassB {
+
+ }
+
+ export class GenericA<T> {
+
+ }
+
+ export class GenericB<T> extends GenericA<T> {
+
+ }
+
+ export class ConcreteB extends GenericB<string> {
+
+ }
+ */

@@ -118,6 +118,9 @@ declare module "tsreflect" {
         isIdenticalTo(target: Type, diagnostics?: Diagnostic[]): boolean;
         isSubtypeOf(target: Type, diagnostics?: Diagnostic[]): boolean;
         isAssignableTo(target: Type, diagnostics?: Diagnostic[]): boolean;
+        isSubclassOf(target: Type): boolean;
+
+        hasBaseType(target: Type): boolean;
 
         isClass(): boolean;
         isInterface(): boolean;

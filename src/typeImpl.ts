@@ -1,10 +1,36 @@
 
 module reflect {
 
-    export class TypeImpl implements Type {
+    export class TypeImpl implements Type, IntrinsicType, InterfaceType, TypeReference, GenericType, TupleType {
 
         id: number;
-        symbol: Symbol;
+        symbol: SymbolImpl;
+
+        // Implementation of IntrinsicType
+        intrinsicName: string;  // Name of intrinsic type
+
+        // Implementation of InterfaceType
+        typeParameters: TypeParameter[];           // Type parameters (undefined if non-generic)
+        baseTypes: TypeImpl[];                   // Base types
+        declaredProperties: Symbol[];              // Declared members
+        declaredCallSignatures: Signature[];       // Declared call signatures
+        declaredConstructSignatures: Signature[];  // Declared construct signatures
+        declaredStringIndexType: Type;             // Declared string index type
+        declaredNumberIndexType: Type;             // Declared numeric index type
+
+        // Implementation of TypeReference
+        target: TypeImpl;    // Type reference target
+        typeArguments: Type[];  // Type reference type arguments
+
+        // Implementation of GenericType
+        instantiations: Map<TypeReference>;   // Generic instantiation cache
+        openReferenceTargets: GenericType[];  // Open type reference targets
+        openReferenceChecks: Map<boolean>;    // Open type reference check cache
+
+        // Implementation of TupleType
+        elementTypes: Type[];          // Element types
+        baseArrayType: TypeReference;  // Array<T> where T is best common type of element types
+
 
         constructor(public flags: TypeFlags) {
 
@@ -12,19 +38,19 @@ module reflect {
 
         getFullName(): string {
             if (this.symbol) {
-                return (<SymbolImpl>this.symbol).getFullName();
+                return this.symbol.getFullName();
             }
         }
 
         getName(): string {
             if (this.symbol) {
-                return (<SymbolImpl>this.symbol).getName();
+                return this.symbol.getName();
             }
         }
 
         getDescription(): string {
             if (this.symbol) {
-                return (<SymbolImpl>this.symbol).getDescription();
+                return this.symbol.getDescription();
             }
         }
 
@@ -43,11 +69,11 @@ module reflect {
                 inherit = nameOrInherit;
             }
 
-            var annotations = (<SymbolImpl>this.symbol).getAnnotations(name);
+            var annotations = this.symbol.getAnnotations(name);
 
             if(inherit) {
-                forEach((<InterfaceType>(<any>this)).baseTypes, baseType => {
-                   annotations = ((<TypeImpl>baseType).getAnnotations(name, inherit)).concat(annotations);
+                forEach(this.baseTypes, baseType => {
+                   annotations = (baseType.getAnnotations(name, inherit)).concat(annotations);
                 });
             }
 
@@ -101,6 +127,59 @@ module reflect {
         isAssignableTo(target: Type, diagnostics?: Diagnostic[]): boolean {
 
             return isTypeAssignableTo(this, target, diagnostics);
+        }
+
+        hasBaseType(target: Type): boolean {
+
+            return check(this);
+            function check(type: TypeImpl): boolean {
+                var type = type._getTargetType();
+                return type === target || forEach(type.baseTypes, check);
+            }
+        }
+
+        private _getTargetType(): TypeImpl {
+            return this.flags & TypeFlags.Reference ? this.target : this;
+        }
+
+        isSubclassOf(target: Type): boolean {
+
+            if(target === this) {
+                return false;
+            }
+
+            var baseClass = this._getTargetType();
+            if((baseClass.flags & TypeFlags.Class) === 0) {
+                return false;
+            }
+
+            while(baseClass) {
+                if(baseClass === target) {
+                    return true;
+                }
+                baseClass = baseClass._getBaseClass();
+            }
+            return false;
+        }
+
+        private _baseClass: TypeImpl;
+
+        private _getBaseClass(): TypeImpl {
+
+            // note: does not check that the current type is a class. if the current type is an interface,
+            // this could incorrectly return that it has a base class if the interface extends a class.
+
+            if(this._baseClass !== undefined) {
+                return this._baseClass;
+            }
+
+            return this._baseClass = null || forEach(this.baseTypes, baseType => {
+
+                var type = baseType._getTargetType();
+                if(type.flags & TypeFlags.Class) {
+                    return type;
+                }
+            });
         }
 
         isClass(): boolean {
@@ -202,7 +281,7 @@ module reflect {
                 throw new Error("Type must be a reference");
             }
 
-            return (<TypeReference><any>this).target;
+            return this.target;
         }
     }
 }
