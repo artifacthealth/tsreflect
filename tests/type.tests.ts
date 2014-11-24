@@ -184,10 +184,52 @@ describe('Type', () => {
 
         it('should return true for generic interface as base type of concrete of interface', () => {
 
-            helpers.referenceFixture("arrayAsGeneric");
+            var fixture = helpers.requireFixture("arrayAsGeneric");
 
-            var type = reflect.resolve("ArrayAsGeneric").getDeclaredType();
+            var type = fixture.resolve("ArrayAsGeneric").getDeclaredType();
             assert.ok(type.hasBaseType(reflect.resolve("Array").getDeclaredType()));
+        });
+    });
+
+    describe('isArray', () => {
+
+        it('returns true when type is an array', () => {
+
+            var fixture = helpers.requireFixture("arrayAsGeneric");
+            assert.ok(fixture.resolve("stringArray").getType().isArray());
+        });
+
+        it('returns true when type has base type Array', () => {
+
+            var fixture = helpers.requireFixture("arrayAsGeneric");
+            assert.ok(fixture.resolve("ArrayAsGeneric").getDeclaredType().isArray());
+        });
+
+        it('otherwise, returns false', () => {
+
+            var fixture = helpers.requireFixture("arrayAsGeneric");
+            assert.notOk(reflect.resolve("String").getType().isArray());
+        });
+    });
+
+    describe('getElementType', () => {
+
+        it('returns element type of array when type is an array', () => {
+
+            var fixture = helpers.requireFixture("arrayAsGeneric");
+            assert.ok(fixture.resolve("stringArray").getType().getElementType().isString());
+        });
+
+        it('returns type argument of generic array base type', () => {
+
+            var fixture = helpers.requireFixture("arrayAsGeneric");
+            assert.ok(fixture.resolve("ArrayAsGeneric").getDeclaredType().getElementType().isNumber());
+        });
+
+        it('otherwise, returns false', () => {
+
+            var fixture = helpers.requireFixture("arrayAsGeneric");
+            assert.notOk(reflect.resolve("String").getType().isArray());
         });
     });
 

@@ -125,6 +125,7 @@ declare module "tsreflect" {
         isClass(): boolean;
         isInterface(): boolean;
         isTuple(): boolean;
+        isArray(): boolean;
         isAnonymous(): boolean;
         isReference(): boolean;
         isEnum(): boolean;
@@ -140,6 +141,7 @@ declare module "tsreflect" {
 
         getEnumValue(value: string, ignoreCase?: boolean): number;
         getEnumName(value: number): string;
+        getElementType(): Type;
         getReferenceTarget(): Type;
     }
 

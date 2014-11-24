@@ -20,7 +20,7 @@ module reflect {
 
         // Implementation of TypeReference
         target: TypeImpl;    // Type reference target
-        typeArguments: Type[];  // Type reference type arguments
+        typeArguments: TypeImpl[];  // Type reference type arguments
 
         // Implementation of GenericType
         instantiations: Map<TypeReference>;   // Generic instantiation cache
@@ -238,6 +238,10 @@ module reflect {
             return (this.flags & TypeFlags.Intrinsic) !== 0;
         }
 
+        isArray(): boolean {
+            return this.hasBaseType(globalArrayType);
+        }
+
         isObjectType(): boolean {
             return (this.flags & TypeFlags.ObjectType) !== 0;
         }
@@ -275,7 +279,33 @@ module reflect {
             return enumImplementation[value];
         }
 
-        getReferenceTarget(): Type {
+        private _elementType: TypeImpl;
+
+        getElementType(): TypeImpl {
+
+            if(this._elementType !== undefined) {
+                return this._elementType;
+            }
+
+            if(!this.isArray()) {
+                throw new Error("Type must be an Array type");
+            }
+
+            var reference = getArrayReference(this);
+            if(reference) {
+                return this._elementType = reference.typeArguments[0];
+            }
+
+            function getArrayReference(type: TypeImpl): TypeImpl {
+                var target = type._getTargetType();
+                if(target === globalArrayType) {
+                    return type;
+                }
+                return forEach(target.baseTypes, getArrayReference);
+            }
+        }
+
+        getReferenceTarget(): TypeImpl {
 
             if(!this.isReference()) {
                 throw new Error("Type must be a reference");

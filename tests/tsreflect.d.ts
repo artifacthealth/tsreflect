@@ -120,6 +120,7 @@ export interface Type {
     isClass(): boolean;
     isInterface(): boolean;
     isTuple(): boolean;
+    isArray(): boolean;
     isAnonymous(): boolean;
     isReference(): boolean;
     isEnum(): boolean;
@@ -135,6 +136,7 @@ export interface Type {
 
     getEnumValue(value: string, ignoreCase?: boolean): number;
     getEnumName(value: number): string;
+    getElementType(): Type;
     getReferenceTarget(): Type;
 }
 

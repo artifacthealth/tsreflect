@@ -39,7 +39,7 @@ module reflect {
 
     var globalObjectType: ObjectType;
     var globalFunctionType: ObjectType;
-    var globalArrayType: ObjectType;
+    export var globalArrayType: ObjectType;
     var globalStringType: ObjectType;
     var globalNumberType: ObjectType;
     var globalBooleanType: ObjectType;

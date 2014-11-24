@@ -1,3 +1,5 @@
-interface ArrayAsGeneric extends Array<string> {
+export interface ArrayAsGeneric extends Array<number> {
 
 }
+
+export var stringArray: string[];

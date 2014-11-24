@@ -85,6 +85,7 @@ module reflect {
         }
 
         forEach(files, bindSourceFile);
+        forEach(files, bindSourceFile);
         files = [];
 
         if(!initializedGlobals) {
@@ -602,6 +603,7 @@ module reflect {
 
             node.kind = NodeKind.TypeReference;
             node.flags = NodeFlags.None;
+            scanTypeNodes(node.arguments);
         }
 
         function scanObjectTypeNode(node: ObjectTypeNode): void {
