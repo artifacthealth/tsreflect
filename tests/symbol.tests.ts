@@ -80,6 +80,63 @@ describe('Symbol', () => {
         });
     });
 
+    describe('getValue', () => {
+
+        it('returns the value of the property represented by the symbol for the given object', () => {
+
+            var type = helpers.requireFixture("classExportedInExternalModule").resolve("TestClass").getDeclaredType();
+            var instance = type.createObject();
+
+            instance.a = 10;
+
+            // first call to getValue generates the optimized getValue
+            assert.equal(type.getProperty("a").getValue(instance), 10);
+
+            // make sure it still works on the second call
+            assert.equal(type.getProperty("a").getValue(instance), 10);
+        });
+
+        it('should generate a new implementation of getValue after first call', () => {
+
+            var type = helpers.requireFixture("classExportedInExternalModule").resolve("TestClass").getDeclaredType();
+
+            var symbol = type.getProperty("b");
+            var saved = symbol.getValue;
+
+            symbol.getValue({});
+            assert.notEqual(symbol.getValue, saved);
+        });
+    });
+
+    describe('setValue', () => {
+
+        it('sets the value of the property represented by the symbol for the given object', () => {
+
+            var type = helpers.requireFixture("classExportedInExternalModule").resolve("TestClass").getDeclaredType();
+            var instance = type.createObject();
+
+            // first call to getValue generates the optimized getValue
+            type.getProperty("a").setValue(instance, 10)
+            assert.equal(instance.a, 10);
+
+            // make sure it still works on the second call
+            type.getProperty("a").setValue(instance, 15)
+            assert.equal(instance.a, 15);
+        });
+
+
+        it('should generate a new implementation of setValue after first call', () => {
+
+            var type = helpers.requireFixture("classExportedInExternalModule").resolve("TestClass").getDeclaredType();
+
+            var symbol = type.getProperty("b");
+            var saved = symbol.setValue;
+
+            symbol.setValue({}, 1);
+            assert.notEqual(symbol.setValue, saved);
+        });
+    });
+
     describe('getAnnotations', () => {
 
         it('returns a list of annotations matching name', () => {

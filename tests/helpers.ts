@@ -5,7 +5,7 @@
 import path = require("path");
 import reflect = require("./tsreflect");
 
-var fixtureDir = "../tests/fixtures/compiled/";
+var fixtureDir = "./fixtures/";
 
 export function referenceFixture(filename: string): void {
 

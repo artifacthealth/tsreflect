@@ -7,6 +7,7 @@ module reflect {
         valueDeclaration: Declaration; // First value declaration of the symbol
         annotations: Annotation[];
         annotationsByName: AnnotationMap;
+        parent: SymbolImpl;               // Parent symbol
 
         constructor(public flags: SymbolFlags, public name: string) {
 
@@ -27,6 +28,34 @@ module reflect {
                 throwDiagnosticError();
             }
             return ret;
+        }
+
+        getValue(obj: any): any {
+
+            if(!this.name || (this.flags & (SymbolFlags.Property | SymbolFlags.Variable | SymbolFlags.Accessor)) === 0) {
+                throw new Error("Symbol must be a property, accessor, or variable.");
+            }
+
+            // Generate getters for VM optimization on first call to the getter. Verified that this improves performance
+            // more than 3x for subsequent calls. We need to wait until the first call to generate the getter because
+            // the 'flags' are not necessarily set in the constructor.
+            // https://docs.google.com/document/d/10W46qDNO8Dl0Uye3QX0oUDPYAwaPl0qNy73TVLjd1WI/edit?pli=1#heading=h.rigwvvsmj92x
+            this.getValue = <any>(new Function("o", "return o['" + this.name + "']"));
+
+            return obj[this.name];
+        }
+
+        setValue(obj: any, value: any): void {
+
+            if(!this.name || (this.flags & (SymbolFlags.Property | SymbolFlags.Variable | SymbolFlags.Accessor)) === 0) {
+                throw new Error("Symbol must be a property, accessor, or variable.");
+            }
+
+            // See comment in getValue. Verified performance improvement for setting a value as well, but for
+            // setting we got almost a 10x performance improvement.
+            this.setValue = <any>(new Function("o,v", "o['" + this.name + "'] = v"));
+
+            obj[this.name] = value;
         }
 
         getFullName(): string {

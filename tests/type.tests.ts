@@ -6,6 +6,7 @@ import chai = require("chai");
 import assert = chai.assert;
 import reflect = require("./tsreflect");
 import helpers = require("./helpers");
+import classExportedInExternalModule = require("./fixtures/classExportedInExternalModule");
 
 describe('Type', () => {
 
@@ -273,6 +274,85 @@ describe('Type', () => {
 
         it('should return true if target is open generic base class of concrete generic reference ', () => {
             assert.ok(referenceB.isSubclassOf(genericB));
+        });
+    });
+
+    describe('createObject', () => {
+
+        it('creates object with prototype and constructor matching declared class type', () => {
+
+            var moduleSymbol = helpers.requireFixture("classExportedInExternalModule");
+            var testClassType = moduleSymbol.resolve("TestClass").getDeclaredType();
+
+            var obj = testClassType.createObject();
+            assert.equal(3, obj.add(1,2));
+            assert.equal(obj.constructor, classExportedInExternalModule.TestClass);
+        });
+
+        it('creates object for class exported as export assignment', () => {
+
+            var moduleSymbol = helpers.requireFixture("classAsExportAssignment");
+            var testClassType = moduleSymbol.getDeclaredType();
+
+            var obj = testClassType.createObject();
+            assert.equal(3, obj.add(1,2));
+        });
+
+        it('creates object for class in nested internal module exported as export assignment', () => {
+
+            var moduleSymbol = helpers.requireFixture("classInInternalModuleAsExportAssignment");
+            var testClassType = moduleSymbol.getDeclaredType();
+
+            var obj = testClassType.createObject();
+            assert.equal(3, obj.add(1,2));
+        });
+
+        it('creates object for class in nested internal module where internal module is exported as export assignment', () => {
+
+            var moduleSymbol = helpers.requireFixture("classInExportedInternalModule");
+            var testClassType = moduleSymbol.resolve("B.TestClass").getDeclaredType();
+
+            var obj = testClassType.createObject();
+            assert.equal(3, obj.add(1,2));
+        });
+
+        it('creates object for class in ambient external module', () => {
+
+            reflect.reference("../typings/node.d.json");
+
+            var bufferType = reflect.require("cluster").resolve("Worker").getDeclaredType();
+            var obj = bufferType.createObject();
+            assert.ok(obj.kill);
+        });
+
+        it('creates object for global class', () => {
+
+            var dateType = reflect.resolve("Date").getDeclaredType();
+            var obj = dateType.createObject();
+            assert.ok(obj.getHours);
+        });
+
+        it('does not call the constructor if no arguments are provided', () => {
+
+            var type = helpers.requireFixture("classWithConstructor").getDeclaredType();
+            var obj = type.createObject();
+            assert.isUndefined(obj.constructorCalled);
+        });
+
+        it('calls constructor with empty array when empty array is passed to createObject', () => {
+
+            var type = helpers.requireFixture("classWithConstructor").getDeclaredType();
+            var obj = type.createObject([]);
+            assert.isTrue(obj.constructorCalled);
+        });
+
+        it('calls constructor with arguments in array passed to createObject', () => {
+
+            var type = helpers.requireFixture("classWithConstructor").getDeclaredType();
+            var obj = type.createObject([1, "two"]);
+            assert.lengthOf(obj.argumentsPassed, 2);
+            assert.equal(obj.argumentsPassed[0], 1);
+            assert.equal(obj.argumentsPassed[1], "two");
         });
     });
 });

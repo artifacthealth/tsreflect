@@ -1,7 +1,6 @@
 export declare function require (moduleName: string): Symbol;
 export declare function reference (filename: string): void;
 export declare function resolve (entityName: string): Symbol;
-export declare function createObject(classType: Type): any;
 
 export declare enum SymbolFlags {
 
@@ -46,6 +45,9 @@ export interface Symbol {
     getDeclaredType(): Type;
 
     resolve (name: string): Symbol;
+
+    getValue(obj: any): any;
+    setValue(obj: any, value: any): void;
 
     isVariable(): boolean;
     isFunction(): boolean;
@@ -137,7 +139,8 @@ export interface Type {
     getEnumValue(value: string, ignoreCase?: boolean): number;
     getEnumName(value: number): string;
     getElementType(): Type;
-    getReferenceTarget(): Type;
+
+    createObject(args?: any[]): any;
 }
 
 export interface Signature {

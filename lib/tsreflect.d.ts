@@ -3,10 +3,6 @@ declare module "tsreflect" {
     function require (moduleName: string): Symbol;
     function reference (fileName: string): void;
     function resolve (entityName: string): Symbol;
-    function createObject(classType: Type): any;
-
-    function parse(enumType: Type, value: string, ignoreCase?: boolean);
-    function getName(enumType: Type, value: number);
 
     enum SymbolFlags {
 
@@ -52,6 +48,9 @@ declare module "tsreflect" {
 
         resolve (name: string): Symbol;
 
+        getValue(obj: any): any;
+        setValue(obj: any, value: any): void;
+
         isVariable(): boolean;
         isFunction(): boolean;
         isClass(): boolean;
@@ -66,7 +65,6 @@ declare module "tsreflect" {
         isGetAccessor(): boolean;
         isSetAccessor(): boolean;
         isEnumMember(): boolean;
-
     }
 
     interface Annotation {
@@ -142,7 +140,8 @@ declare module "tsreflect" {
         getEnumValue(value: string, ignoreCase?: boolean): number;
         getEnumName(value: number): string;
         getElementType(): Type;
-        getReferenceTarget(): Type;
+
+        createObject(args?: any[]): any;
     }
 
     interface Signature {

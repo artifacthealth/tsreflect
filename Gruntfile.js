@@ -54,12 +54,12 @@ module.exports = function(grunt) {
                     target: "es5",
                     module: "commonjs",
                     noImplicitAny: true,
-                    basePath: 'tests/fixtures/'
+                    basePath: 'tests/'
                 },
                 src: [
                     "tests/fixtures/*.ts"
                 ],
-                dest: "tests/fixtures/compiled/"
+                dest: "build/"
             }
         },
 
@@ -102,7 +102,7 @@ module.exports = function(grunt) {
         },
 
         tsreflect: {
-            tests: {
+            fixtures: {
                 options: {
                     noLib: false,
                     accessors: true,
@@ -112,7 +112,7 @@ module.exports = function(grunt) {
                 src: [
                     "tests/fixtures/**/*.ts"
                 ],
-                dest: "tests/fixtures/compiled/"
+                dest: "build/fixtures/"
             }
         },
 
@@ -130,5 +130,5 @@ module.exports = function(grunt) {
     grunt.registerTask("default", [ "build", "lib", "tests" ]);
     grunt.registerTask("build", [ "clean:build", "typescript:build", "copy:build" ]);
     grunt.registerTask("lib", [ "clean:lib", "concat:lib" ]);
-    grunt.registerTask("tests", [ "typescript:tests", "typescript:fixtures", "tsreflect:tests", "mochaTest:tests" ]);
+    grunt.registerTask("tests", [ "typescript:tests", "typescript:fixtures", "tsreflect:fixtures", "mochaTest:tests" ]);
 };

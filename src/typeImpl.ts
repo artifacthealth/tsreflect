@@ -131,6 +131,7 @@ module reflect {
 
         hasBaseType(target: Type): boolean {
 
+            // TODO: cache?
             return check(this);
             function check(type: TypeImpl): boolean {
                 var type = type._getTargetType();
@@ -252,7 +253,7 @@ module reflect {
                 throw new Error("Type must be an Enum type.");
             }
 
-            var enumImplementation = getImplementationOfType(this);
+            var enumImplementation = this._getImplementation();
 
             if(!ignoreCase) {
                 return enumImplementation[value];
@@ -275,7 +276,7 @@ module reflect {
                 throw new Error("Type must be an Enum type.");
             }
 
-            var enumImplementation = getImplementationOfType(this);
+            var enumImplementation = this._getImplementation();
             return enumImplementation[value];
         }
 
@@ -305,13 +306,74 @@ module reflect {
             }
         }
 
-        getReferenceTarget(): TypeImpl {
+        createObject(args?: any[]): any {
 
-            if(!this.isReference()) {
-                throw new Error("Type must be a reference");
+            var constructor = this._getImplementation();
+
+            if(!constructor.prototype) {
+                throw new Error("Constructor '" + this.getFullName() + "' does not have a prototype.");
             }
 
-            return this.target;
+            var instance = Object.create(constructor.prototype);
+            if(args) {
+                constructor.apply(instance, args);
+            }
+            return instance;
+        }
+
+        private _cachedImplementation: any;
+
+        private _getImplementation(): any {
+
+            var obj = this._cachedImplementation;
+            if(obj) {
+                return obj;
+            }
+
+            // find the module containing this class
+            var moduleSymbol = this._findContainingExternalModule();
+            if(!moduleSymbol) {
+                // class is in the global namespace
+                var obj = global;
+                var moduleName = "globals"; // for error reporting
+                var name = symbolToString(this.symbol);
+            }
+            else {
+                // class is in an external module, load the javascript module
+                var moduleName = moduleSymbol.name.replace(/^"|"$/g, "");
+                if (isExternalModuleNameRelative(moduleName)) {
+                    var obj = module.require(absolutePath(moduleName));
+                }
+                else {
+                    var obj = module.require(moduleName);
+                }
+
+                // find the name of the symbol in the module
+                var name = symbolToString(this.symbol, getResolvedExportSymbol(moduleSymbol));
+            }
+            if(name) {
+                var path = name.split('.');
+                for (var i = 0, l = path.length; i < l; i++) {
+                    obj = obj[path[i]];
+                    if (!obj) {
+                        throw new Error("Could not find '" + name + "' in module '" + moduleName + "'.");
+                    }
+                }
+            }
+
+            return this._cachedImplementation = obj;
+        }
+
+        private _findContainingExternalModule(): Symbol {
+
+            var symbol = this.symbol;
+
+            while(symbol) {
+                if(symbol.valueDeclaration && symbol.valueDeclaration.flags & NodeFlags.ExternalModule) {
+                    return symbol;
+                }
+                symbol = symbol.parent;
+            }
         }
     }
 }

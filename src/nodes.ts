@@ -75,21 +75,10 @@ module reflect {
         resolvedType?: Type;            // Cached type of type node
         resolvedSignature?: Signature;  // Cached signature of signature node or call expression
         resolvedSymbol?: Symbol;        // Cached name resolution result
-        flags?: NodeCheckFlags;         // Set of flags specific to Node
         enumMemberValue?: number;       // Constant value of enum member
         isIllegalTypeReferenceInConstraint?: boolean; // Is type reference in constraint refers to the type parameter from the same list
         isVisible?: boolean;            // Is this node visible
         localModuleName?: string;       // Local name for module instance
-    }
-
-    export enum NodeCheckFlags {
-        TypeChecked    = 0x00000001,  // Node has been type checked
-        LexicalThis    = 0x00000002,  // Lexical 'this' reference
-        CaptureThis    = 0x00000004,  // Lexical 'this' used in body
-        EmitExtends    = 0x00000008,  // Emit __extends
-        SuperInstance  = 0x00000010,  // Instance 'super' reference
-        SuperStatic    = 0x00000020,  // Static 'super' reference
-        ContextChecked = 0x00000040,  // Contextual types have been assigned
     }
 
     export interface Block extends Node {
