@@ -4,6 +4,8 @@ declare module "tsreflect" {
     function reference (fileName: string): void;
     function resolve (entityName: string): Symbol;
 
+    function loadDeclarationFile(path: string, callback: (err: DiagnosticError, symbol: Symbol) => void): void;
+
     enum SymbolFlags {
 
         Variable,
@@ -161,4 +163,8 @@ declare module "tsreflect" {
         code: number;
     }
 
+    interface DiagnosticError extends Error {
+
+        diagnostics: Diagnostic[];
+    }
 }

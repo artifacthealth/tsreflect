@@ -1,5 +1,10 @@
 module reflect {
 
+    export interface DiagnosticError extends Error {
+
+        diagnostics: Diagnostic[];
+    }
+
     export class Diagnostic {
 
         filename: string;

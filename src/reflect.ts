@@ -9,6 +9,8 @@
 
 module reflect {
 
+    var path = require("path");
+
     export var hasDiagnosticErrors = false;
     var errors: Diagnostic[] = [];
 
@@ -41,6 +43,21 @@ module reflect {
         }
     }
     exports.reference = reference;
+
+    function loadDeclarationFile(filePath: string, callback: (err: Error, symbol: Symbol) => void): void {
+
+        processRootFileAsync(path.relative(process.cwd(), filePath), (err, sourceFile) => {
+            if(err) return callback(err, null);
+
+            var symbol = sourceFile.symbol;
+            if (symbol) {
+                symbol = getResolvedExportSymbol(sourceFile.symbol);
+            }
+
+            callback(null, symbol);
+        });
+    }
+    exports.loadDeclarationFile = loadDeclarationFile;
 
     /**
      * Finds a symbol for the given qualified name and meaning in the global scope.
@@ -79,14 +96,21 @@ module reflect {
     export function throwDiagnosticError(): void {
 
         if(hasDiagnosticErrors) {
-            var diagnostics = getSortedDiagnostics();
-
-            // clear errors
-            hasDiagnosticErrors = false;
-            errors = [];
-
-            throw new Error(getDiagnosticErrorMessage(diagnostics));
+            throw createDiagnosticError();
         }
+    }
+
+    export function createDiagnosticError(): DiagnosticError {
+
+        var diagnostics = getSortedDiagnostics();
+
+        // clear errors
+        hasDiagnosticErrors = false;
+        errors = [];
+
+        var error = <DiagnosticError>new Error(getDiagnosticErrorMessage(diagnostics));
+        error.diagnostics = diagnostics;
+        return error;
     }
 
     function getDiagnosticErrorMessage(diagnostics: Diagnostic[]): string {

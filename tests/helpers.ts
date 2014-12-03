@@ -14,11 +14,15 @@ export function referenceFixture(filename: string): void {
 
 export function getRelativeExternalModuleName(filename: string): string {
 
-    var filePath = relativePath(path.join(__dirname, fixtureDir, filename));
+    var filePath = relativePath(getAbsolutePath(filename));
     if(!isRelativePath(filePath)) {
         filePath = "./" + filePath;
     }
     return '"' + filePath + '"';
+}
+
+function getAbsolutePath(filename: string): string {
+    return path.join(__dirname, fixtureDir, filename);
 }
 
 export function isRelativePath(path: string): boolean {
@@ -28,6 +32,12 @@ export function isRelativePath(path: string): boolean {
 export function requireFixture(filename: string): reflect.Symbol {
 
     return reflect.require(fixtureDir + filename);
+}
+
+export function loadFixture(filePath: string, callback: (err: reflect.DiagnosticError, symbol: reflect.Symbol) => void): void {
+
+    // path passed to loadDeclarationFile is relative to cwd
+    return reflect.loadDeclarationFile(path.resolve(__dirname, fixtureDir, filePath), callback);
 }
 
 function relativePath(to: string): string {

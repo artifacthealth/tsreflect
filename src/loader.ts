@@ -1,4 +1,5 @@
 /// <reference path="../typings/node.d.ts"/>
+/// <reference path="../typings/async.d.ts"/>
 
 /// <reference path="pathUtil.ts"/>
 /// <reference path="nodes.ts"/>
@@ -30,6 +31,7 @@ module reflect {
     var flags = Object.keys(flagMap);
 
     var fs = require("fs");
+    var async = require("async");
 
     export function getLoadedSourceFile(filename: string) {
 
@@ -43,6 +45,19 @@ module reflect {
         var sourceFile = processSourceFile(filename, false);
         bindPendingFiles();
         return sourceFile;
+    }
+
+    export function processRootFileAsync(filename: string, callback: (err: Error, file: SourceFile) => void): void {
+
+        processSourceFileAsync(filename, false, null, (err, sourceFile) => {
+            if(err) return callback(err, null);
+
+            bindPendingFilesAsync((err) => {
+                if(err) return callback(err, null);
+
+                callback(null, sourceFile);
+            });
+        });
     }
 
     export function processExternalModule(moduleName: string, searchPath: string): Symbol {
@@ -78,17 +93,41 @@ module reflect {
         addDiagnostic(new Diagnostic(undefined, Diagnostics.Cannot_find_external_module_0, moduleName));
     }
 
-    function bindPendingFiles(): void {
+    function bindPendingFilesAsync(callback: (err: Error) => void): void {
 
         if(!seenNoDefaultLib) {
+            processSourceFileAsync(normalizePath(getDefaultLibFilename()), true, null, (err) => {
+                if(err) return callback(err);
+
+                processFiles();
+            });
+        }
+        else {
+            process.nextTick(processFiles);
+        }
+
+        function processFiles() {
+            processBindFilesQueue();
+            callback(hasDiagnosticErrors ? createDiagnosticError() : null);
+        }
+    }
+
+    function bindPendingFiles(): void {
+
+        if (!seenNoDefaultLib) {
             processSourceFile(normalizePath(getDefaultLibFilename()), true);
         }
+
+        processBindFilesQueue();
+    }
+
+    function processBindFilesQueue(): void {
 
         forEach(files, bindSourceFile);
         forEach(files, bindSourceFile);
         files = [];
 
-        if(!initializedGlobals) {
+        if (!initializedGlobals) {
             initializeGlobalTypes();
             initializedGlobals = true;
         }
@@ -99,6 +138,39 @@ module reflect {
     function getDefaultLibFilename(): string {
 
         return combinePaths(normalizePath(__dirname), "lib.core.d.json");
+    }
+
+    function processSourceFileAsync(filename: string, isDefaultLib: boolean, refFile: SourceFile, callback: (err: Error, result: SourceFile) => void): void {
+
+        var ret: SourceFile;
+        var diagnostic: DiagnosticMessage;
+        if (hasExtension(filename)) {
+            if (!fileExtensionIs(filename, ".d.json")) {
+                process.nextTick(() => {
+                    handleCallback(null, null, Diagnostics.File_0_must_have_extension_d_json);
+                });
+            }
+            else {
+                findSourceFileAsync(filename, isDefaultLib, refFile, handleCallback);
+            }
+        }
+        else {
+            filename += ".d.json";
+            findSourceFileAsync(filename, isDefaultLib, refFile, handleCallback);
+        }
+
+        function handleCallback(err: Error, file: SourceFile, diagnostic?: DiagnosticMessage) {
+            if (err) return callback(err, null);
+
+            if (!diagnostic && !file) {
+                diagnostic = Diagnostics.File_0_not_found;
+            }
+            if (diagnostic) {
+                addDiagnostic(new Diagnostic(refFile, diagnostic, filename));
+                return callback(createDiagnosticError(), null);
+            }
+            callback(null, file);
+        }
     }
 
     function processSourceFile(filename: string, isDefaultLib: boolean, refFile?: SourceFile): SourceFile {
@@ -126,6 +198,66 @@ module reflect {
         return ret;
     }
 
+    function findSourceFileAsync(filename: string, isDefaultLib: boolean, refFile: SourceFile, callback: (err: Error, result: SourceFile) => void): void {
+        var canonicalName = getCanonicalFileName(filename);
+        if (hasProperty(filesByName, canonicalName)) {
+            // We've already looked for this file, use cached result
+            var file = filesByName[canonicalName];
+            if (file && useCaseSensitiveFileNames && canonicalName !== file.filename) {
+                addDiagnostic(new Diagnostic(refFile,
+                    Diagnostics.Filename_0_differs_from_already_included_filename_1_only_in_casing, filename, file.filename));
+                return callback(createDiagnosticError(), null);
+            }
+
+            process.nextTick(() => {
+                callback(null, file);
+            });
+            return;
+        }
+
+        // We haven't looked for this file, do so now and cache result
+        readSourceFileAsync(filename, (err, file) => {
+
+            if (err) {
+                addDiagnostic(new Diagnostic(refFile, Diagnostics.Cannot_read_file_0_Colon_1, filename, err.message));
+                return callback(createDiagnosticError(), null);
+            }
+
+            filesByName[canonicalName] = file;
+
+            if (!file) {
+                return callback(null, undefined);
+            }
+
+            seenNoDefaultLib = seenNoDefaultLib || file.noDefaultLib;
+            if (options.noResolve) {
+                handleCallback(file);
+                return;
+            }
+
+            var basePath = getDirectoryPath(filename);
+
+            processReferencedFilesAsync(file, basePath, (err) => {
+                if (err) return callback(err, null);
+
+                processImportedModulesAsync(file, basePath, (err) => {
+                    if (err) return callback(err, null);
+                    handleCallback(file);
+                });
+            });
+        });
+
+        function handleCallback(file: SourceFile) {
+            if (isDefaultLib) {
+                files.unshift(file);
+            }
+            else {
+                files.push(file);
+            }
+            callback(null, file);
+        }
+    }
+
     // Get source file from normalized filename
     function findSourceFile(filename: string, isDefaultLib: boolean, refFile?: SourceFile): SourceFile {
         var canonicalName = getCanonicalFileName(filename);
@@ -142,7 +274,7 @@ module reflect {
             try {
                 var file = filesByName[canonicalName] = readSourceFile(filename);
             }
-            catch(e) {
+            catch (e) {
                 addDiagnostic(new Diagnostic(refFile, Diagnostics.Cannot_read_file_0_Colon_1, filename, e.message));
             }
             if (file) {
@@ -163,6 +295,29 @@ module reflect {
         return file;
     }
 
+    function readSourceFileAsync(filename: string, callback: (err: Error, result: SourceFile) => void): void {
+
+        fs.exists(filename, (exists: boolean) => {
+            if (!exists) return callback(null, undefined);
+
+            fs.readFile(filename, options.charset, (err: Error, text: string) => {
+                if (err) return callback(err, null);
+
+                if (!text) return callback(null, undefined);
+
+                if (!isRelativePath(filename)) {
+                    filename = "./" + filename;
+                }
+
+                var sourceFile = createSourceFile(filename, text);
+                if(hasDiagnosticErrors) {
+                    return callback(createDiagnosticError(), null);
+                }
+                callback(null, sourceFile);
+            });
+        });
+    }
+
     function readSourceFile(filename: string): SourceFile {
 
         if (!fs.existsSync(filename)) {
@@ -170,38 +325,104 @@ module reflect {
         }
 
         var text = fs.readFileSync(filename, options.charset);
-        if(text) {
-            if(!isRelativePath(filename)) {
+        if (text) {
+            if (!isRelativePath(filename)) {
                 filename = "./" + filename;
             }
             return createSourceFile(filename, text);
         }
     }
 
-    function processReferencedFiles(file: SourceFile, basePath: string) {
+    function processReferencedFilesAsync(file: SourceFile, basePath: string, callback: (err: Error) => void): void {
+
+        async.each(file.references || [], (filename: string, callback: (err?: Error) => void) => {
+            processSourceFileAsync(normalizePath(combinePaths(basePath, filename)), /* isDefaultLib */ false, file, callback);
+        }, callback);
+    }
+
+    function processReferencedFiles(file: SourceFile, basePath: string): void {
+
         forEach(file.references, filename => {
             processSourceFile(normalizePath(combinePaths(basePath, filename)), /* isDefaultLib */ false, file);
         });
     }
 
-    function processImportedModules(file: SourceFile, basePath: string) {
+    function processImportedModulesAsync(file: SourceFile, basePath: string, callback: (err: Error) => void): void {
+
+        async.each(getExternalImportDeclarations(file), (node: ImportDeclaration, callback: (err?: Error) => void) => {
+
+            if(node.parent !== file) {
+                // TypeScript 1.0 spec (April 2014): 12.1.6
+                // An ExternalImportDeclaration in anAmbientExternalModuleDeclaration may reference other external modules
+                // only through top - level external module names. Relative external module names are not permitted.
+                var searchName = normalizePath(combinePaths(basePath, node.require));
+                return findSourceFileAsync(searchName + ".d.json", false, file, callback);
+            }
+
+            searchForModule(basePath, node.require);
+
+            function searchForModule(searchPath: string, moduleName: string) {
+
+                var searchName = normalizePath(combinePaths(searchPath, moduleName));
+                findSourceFileAsync(searchName + ".d.json", false, file, (err, result) => {
+                    if(err) return callback(err);
+
+                    if(result) {
+                        return callback();
+                    }
+
+                    var parentPath = getDirectoryPath(searchPath);
+                    if (parentPath === searchPath) {
+                        return callback();
+                    }
+                    searchPath = parentPath;
+
+                    searchForModule(searchPath, moduleName);
+                });
+            }
+
+        }, callback);
+    }
+
+    function processImportedModules(file: SourceFile, basePath: string): void {
+
+        forEach(getExternalImportDeclarations(file), node => {
+
+            if(node.parent === file) {
+                var moduleName = node.require;
+                var searchPath = basePath;
+                while (true) {
+                    var searchName = normalizePath(combinePaths(searchPath, moduleName));
+                    if (findSourceFile(searchName + ".d.json", false, file)) {
+                        break;
+                    }
+
+                    var parentPath = getDirectoryPath(searchPath);
+                    if (parentPath === searchPath) {
+                        break;
+                    }
+                    searchPath = parentPath;
+                }
+            }
+            else {
+                // TypeScript 1.0 spec (April 2014): 12.1.6
+                // An ExternalImportDeclaration in anAmbientExternalModuleDeclaration may reference other external modules
+                // only through top - level external module names. Relative external module names are not permitted.
+                var searchName = normalizePath(combinePaths(basePath, node.require));
+                findSourceFile(searchName + ".d.json", false, file);
+            }
+        });
+    }
+
+    function getExternalImportDeclarations(file: SourceFile): ImportDeclaration[] {
+
+        var nodes: ImportDeclaration[] = [];
+
         forEach(file.declares, node => {
             if (node.kind === NodeKind.ImportDeclaration && (<ImportDeclaration>node).require) {
                 var moduleName = (<ImportDeclaration>node).require;
                 if (moduleName) {
-                    var searchPath = basePath;
-                    while (true) {
-                        var searchName = normalizePath(combinePaths(searchPath, moduleName));
-                        if (findSourceFile(searchName + ".d.json", false, file)) {
-                            break;
-                        }
-
-                        var parentPath = getDirectoryPath(searchPath);
-                        if (parentPath === searchPath) {
-                            break;
-                        }
-                        searchPath = parentPath;
-                    }
+                    nodes.push(<ImportDeclaration>node);
                 }
             }
             else if (node.kind === NodeKind.ModuleDeclaration && (node.flags & NodeFlags.ExternalModule)) {
@@ -214,17 +435,16 @@ module reflect {
                     if (node.kind === NodeKind.ImportDeclaration && (<ImportDeclaration>node).require) {
                         var moduleName = (<ImportDeclaration>node).require;
                         if (moduleName) {
-                            // TypeScript 1.0 spec (April 2014): 12.1.6
-                            // An ExternalImportDeclaration in anAmbientExternalModuleDeclaration may reference other external modules
-                            // only through top - level external module names. Relative external module names are not permitted.
-                            var searchName = normalizePath(combinePaths(basePath, moduleName));
-                            findSourceFile(searchName + ".d.json", false, file);
+                            nodes.push(<ImportDeclaration>node);
                         }
                     }
                 });
             }
         });
+
+        return nodes;
     }
+
 
     function createSourceFile(filename: string, text: string): SourceFile {
 

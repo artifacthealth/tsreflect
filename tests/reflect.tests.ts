@@ -55,4 +55,44 @@ describe('reflect', () => {
         });
     });
 
+    describe('loadDeclarationFile', () => {
+
+        it('correctly loads an external module using path relative to cwd', (done) => {
+
+            helpers.loadFixture("simpleExternalModule", (err, symbol) => {
+                if(err) return done(err);
+
+                assert.ok(symbol, "Expected loadFixture to return a symbol");
+                assert.equal(symbol.getName(), helpers.getRelativeExternalModuleName("simpleExternalModule"));
+                done();
+            });
+        });
+
+        it('should return error in callback if file is not found', (done) => {
+
+            helpers.loadFixture("someUnknownModule", (err, symbol) => {
+
+                assert.ok(err);
+                assert.equal(err.diagnostics[0].code, 6053);
+                assert.notOk(symbol);
+
+                done();
+            });
+        });
+
+        it('should return error in callback if loaded duplicate symbol', (done) => {
+
+            helpers.referenceFixture("simpleClass");
+
+            helpers.loadFixture("simpleClassDuplicate", (err, symbol) => {
+
+                assert.ok(err);
+                assert.equal(err.diagnostics[0].code, 2300);
+                assert.notOk(symbol);
+
+                done();
+            });
+        });
+    });
+
 });

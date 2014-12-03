@@ -113,6 +113,18 @@ module.exports = function(grunt) {
                     "tests/fixtures/**/*.ts"
                 ],
                 dest: "build/fixtures/"
+            },
+            duplicateFixture: {
+                options: {
+                    noLib: false,
+                    accessors: true,
+                    annotations: true,
+                    typePrivates: true
+                },
+                src: [
+                    "tests/fixtures/simpleClass.ts"
+                ],
+                dest: "build/fixtures/simpleClassDuplicate.d.json"
             }
         },
 
@@ -130,5 +142,5 @@ module.exports = function(grunt) {
     grunt.registerTask("default", [ "build", "lib", "tests" ]);
     grunt.registerTask("build", [ "clean:build", "typescript:build", "copy:build" ]);
     grunt.registerTask("lib", [ "clean:lib", "concat:lib" ]);
-    grunt.registerTask("tests", [ "typescript:tests", "typescript:fixtures", "tsreflect:fixtures", "mochaTest:tests" ]);
+    grunt.registerTask("tests", [ "typescript:tests", "typescript:fixtures", "tsreflect:fixtures", "tsreflect:duplicateFixture", "mochaTest:tests" ]);
 };

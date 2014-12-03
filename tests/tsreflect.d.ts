@@ -1,6 +1,8 @@
 export declare function require (moduleName: string): Symbol;
 export declare function reference (filename: string): void;
+
 export declare function resolve (entityName: string): Symbol;
+export declare function loadDeclarationFile(path: string, callback: (err: DiagnosticError, symbol: Symbol) => void): void;
 
 export declare enum SymbolFlags {
 
@@ -158,4 +160,9 @@ export interface Diagnostic {
     filename?: string;
     messageText: string;
     code: number;
+}
+
+export interface DiagnosticError extends Error {
+
+    diagnostics: Diagnostic[];
 }
