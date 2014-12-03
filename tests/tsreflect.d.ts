@@ -1,8 +1,9 @@
-export declare function require (moduleName: string): Symbol;
-export declare function reference (filename: string): void;
+export declare function require(moduleName: string): Symbol;
+export declare function reference(filename: string): void;
 
-export declare function resolve (entityName: string): Symbol;
-export declare function loadDeclarationFile(path: string, callback: (err: DiagnosticError, symbol: Symbol) => void): void;
+export declare function resolve(entityName: string): Symbol;
+export declare function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+export declare function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
 
 export declare enum SymbolFlags {
 
@@ -31,7 +32,8 @@ export declare enum SymbolFlags {
     Module,
     Accessor,
     Signature,
-    ModuleMember
+    ModuleMember,
+    Descendants
 }
 
 export interface Symbol {
@@ -45,6 +47,7 @@ export interface Symbol {
 
     getType(): Type;
     getDeclaredType(): Type;
+    getExports(flags?: SymbolFlags): Symbol[];
 
     resolve (name: string): Symbol;
 

@@ -180,5 +180,37 @@ describe('Symbol', () => {
             assert.equal(annotations[1].name, "second");
         });
     });
+
+    describe('getExports', () => {
+
+        it('returns all exported symbols in current symbol if flags are not specified', () => {
+
+            helpers.referenceFixture("moduleWithVariables");
+
+            var symbols = reflect.resolve("moduleWithVariables").getExports();
+            assert.isArray(symbols);
+            assert.lengthOf(symbols, 3);
+        });
+
+        it('returns exported symbols in current symbol matching specified flags', () => {
+
+            helpers.referenceFixture("moduleWithVariables");
+
+            var symbols = reflect.resolve("moduleWithVariables").getExports(reflect.SymbolFlags.Variable);
+            assert.isArray(symbols);
+            assert.lengthOf(symbols, 2);
+        });
+
+
+        it('correctly resolves imported module members', () => {
+
+            helpers.referenceFixture("moduleWithImportedVariable");
+
+            var symbols = reflect.resolve("moduleWithImportedVariable").getExports(reflect.SymbolFlags.Variable);
+            assert.isArray(symbols);
+            assert.lengthOf(symbols, 1);
+        });
+    });
+
 });
 

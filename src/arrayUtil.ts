@@ -7,9 +7,6 @@ module reflect {
     var hasOwnProperty = Object.prototype.hasOwnProperty;
 
     export function hasProperty<T>(map: Map<T>, key: string): boolean {
-        if(!map) {
-            console.log('here;')
-        }
         return hasOwnProperty.call(map, key);
     }
 

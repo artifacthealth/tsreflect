@@ -57,7 +57,7 @@ module.exports = function(grunt) {
                     basePath: 'tests/'
                 },
                 src: [
-                    "tests/fixtures/*.ts"
+                    "tests/fixtures/**/*.ts"
                 ],
                 dest: "build/"
             }

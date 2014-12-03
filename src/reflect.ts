@@ -1,4 +1,5 @@
 /// <reference path="../typings/node.d.ts"/>
+/// <reference path="../typings/glob.d.ts"/>
 
 /// <reference path="nodes.ts"/>
 /// <reference path="loader.ts"/>
@@ -9,7 +10,11 @@
 
 module reflect {
 
+    // TODO: make sure we check for hasDiagnosticErrors everywhere that they could be created
+
     var path = require("path");
+    var glob = require("glob");
+    var async = require("async");
 
     export var hasDiagnosticErrors = false;
     var errors: Diagnostic[] = [];
@@ -44,20 +49,58 @@ module reflect {
     }
     exports.reference = reference;
 
-    function loadDeclarationFile(filePath: string, callback: (err: Error, symbol: Symbol) => void): void {
+    function load(path: string, callback: (err: Error, symbols: Symbol[]) => void): void;
+    function load(paths: string[], callback: (err: Error, symbols: Symbol[]) => void): void;
+    function load(paths: any, callback: (err: Error, symbols: Symbol[]) => void): void {
 
-        processRootFileAsync(path.relative(process.cwd(), filePath), (err, sourceFile) => {
-            if(err) return callback(err, null);
+        var symbols: Symbol[] = [];
 
-            var symbol = sourceFile.symbol;
-            if (symbol) {
-                symbol = getResolvedExportSymbol(sourceFile.symbol);
-            }
+        if(!Array.isArray(paths)) {
+            paths = [paths];
+        }
 
-            callback(null, symbol);
+        async.each(paths, processPath, (err: Error) => {
+            if (err) return callback(err, null);
+            callback(null, symbols);
         });
+
+        function processPath(filePath: string, callback: (err?: Error) => void): void {
+
+            var relativePath = path.relative(process.cwd(), filePath);
+
+            glob(relativePath, (err: Error, matches: string[]) => {
+                if(err) return callback(err);
+
+                // If there were not any matches then filePath was probably a path to a single file
+                // without an extension. Pass in the original path and let processRootFileAsync figure
+                // it out.
+                if(!matches || matches.length == 0) {
+                    matches = [relativePath];
+                }
+
+                async.each(matches, processFile, (err: Error) => {
+                    if (err) return callback(err);
+                    callback();
+                });
+            });
+        }
+
+        function processFile(filePath: string, callback: (err?: Error) => void): void {
+
+            processRootFileAsync(filePath, (err, sourceFile) => {
+                if(err) return callback(err);
+
+                var symbol = sourceFile.symbol;
+                if (symbol) {
+                    symbol = getResolvedExportSymbol(sourceFile.symbol);
+                }
+
+                symbols.push(symbol);
+                callback();
+            });
+        }
     }
-    exports.loadDeclarationFile = loadDeclarationFile;
+    exports.load = load;
 
     /**
      * Finds a symbol for the given qualified name and meaning in the global scope.

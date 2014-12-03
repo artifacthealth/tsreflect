@@ -8,6 +8,7 @@ module reflect {
         annotations: Annotation[];
         annotationsByName: AnnotationMap;
         parent: SymbolImpl;               // Parent symbol
+        exports: SymbolTable;         // Module exports
 
         constructor(public flags: SymbolFlags, public name: string) {
 
@@ -93,6 +94,15 @@ module reflect {
         getDeclaredType(): Type {
 
             var ret = getDeclaredTypeOfSymbol(this);
+            if(hasDiagnosticErrors) {
+                throwDiagnosticError();
+            }
+            return ret;
+        }
+
+        getExports(flags: SymbolFlags = SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace): Symbol[] {
+
+            var ret = getExportedSymbols(this.exports, flags);
             if(hasDiagnosticErrors) {
                 throwDiagnosticError();
             }

@@ -1,10 +1,12 @@
 declare module "tsreflect" {
 
-    function require (moduleName: string): Symbol;
-    function reference (fileName: string): void;
-    function resolve (entityName: string): Symbol;
+    function require(moduleName: string): Symbol;
+    function reference(fileName: string): void;
 
-    function loadDeclarationFile(path: string, callback: (err: DiagnosticError, symbol: Symbol) => void): void;
+    function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+    function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+
+    function resolve(entityName: string): Symbol;
 
     enum SymbolFlags {
 
@@ -47,6 +49,7 @@ declare module "tsreflect" {
 
         getType(): Type;
         getDeclaredType(): Type;
+        getExports(flags?: SymbolFlags): Symbol[];
 
         resolve (name: string): Symbol;
 

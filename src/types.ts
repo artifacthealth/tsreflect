@@ -48,7 +48,7 @@ module reflect {
         Instantiated       = 0x00800000,  // Instantiated symbol
         Merged             = 0x01000000,  // Merged symbol (created during program binding)
         Transient          = 0x02000000,  // Transient symbol (created during type check)
-        Prototype          = 0x04000000,  // Symbol for the prototype property (without source code representation)
+        Prototype          = 0x04000000,  // Symbol for the prototype property (without source code representation
 
         Value     = Variable | Property | EnumMember | Function | Class | Enum | ValueModule | Method | GetAccessor | SetAccessor,
         Type      = Class | Interface | Enum | TypeLiteral | ObjectLiteral | TypeParameter,

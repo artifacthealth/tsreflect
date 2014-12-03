@@ -119,6 +119,30 @@ module reflect {
         // return undefined if we can't find a symbol.
     }
 
+    export function getExportedSymbols(symbols: SymbolTable, flags: SymbolFlags): Symbol[] {
+
+        var matches: Symbol[] = [];
+
+        for(var name in symbols) {
+            if(symbols.hasOwnProperty(name)) {
+                var symbol = symbols[name];
+
+                if(symbol.flags & flags) {
+                    matches.push(symbol);
+                }
+                else if (symbol.flags & SymbolFlags.Import) {
+                    symbol = resolveImport(symbol);
+                    // unknown symbol indicates there were reported errors during import resolution.
+                    if (symbol !== unknownSymbol && symbol.flags & flags) {
+                        matches.push(symbol);
+                    }
+                }
+            }
+        }
+
+        return matches;
+    }
+
     function resolveName(location: Node, name: string, meaning: SymbolFlags): Symbol {
 
         var errorLocation = location;
