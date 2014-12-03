@@ -93,6 +93,21 @@ describe('Type', () => {
         });
     });
 
+    describe('hasAnnotation', () => {
+
+        it('should return true if annotation is defined on base type and insert argument is true', () => {
+
+            helpers.referenceFixture("interfaceExtendsInterface");
+            assert.isTrue(reflect.resolve("InterfaceExtendsInterface3").getDeclaredType().hasAnnotation("first", true));
+        });
+
+        it('should return false if annotation is defined on base type and insert argument is false', () => {
+
+            helpers.referenceFixture("interfaceExtendsInterface");
+            assert.isFalse(reflect.resolve("InterfaceExtendsInterface3").getDeclaredType().hasAnnotation("first"));
+        });
+    });
+
     describe('getProperties', () => {
 
         it('returns properties for module\'s anonymous type', () => {

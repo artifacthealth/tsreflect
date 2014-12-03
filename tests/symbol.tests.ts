@@ -181,6 +181,25 @@ describe('Symbol', () => {
         });
     });
 
+    describe('hasAnnotation', () => {
+
+        it('returns true if symbol has the specified annotation', () => {
+
+            helpers.referenceFixture("classWithAnnotations");
+
+            var nameSymbol = reflect.resolve("ClassWithAnnotations").getDeclaredType().getProperty("name");
+            assert.isTrue(nameSymbol.hasAnnotation("defaultValue"));
+        });
+
+        it('returns false if symbol does not have the specified annotation', () => {
+
+            helpers.referenceFixture("classWithAnnotations");
+
+            var nameSymbol = reflect.resolve("ClassWithAnnotations").getDeclaredType().getProperty("name");
+            assert.isFalse(nameSymbol.hasAnnotation("someUndefinedAnnotation"));
+        });
+    });
+
     describe('getExports', () => {
 
         it('returns all exported symbols in current symbol if flags are not specified', () => {

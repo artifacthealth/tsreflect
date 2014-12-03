@@ -45,7 +45,11 @@ module reflect {
         getAnnotations(name?: string): Annotation[] {
 
             return getAnnotationsFromSymbolOrSignature(name, this);
+        }
 
+        hasAnnotation(name: string): boolean {
+
+            return hasAnnotation(name, this);
         }
     }
 }

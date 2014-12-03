@@ -44,6 +44,7 @@ declare module "tsreflect" {
         getFullName(): string;
         getDescription(): string;
         getAnnotations(name?: string): Annotation[];
+        hasAnnotation(name: string): boolean;
 
         getFlags(): SymbolFlags;
 
@@ -108,6 +109,7 @@ declare module "tsreflect" {
         getDescription(): string;
         getAnnotations(inherit: boolean): Annotation[];
         getAnnotations(name?: string, inherit?: boolean): Annotation[];
+        hasAnnotation(name: string, inherit?: boolean): boolean;
 
         getFlags(): TypeFlags;
 
@@ -153,6 +155,7 @@ declare module "tsreflect" {
 
         getDescription(): string;
         getAnnotations(name?: string): Annotation[];
+        hasAnnotation(name: string): boolean;
 
         getParameters(): Symbol[];
         getParameter(name: string): Symbol;

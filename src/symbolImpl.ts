@@ -84,6 +84,11 @@ module reflect {
             return getAnnotationsFromSymbolOrSignature(name, this);
         }
 
+        hasAnnotation(name: string): boolean {
+
+            return hasAnnotation(name, this);
+        }
+
         getType(): Type {
 
             // TODO:  return unknown type as undefined? or maybe this is better. We can still have a way to check for
@@ -199,6 +204,14 @@ module reflect {
         annotationsByName: AnnotationMap;
         declaration?: Declaration;
         declarations?: Declaration[];
+    }
+
+    export function hasAnnotation(name: string, container: AnnotationContainer): boolean {
+
+        if(!container.annotations) {
+            getAnnotationsFromSymbolOrSignature(name, container);
+        }
+        return container.annotationsByName[name] !== undefined;
     }
 
     export function getAnnotationsFromSymbolOrSignature(name: string, container: AnnotationContainer): Annotation[] {

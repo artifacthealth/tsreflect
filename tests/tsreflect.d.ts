@@ -42,6 +42,7 @@ export interface Symbol {
     getName(): string;
     getDescription(): string;
     getAnnotations(name?: string): Annotation[];
+    hasAnnotation(name: string): boolean;
 
     getFlags(): SymbolFlags;
 
@@ -107,6 +108,7 @@ export interface Type {
     getDescription(): string;
     getAnnotations(inherit: boolean): Annotation[];
     getAnnotations(name?: string, inherit?: boolean): Annotation[];
+    hasAnnotation(name: string, inherit?: boolean): boolean;
 
     getFlags(): TypeFlags;
 
@@ -152,6 +154,7 @@ export interface Signature {
 
     getDescription(): string;
     getAnnotations(name?: string): Annotation[];
+    hasAnnotation(name: string): boolean;
 
     getParameters(): Symbol[];
     getParameter(name: string): Symbol;

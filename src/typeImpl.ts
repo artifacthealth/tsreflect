@@ -80,6 +80,23 @@ module reflect {
             return annotations;
         }
 
+        hasAnnotation(name: string, inherit?: boolean): boolean {
+
+            if(!this.symbol) {
+                return false;
+            }
+
+            if(this.symbol.hasAnnotation(name)) {
+                return true;
+            }
+
+            if(inherit) {
+                return forEach(this.baseTypes, baseType => baseType.hasAnnotation(name, inherit));
+            }
+
+            return false;
+        }
+
         getFlags(): TypeFlags {
             return this.flags;
         }
