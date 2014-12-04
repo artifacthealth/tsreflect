@@ -2,7 +2,7 @@ export class ClassA {
 
 }
 
-export class ClassB extends ClassA {
+export class ClassB extends ClassA implements InterfaceA {
 
 }
 
@@ -23,3 +23,7 @@ export class ConcreteB extends GenericB<string> {
 }
 
 export var ReferenceB: GenericB<string>
+
+export interface InterfaceA {
+
+}

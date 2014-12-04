@@ -168,6 +168,10 @@ module reflect {
             }
         }
 
+        getBaseTypes(): TypeImpl[] {
+            return this.baseTypes;
+        }
+
         private _getTargetType(): TypeImpl {
             return this.flags & TypeFlags.Reference ? this.target : this;
         }
@@ -187,14 +191,14 @@ module reflect {
                 if(baseClass === target) {
                     return true;
                 }
-                baseClass = baseClass._getBaseClass();
+                baseClass = baseClass.getBaseClass();
             }
             return false;
         }
 
         private _baseClass: TypeImpl;
 
-        private _getBaseClass(): TypeImpl {
+        private getBaseClass(): TypeImpl {
 
             // note: does not check that the current type is a class. if the current type is an interface,
             // this could incorrectly return that it has a base class if the interface extends a class.

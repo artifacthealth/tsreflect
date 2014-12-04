@@ -124,6 +124,8 @@ export interface Type {
     isAssignableTo(target: Type, diagnostics?: Diagnostic[]): boolean;
     isSubclassOf(target: Type): boolean;
 
+    getBaseClass(): Type;
+    getBaseTypes(): Type;
     hasBaseType(target: Type): boolean;
 
     isClass(): boolean;

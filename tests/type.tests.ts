@@ -370,6 +370,25 @@ describe('Type', () => {
             assert.equal(obj.argumentsPassed[1], "two");
         });
     });
+
+    describe("getBaseClass", () => {
+
+        it('returns the base type that is a class', () => {
+
+            var fixture = helpers.requireFixture("classInheritance");
+            var classA = fixture.resolve("ClassA").getDeclaredType();
+
+            assert.equal(fixture.resolve("ClassB").getDeclaredType().getBaseClass(), classA);
+        });
+
+        it('returns null if type does not have a base class', () => {
+
+            var fixture = helpers.requireFixture("classInheritance");
+
+            assert.equal(fixture.resolve("ClassA").getDeclaredType().getBaseClass(), null);
+        });
+
+    });
 });
 
 
