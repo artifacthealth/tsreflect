@@ -14,6 +14,10 @@ module reflect {
 
         }
 
+        getId(): number {
+            return this.id;
+        }
+
         resolve(name: string, meaning: SymbolFlags = SymbolFlags.Namespace | SymbolFlags.Type | SymbolFlags.Value): Symbol {
 
             if (!name) {
@@ -75,7 +79,15 @@ module reflect {
 
         getDescription(): string {
 
-            return forEach(this.declarations, x => x.description);
+            var declarations = this.declarations;
+            for(var i = 0, l = declarations.length; i < l; i++) {
+                var declaration = declarations[i];
+
+                var description = declaration.description;
+                if(description) {
+                    return description;
+                }
+            }
         }
 
         // TODO: list all symbols in symbol? List all types in symbol? List all symbols with annotation?
@@ -93,7 +105,11 @@ module reflect {
 
             // TODO:  return unknown type as undefined? or maybe this is better. We can still have a way to check for
             // unknown but code that wants to get properties of type or something can continue without a separate check.
-            return getTypeOfSymbol(this);
+            var ret = getTypeOfSymbol(this);
+            if(hasDiagnosticErrors) {
+                throwDiagnosticError();
+            }
+            return ret;
         }
 
         getDeclaredType(): Type {
@@ -185,12 +201,6 @@ module reflect {
             return (this.flags & SymbolFlags.EnumMember) !== 0;
         }
 
-        /*
-        Value,
-        Type,
-        Namespace,
-        ModuleMember
-        */
     }
 
     export interface AnnotationMap {
@@ -221,17 +231,21 @@ module reflect {
             container.annotations = [];
             container.annotationsByName = {};
 
-            forEach(container.declarations || [container.declaration], declaration => {
-                forEach(declaration.annotations, annotation => {
+            var declarations = container.declarations || [container.declaration];
+            for(var i = 0, l = declarations.length; i < l; i++) {
 
+                var annotations = declarations[i].annotations;
+                for(var j = 0, k = annotations.length; j < k; j++) {
+
+                    var annotation = annotations[j];
                     var list = container.annotationsByName[annotation.name];
                     if(!list) {
                         list = container.annotationsByName[annotation.name] = [];
                     }
                     list.push(annotation);
                     container.annotations.push(annotation);
-                });
-            });
+                }
+            }
         }
 
         if(name) {

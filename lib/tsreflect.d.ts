@@ -40,6 +40,7 @@ declare module "tsreflect" {
 
     interface Symbol {
 
+        getId(): number;
         getName(): string;
         getFullName(): string;
         getDescription(): string;
@@ -104,6 +105,7 @@ declare module "tsreflect" {
 
     interface Type {
 
+        getId(): number;
         getName(): string;
         getFullName(): string;
         getDescription(): string;

@@ -36,6 +36,10 @@ module reflect {
 
         }
 
+        getId(): number {
+            return this.id;
+        }
+
         getFullName(): string {
             if (this.symbol) {
                 return this.symbol.getFullName();
@@ -72,9 +76,11 @@ module reflect {
             var annotations = this.symbol.getAnnotations(name);
 
             if(inherit) {
-                forEach(this.baseTypes, baseType => {
-                   annotations = (baseType.getAnnotations(name, inherit)).concat(annotations);
-                });
+                var baseTypes = this.baseTypes;
+                for(var i = 0, l = baseTypes.length; i < l; i++) {
+                    var baseType = baseTypes[i];
+                    annotations = (baseType.getAnnotations(name, inherit)).concat(annotations);
+                }
             }
 
             return annotations;
@@ -91,7 +97,13 @@ module reflect {
             }
 
             if(inherit) {
-                return forEach(this.baseTypes, baseType => baseType.hasAnnotation(name, inherit));
+                var baseTypes = this.baseTypes;
+                for(var i = 0, l = baseTypes.length; i < l; i++) {
+
+                    if (baseTypes[i].hasAnnotation(name, inherit)) {
+                        return true;
+                    }
+                }
             }
 
             return false;
@@ -191,13 +203,19 @@ module reflect {
                 return this._baseClass;
             }
 
-            return this._baseClass = null || forEach(this.baseTypes, baseType => {
+            var baseClass: TypeImpl = null;
 
-                var type = baseType._getTargetType();
-                if(type.flags & TypeFlags.Class) {
-                    return type;
+            var baseTypes = this.baseTypes;
+            for(var i = 0, l = baseTypes.length; i < l; i++) {
+
+                var candidate = baseTypes[i]._getTargetType();
+                if(candidate.flags & TypeFlags.Class) {
+                    baseClass = candidate;
+                    break;
                 }
-            });
+            }
+
+            return this._baseClass = baseClass;
         }
 
         isClass(): boolean {
@@ -309,10 +327,13 @@ module reflect {
                 throw new Error("Type must be an Array type");
             }
 
+            var elementType: TypeImpl = null;
+
             var reference = getArrayReference(this);
             if(reference) {
-                return this._elementType = reference.typeArguments[0];
+                elementType = reference.typeArguments[0];
             }
+            return this._elementType = elementType;
 
             function getArrayReference(type: TypeImpl): TypeImpl {
                 var target = type._getTargetType();
