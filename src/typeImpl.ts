@@ -28,8 +28,8 @@ module reflect {
         openReferenceChecks: Map<boolean>;    // Open type reference check cache
 
         // Implementation of TupleType
-        elementTypes: Type[];          // Element types
-        baseArrayType: TypeReference;  // Array<T> where T is best common type of element types
+        elementTypes: TypeImpl[];          // Element types
+        baseArrayType: TypeImpl;  // Array<T> where T is best common type of element types
 
 
         constructor(public flags: TypeFlags) {
@@ -342,6 +342,15 @@ module reflect {
                 }
                 return forEach(target.baseTypes, getArrayReference);
             }
+        }
+
+        getElementTypes(): TypeImpl[] {
+
+            if(!this.isTuple()) {
+                throw new Error("Type must be a Tuple type");
+            }
+
+            return this.elementTypes;
         }
 
         createObject(args?: any[]): any {
