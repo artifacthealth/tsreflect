@@ -2,8 +2,8 @@ class ClassWithAnnotations {
 
     /**
      * Gets or sets the name of the class
-     * @annotation defaultValue "The Class"
-     * @annotation includeInExport false
+     * @defaultValue "The Class"
+     * @includeInExport false
      */
     name: string;
 }

@@ -1,19 +1,19 @@
 /**
- * @annotation first
+ * @first
  */
 interface InterfaceExtendsInterface1 {
 
 }
 
 /**
- * @annotation second
+ * @second
  */
 interface InterfaceExtendsInterface2 extends InterfaceExtendsInterface1 {
 
 }
 
 /**
- * @annotation third
+ * @third
  */
 interface InterfaceExtendsInterface3 extends InterfaceExtendsInterface2 {
 

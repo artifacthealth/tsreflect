@@ -1,5 +1,5 @@
 /**
- * @annotation first "some value"
+ * @first "some value"
  */
 interface InterfaceWithAnnotations {
 
@@ -7,7 +7,7 @@ interface InterfaceWithAnnotations {
 }
 
 /**
- * @annotation second false
+ * @second false
  */
 interface InterfaceWithAnnotations {
 
