@@ -76,6 +76,8 @@ export interface Annotation {
 
     name: string;
     value: any;
+
+    getDeclarationFileName(): string;
 }
 
 export declare enum TypeFlags {

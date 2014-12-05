@@ -233,12 +233,12 @@ module reflect {
 
             var declarations = container.declarations || [container.declaration];
             for(var i = 0, l = declarations.length; i < l; i++) {
-
-                var annotations = declarations[i].annotations;
+                var declaration = declarations[i];
+                var annotations = declaration.annotations;
                 if(annotations) {
                     for (var j = 0, k = annotations.length; j < k; j++) {
 
-                        var annotation = annotations[j];
+                        var annotation = new AnnotationImpl(annotations[j], declaration);
                         var list = container.annotationsByName[annotation.name];
                         if (!list) {
                             list = container.annotationsByName[annotation.name] = [];
@@ -255,5 +255,22 @@ module reflect {
         }
 
         return container.annotations;
+    }
+
+    export class AnnotationImpl implements Annotation {
+
+        name: string;
+        value: string;
+
+        constructor(annotation: Annotation, private declaration: Declaration) {
+
+            this.name = annotation.name;
+            this.value = annotation.value;
+        }
+
+        getDeclarationFileName(): string {
+
+            return getSourceFile(this.declaration).filename;
+        }
     }
 }

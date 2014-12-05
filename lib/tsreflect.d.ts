@@ -78,6 +78,9 @@ declare module "tsreflect" {
 
         name: string;
         value: any;
+
+        /** Returns the name of the file that the annotation was declared in. */
+        getDeclarationFileName(): string;
     }
 
     export enum TypeFlags {

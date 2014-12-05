@@ -14,11 +14,16 @@ export function referenceFixture(filename: string): void {
 
 export function getRelativeExternalModuleName(filename: string): string {
 
+    return '"' + getRelativeFixturePath(filename) + '"';
+}
+
+export function getRelativeFixturePath(filename: string): string {
+
     var filePath = relativePath(getAbsolutePath(filename));
     if(!isRelativePath(filePath)) {
         filePath = "./" + filePath;
     }
-    return '"' + filePath + '"';
+    return filePath;
 }
 
 function getAbsolutePath(filename: string): string {
