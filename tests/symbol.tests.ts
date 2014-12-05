@@ -198,6 +198,12 @@ describe('Symbol', () => {
             var nameSymbol = reflect.resolve("ClassWithAnnotations").getDeclaredType().getProperty("name");
             assert.isFalse(nameSymbol.hasAnnotation("someUndefinedAnnotation"));
         });
+
+        it('returns false if symbol does not have any annotations', () => {
+
+            var symbol = helpers.requireFixture("classWithConstructor").getDeclaredType().getProperty("constructorCalled");
+            assert.isFalse(symbol.hasAnnotation("someUndefinedAnnotation"));
+        });
     });
 
     describe('getExports', () => {

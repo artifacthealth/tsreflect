@@ -235,15 +235,17 @@ module reflect {
             for(var i = 0, l = declarations.length; i < l; i++) {
 
                 var annotations = declarations[i].annotations;
-                for(var j = 0, k = annotations.length; j < k; j++) {
+                if(annotations) {
+                    for (var j = 0, k = annotations.length; j < k; j++) {
 
-                    var annotation = annotations[j];
-                    var list = container.annotationsByName[annotation.name];
-                    if(!list) {
-                        list = container.annotationsByName[annotation.name] = [];
+                        var annotation = annotations[j];
+                        var list = container.annotationsByName[annotation.name];
+                        if (!list) {
+                            list = container.annotationsByName[annotation.name] = [];
+                        }
+                        list.push(annotation);
+                        container.annotations.push(annotation);
                     }
-                    list.push(annotation);
-                    container.annotations.push(annotation);
                 }
             }
         }
