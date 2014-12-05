@@ -11,7 +11,7 @@ describe('Annotation', () => {
 
     describe('getDeclarationFileName', () => {
 
-        it('', () => {
+        it('returns the name of the file that declares the annotation', () => {
             helpers.referenceFixture("classWithAnnotations");
 
             var nameSymbol = reflect.resolve("ClassWithAnnotations").getDeclaredType().getProperty("name");
