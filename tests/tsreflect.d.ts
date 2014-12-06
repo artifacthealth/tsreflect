@@ -127,7 +127,7 @@ export interface Type {
     isSubclassOf(target: Type): boolean;
 
     getBaseClass(): Type;
-    getBaseTypes(): Type;
+    getBaseTypes(): Type[];
     hasBaseType(target: Type): boolean;
 
     isClass(): boolean;
