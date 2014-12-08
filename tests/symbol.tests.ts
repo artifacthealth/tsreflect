@@ -204,6 +204,12 @@ describe('Symbol', () => {
             var symbol = helpers.requireFixture("classWithConstructor").getDeclaredType().getProperty("constructorCalled");
             assert.isFalse(symbol.hasAnnotation("someUndefinedAnnotation"));
         });
+
+        it('return false if symbol is the implied prototype symbol', () => {
+
+            var symbol = helpers.requireFixture("classWithConstructor").getType().getProperty("prototype");
+            assert.isFalse(symbol.hasAnnotation("someUndefinedAnnotation"));
+        });
     });
 
     describe('getExports', () => {
