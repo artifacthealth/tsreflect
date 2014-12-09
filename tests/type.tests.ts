@@ -292,6 +292,18 @@ describe('Type', () => {
         });
     });
 
+    describe('getConstructor', () => {
+
+        it('returns the constructor for the specified class', () => {
+
+            var moduleSymbol = helpers.requireFixture("classExportedInExternalModule");
+            var testClassType = moduleSymbol.resolve("TestClass").getDeclaredType();
+
+            var ctr = testClassType.getConstructor();
+            assert.equal(ctr, classExportedInExternalModule.TestClass);
+        });
+    });
+
     describe('createObject', () => {
 
         it('creates object with prototype and constructor matching declared class type', () => {

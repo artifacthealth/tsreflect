@@ -157,6 +157,7 @@ declare module "tsreflect" {
         getElementTypes(): Type[];
 
         createObject(args?: any[]): any;
+        getConstructor(): Function;
     }
 
     interface Signature {

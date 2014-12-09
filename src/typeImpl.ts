@@ -372,6 +372,14 @@ module reflect {
             return instance;
         }
 
+        getConstructor(): Function {
+
+            if(!this.isClass()) {
+                throw new Error("Type must be a Class type");
+            }
+            return this._getImplementation();
+        }
+
         private _cachedImplementation: any;
 
         private _getImplementation(): any {

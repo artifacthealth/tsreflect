@@ -153,6 +153,7 @@ export interface Type {
     getElementTypes(): Type[];
 
     createObject(args?: any[]): any;
+    getConstructor(): Function;
 }
 
 export interface Signature {
