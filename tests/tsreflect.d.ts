@@ -134,6 +134,7 @@ export interface Type {
     isInterface(): boolean;
     isTuple(): boolean;
     isArray(): boolean;
+    isIndex(): boolean;
     isAnonymous(): boolean;
     isReference(): boolean;
     isEnum(): boolean;

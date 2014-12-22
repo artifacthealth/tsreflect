@@ -207,6 +207,28 @@ describe('Type', () => {
         });
     });
 
+    describe('isIndex', () => {
+
+        it('returns true if type has a string index', () => {
+
+            var fixture = helpers.requireFixture("index");
+            assert.isTrue(fixture.resolve("StringIndex").getDeclaredType().isIndex());
+        });
+
+        it('returns true if type has a number index', () => {
+
+            var fixture = helpers.requireFixture("index");
+            assert.isTrue(fixture.resolve("NumberIndex").getDeclaredType().isIndex());
+        });
+
+        it('returns false if type has neither a string nor number index', () => {
+
+            var fixture = helpers.requireFixture("index");
+            assert.isFalse(fixture.resolve("NoIndex").getDeclaredType().isIndex());
+        });
+
+    });
+
     describe('isArray', () => {
 
         it('returns true when type is an array', () => {

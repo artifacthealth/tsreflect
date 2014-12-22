@@ -282,6 +282,12 @@ module reflect {
             return this.hasBaseType(globalArrayType);
         }
 
+        private _isIndex: boolean;
+
+        isIndex(): boolean {
+            return this._isIndex || (this._isIndex = !!(this.getStringIndexType() || this.getNumberIndexType()));
+        }
+
         isObjectType(): boolean {
             return (this.flags & TypeFlags.ObjectType) !== 0;
         }

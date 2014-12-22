@@ -138,6 +138,7 @@ declare module "tsreflect" {
         isInterface(): boolean;
         isTuple(): boolean;
         isArray(): boolean;
+        isIndex(): boolean;
         isAnonymous(): boolean;
         isReference(): boolean;
         isEnum(): boolean;
