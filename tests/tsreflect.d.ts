@@ -50,7 +50,7 @@ export interface Symbol {
     getDeclaredType(): Type;
     getExports(flags?: SymbolFlags): Symbol[];
 
-    resolve (name: string): Symbol;
+    resolve (entityName: string): Symbol;
 
     getValue(obj: any): any;
     setValue(obj: any, value: any): void;
@@ -150,6 +150,7 @@ export interface Type {
 
     getEnumValue(value: string, ignoreCase?: boolean): number;
     getEnumName(value: number): string;
+    getEnumNames(): string[];
     getElementType(): Type;
     getElementTypes(): Type[];
 

@@ -179,6 +179,20 @@ describe('Type', () => {
         });
     });
 
+    describe('getEnumNames', () => {
+
+        it('returns all named enum values', () => {
+
+            var enumType = helpers.requireFixture("enumInExternalModule").getDeclaredType();
+            var names = enumType.getEnumNames();
+            assert.isArray(names);
+            assert.lengthOf(names, 3);
+            assert.equal(names[0], "value1");
+            assert.equal(names[1], "value2");
+            assert.equal(names[2], "value3");
+        });
+    });
+
     describe('getEnumValue', () => {
 
         it('returns the value of the given enum constant name', () => {

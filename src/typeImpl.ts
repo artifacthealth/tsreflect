@@ -307,12 +307,36 @@ module reflect {
             value = value.toLowerCase();
 
             for(var name in enumImplementation) {
-                if(enumImplementation.hasOwnProperty(name) && typeof name === "string") {
+                if(enumImplementation.hasOwnProperty(name) && isNaN(name)) {
                     if(name.toLowerCase() === value) {
                         return enumImplementation[name];
                     }
                 }
             }
+        }
+
+        private _enumNames: string[];
+
+        getEnumNames(): string[] {
+
+            if(this._enumNames) {
+                return this._enumNames;
+            }
+
+            if(!this.isEnum()) {
+                throw new Error("Type must be an Enum type.");
+            }
+
+            var names: string[] = [];
+
+            var enumImplementation = this._getImplementation();
+            for(var name in enumImplementation) {
+                if(enumImplementation.hasOwnProperty(name) && isNaN(name)) {
+                    names.push(name);
+                }
+            }
+
+            return this._enumNames = names;
         }
 
         getEnumName(value: number): string {

@@ -53,7 +53,7 @@ declare module "tsreflect" {
         getDeclaredType(): Type;
         getExports(flags?: SymbolFlags): Symbol[];
 
-        resolve (name: string): Symbol;
+        resolve (entityName: string): Symbol;
 
         getValue(obj: any): any;
         setValue(obj: any, value: any): void;
@@ -154,6 +154,7 @@ declare module "tsreflect" {
 
         getEnumValue(value: string, ignoreCase?: boolean): number;
         getEnumName(value: number): string;
+        getEnumNames(): string[];
         getElementType(): Type;
         getElementTypes(): Type[];
 
