@@ -75,6 +75,7 @@ module reflect {
 
             var annotations = this.symbol.getAnnotations(name);
 
+            // TODO: what about duplicates from inherited annotations? Should we only inherit from classes?
             if(inherit) {
                 var baseTypes = this.baseTypes;
                 for(var i = 0, l = baseTypes.length; i < l; i++) {
