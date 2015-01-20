@@ -235,6 +235,10 @@ module reflect {
             return (this.flags & TypeFlags.Tuple) !== 0;
         }
 
+        isUnion(): boolean {
+            return (this.flags & TypeFlags.Union) !== 0;
+        }
+
         isAnonymous(): boolean {
             return (this.flags & TypeFlags.Anonymous) !== 0;
         }

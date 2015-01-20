@@ -69,6 +69,7 @@ export interface Symbol {
     isGetAccessor(): boolean;
     isSetAccessor(): boolean;
     isEnumMember(): boolean;
+    isTypeAlias(): boolean;
 
 }
 
@@ -133,6 +134,7 @@ export interface Type {
     isClass(): boolean;
     isInterface(): boolean;
     isTuple(): boolean;
+    isUnion(): boolean;
     isArray(): boolean;
     isIndex(): boolean;
     isAnonymous(): boolean;

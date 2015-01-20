@@ -19,6 +19,7 @@ module reflect {
     export var hasDiagnosticErrors = false;
     var errors: Diagnostic[] = [];
 
+    // TODO: remove if we make enum const
     exports.SymbolFlags = SymbolFlags;
     exports.TypeFlags = TypeFlags;
 

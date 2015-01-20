@@ -479,6 +479,9 @@ module reflect {
                 case "import":
                     scanImportDeclaration(<ImportDeclaration>node);
                     break;
+                case "alias":
+                    scanTypeAliasDeclaration(<TypeAliasDeclaration>node);
+                    break;
             }
         }
 
@@ -558,6 +561,13 @@ module reflect {
 
             node.kind = NodeKind.ImportDeclaration;
             scanFlags(node);
+        }
+
+        function scanTypeAliasDeclaration(node: TypeAliasDeclaration): void {
+
+            node.kind = NodeKind.TypeAliasDeclaration;
+            scanFlags(node);
+            scanChildTypeNode(node, "type");
         }
 
         function scanClassMemberDeclaration(node: MemberDeclaration): void {
@@ -733,6 +743,9 @@ module reflect {
                 case "tuple":
                     scanTupleTypeNode(<TupleTypeNode>node);
                     break;
+                case "union":
+                    scanUnionTypeNode(<TupleTypeNode>node);
+                    break;
             }
         }
 
@@ -764,6 +777,12 @@ module reflect {
         function scanTupleTypeNode(node: TupleTypeNode): void {
 
             node.kind = NodeKind.TupleType;
+            scanTypeNodes(node.types);
+        }
+
+        function scanUnionTypeNode(node: UnionTypeNode): void {
+
+            node.kind = NodeKind.UnionType;
             scanTypeNodes(node.types);
         }
 

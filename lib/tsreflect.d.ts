@@ -72,6 +72,7 @@ declare module "tsreflect" {
         isGetAccessor(): boolean;
         isSetAccessor(): boolean;
         isEnumMember(): boolean;
+        isTypeAlias(): boolean;
     }
 
     interface Annotation {
@@ -137,6 +138,7 @@ declare module "tsreflect" {
         isClass(): boolean;
         isInterface(): boolean;
         isTuple(): boolean;
+        isUnion(): boolean;
         isArray(): boolean;
         isIndex(): boolean;
         isAnonymous(): boolean;

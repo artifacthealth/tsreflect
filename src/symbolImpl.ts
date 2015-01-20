@@ -201,6 +201,10 @@ module reflect {
             return (this.flags & SymbolFlags.EnumMember) !== 0;
         }
 
+        isTypeAlias(): boolean {
+            return (this.flags & SymbolFlags.TypeAlias) !== 0;
+        }
+
     }
 
     export interface AnnotationMap {

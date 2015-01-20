@@ -2,7 +2,7 @@
 
 module reflect {
 
-    export enum NodeKind {
+    export const enum NodeKind {
 
         SourceFile,
 
@@ -13,6 +13,7 @@ module reflect {
         FunctionDeclaration,
         VariableDeclaration,
         ImportDeclaration,
+        TypeAliasDeclaration,
 
         EnumMember,
 
@@ -36,28 +37,34 @@ module reflect {
         TypeReference,
         StringLiteral,
         TupleType,
+        UnionType,
 
         Parameter,
         TypeParameter
     }
 
-    export enum NodeFlags {
-        None             = 0,
-        Export           = 0x00000001,  // Declarations
-        Ambient          = 0x00000002,  // Declarations
-        QuestionMark     = 0x00000004,  // Parameter/Property/Method
-        Rest             = 0x00000008,  // Parameter
-        Public           = 0x00000010,  // Property/Method
-        Private          = 0x00000020,  // Property/Method
-        Protected        = 0x00000040,  // Property/Method
-        Static           = 0x00000080,  // Property/Method
-        MultiLine        = 0x00000100,  // Multi-line array or object literal
-        Synthetic        = 0x00000200,  // Synthetic node (for full fidelity)
-        ExternalModule   = 0x00000400,  // External module flag
+    export const enum NodeFlags {
+        None                = 0,
+        Export              = 0x00000001,  // Declarations
+        Ambient             = 0x00000002,  // Declarations
+        Public              = 0x00000010,  // Property/Method
+        Private             = 0x00000020,  // Property/Method
+        Protected           = 0x00000040,  // Property/Method
+        Static              = 0x00000080,  // Property/Method
+        MultiLine           = 0x00000100,  // Multi-line array or object literal
+        Synthetic           = 0x00000200,  // Synthetic node (for full fidelity)
+        DeclarationFile     = 0x00000400,  // Node is a .d.ts file
+        Let                 = 0x00000800,  // Variable declaration
+        Const               = 0x00001000,  // Variable declaration
+        OctalLiteral        = 0x00002000,
+        ExternalModule      = 0x00004000,  // External module flag
+        QuestionMark        = 0x00008000,  // Parameter/Property/Method
+        Rest                = 0x00010000,  // Parameter
 
         Modifier = Export | Ambient | Public | Private | Protected | Static,
-        AccessibilityModifier = Public | Private | Protected
-    }
+        AccessibilityModifier = Public | Private | Protected,
+        BlockScoped = Let | Const
+}
 
     export interface Node {
 
@@ -158,6 +165,10 @@ module reflect {
         require?: string;
     }
 
+    export interface TypeAliasDeclaration extends ModuleElementDeclaration {
+        name: string;
+        type: TypeNode;
+    }
 
     // Class Member Declarations
 
@@ -255,6 +266,11 @@ module reflect {
     }
 
     export interface TupleTypeNode extends TypeNode {
+
+        types: TypeNode[];
+    }
+
+    export interface UnionTypeNode extends TypeNode {
 
         types: TypeNode[];
     }

@@ -3,10 +3,22 @@
 /// <reference path="diagnostics.ts"/>
 /// <reference path="types.ts"/>
 /// <reference path="typeImpl.ts"/>
-/// <reference path="symbolImpl.ts"/>
 /// <reference path="signatureImpl.ts"/>
 
 module reflect {
+
+    // Ternary values are defined such that
+    // x & y is False if either x or y is False.
+    // x & y is Maybe if either x or y is Maybe, but neither x or y is False.
+    // x & y is True if both x and y are True.
+    // x | y is False if both x and y are False.
+    // x | y is Maybe if either x or y is Maybe, but neither x or y is True.
+    // x | y is True if either x or y is True.
+    export const enum Ternary {
+        False = 0,
+        Maybe = 1,
+        True  = -1
+    }
 
     var nextSymbolId = 1;
     var nextNodeId = 1;
@@ -32,6 +44,10 @@ module reflect {
     var emptyObjectType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
     var anyFunctionType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
     var noConstraintType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+    var inferenceFailureType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+
+    var anySignature = createSignature(undefined, undefined, emptyArray, anyType, 0, false, false);
+    var unknownSignature = createSignature(undefined, undefined, emptyArray, unknownType, 0, false, false);
 
     export var globals: SymbolTable = {};
 
@@ -45,6 +61,7 @@ module reflect {
     var globalBooleanType: ObjectType;
 
     var tupleTypes: Map<TupleType> = {};
+    var unionTypes: Map<UnionType> = {};
     var stringLiteralTypes: Map<StringLiteralType> = {};
 
     var symbolLinks: SymbolLinks[] = [];
@@ -101,7 +118,6 @@ module reflect {
     export function getSymbol(symbols: SymbolTable, name: string, meaning: SymbolFlags): Symbol {
         if (meaning && hasProperty(symbols, name)) {
             var symbol = symbols[name];
-
             if (symbol.flags & meaning) {
                 return symbol;
             }
@@ -258,6 +274,10 @@ module reflect {
         return symbol.flags & meaning ? symbol : resolveImport(symbol);
     }
 
+    function getFullyQualifiedName(symbol: Symbol): string {
+        return symbol.parent ? getFullyQualifiedName(symbol.parent) + "." + symbolToString(symbol) : symbolToString(symbol);
+    }
+
     export function isExternalModuleNameRelative(moduleName: string): boolean {
         // TypeScript 1.0 spec (April 2014): 11.2.1
         // An external module name is "relative" if the first term is "." or "..".
@@ -345,6 +365,12 @@ module reflect {
     }
 
     function symbolIsValue(symbol: Symbol): boolean {
+        // If it is an instantiated symbol, then it is a value if the symbol it is an
+        // instantiation of is a value.
+        if (symbol.flags & SymbolFlags.Instantiated) {
+            return symbolIsValue(getSymbolLinks(symbol).target);
+        }
+
         // If the symbol has the value flag, it is trivially a value.
         if (symbol.flags & SymbolFlags.Value) {
             return true;
@@ -353,12 +379,6 @@ module reflect {
         // If it is an import, then it is a value if the symbol it resolves to is a value.
         if (symbol.flags & SymbolFlags.Import) {
             return (resolveImport(symbol).flags & SymbolFlags.Value) !== 0;
-        }
-
-        // If it is an instantiated symbol, then it is a value if the symbol it is an
-        // instantiation of is a value.
-        if (symbol.flags & SymbolFlags.Instantiated) {
-            return (getSymbolLinks(symbol).target.flags & SymbolFlags.Value) !== 0;
         }
 
         return false;
@@ -403,50 +423,50 @@ module reflect {
         return result || emptyArray;
     }
 
-    function setObjectTypeMembers(type: ObjectType, members: SymbolTable, callSignatures: Signature[], constructSignatures: Signature[], stringIndexType: Type, numberIndexType: Type): ResolvedObjectType {
-        (<ResolvedObjectType>type).members = members;
-        (<ResolvedObjectType>type).properties = getNamedMembers(members);
-        (<ResolvedObjectType>type).callSignatures = callSignatures;
-        (<ResolvedObjectType>type).constructSignatures = constructSignatures;
-        if (stringIndexType) (<ResolvedObjectType>type).stringIndexType = stringIndexType;
-        if (numberIndexType) (<ResolvedObjectType>type).numberIndexType = numberIndexType;
-        return <ResolvedObjectType>type;
+    function setObjectTypeMembers(type: ObjectType, members: SymbolTable, callSignatures: Signature[], constructSignatures: Signature[], stringIndexType: Type, numberIndexType: Type): ResolvedType {
+        (<ResolvedType>type).members = members;
+        (<ResolvedType>type).properties = getNamedMembers(members);
+        (<ResolvedType>type).callSignatures = callSignatures;
+        (<ResolvedType>type).constructSignatures = constructSignatures;
+        if (stringIndexType) (<ResolvedType>type).stringIndexType = stringIndexType;
+        if (numberIndexType) (<ResolvedType>type).numberIndexType = numberIndexType;
+        return <ResolvedType>type;
     }
 
-    function createAnonymousType(symbol: Symbol, members: SymbolTable, callSignatures: Signature[], constructSignatures: Signature[], stringIndexType: Type, numberIndexType: Type): ResolvedObjectType {
+    function createAnonymousType(symbol: Symbol, members: SymbolTable, callSignatures: Signature[], constructSignatures: Signature[], stringIndexType: Type, numberIndexType: Type): ResolvedType {
         return setObjectTypeMembers(createObjectType(TypeFlags.Anonymous, symbol),
             members, callSignatures, constructSignatures, stringIndexType, numberIndexType);
     }
 
-    function isOptionalProperty(propertySymbol:Symbol):boolean {
+    function isOptionalProperty(propertySymbol: Symbol): boolean {
         //  class C {
         //      constructor(public x?) { }
         //  }
         //
         // x is an optional parameter, but it is a required property.
         return propertySymbol.valueDeclaration &&
-            propertySymbol.valueDeclaration.flags & NodeFlags.QuestionMark &&
+            hasQuestionToken(propertySymbol.valueDeclaration) &&
             propertySymbol.valueDeclaration.kind !== NodeKind.Parameter;
     }
 
-    function getApparentType(type: Type): ApparentType {
-        if (type.flags & TypeFlags.TypeParameter) {
-            do {
-                type = getConstraintOfTypeParameter(<TypeParameter>type);
-            } while (type && type.flags & TypeFlags.TypeParameter);
-            if (!type) type = emptyObjectType;
-        }
-        if (type.flags & TypeFlags.StringLike) {
-            type = globalStringType;
-        }
-        else if (type.flags & TypeFlags.NumberLike) {
-            type = globalNumberType;
-        }
-        else if (type.flags & TypeFlags.Boolean) {
-            type = globalBooleanType;
-        }
-        return <ApparentType>type;
+    function hasDotDotDotToken(node: Node) {
+        return node && node.kind === NodeKind.Parameter && (node.flags & NodeFlags.Rest) !== 0;
     }
+
+    function hasQuestionToken(node: Node) {
+        if (node) {
+            switch (node.kind) {
+                case NodeKind.Parameter:
+                case NodeKind.Method:
+                case NodeKind.Field:
+                case NodeKind.PropertySignature:
+                    return (node.flags & NodeFlags.QuestionMark) !== 0;
+            }
+        }
+
+        return false;
+    }
+
 
     function getTypeOfPrototypeProperty(prototype: Symbol): Type {
         // TypeScript 1.0 spec (April 2014): 8.4
@@ -457,8 +477,7 @@ module reflect {
         return classType.typeParameters ? createTypeReference(<GenericType>classType, map(classType.typeParameters, _ => anyType)) : classType;
     }
 
-    function getTypeOfVariableDeclaration(declaration: VariableDeclaration): Type {
-
+    function getTypeOfVariableOrParameterOrPropertyDeclaration(declaration: VariableDeclaration): Type {
         // Use type from type annotation if one is present
         if (declaration.type) {
             return getTypeFromTypeNode(declaration.type);
@@ -475,7 +494,7 @@ module reflect {
         }
 
         // Rest parameters default to type any[], other parameters default to type any
-        var type = declaration.flags & NodeFlags.Rest ? createArrayType(anyType) : anyType;
+        var type = hasDotDotDotToken(declaration) ? createArrayType(anyType) : anyType;
         return type;
     }
 
@@ -486,12 +505,10 @@ module reflect {
             if (symbol.flags & SymbolFlags.Prototype) {
                 return links.type = getTypeOfPrototypeProperty(symbol);
             }
-
             var declaration = symbol.valueDeclaration;
-
             // Handle variable, parameter or property
             links.type = resolvingType;
-            var type = getTypeOfVariableDeclaration(<VariableDeclaration>declaration);
+            var type = getTypeOfVariableOrParameterOrPropertyDeclaration(<VariableDeclaration>declaration);
             if (links.type === resolvingType) {
                 links.type = type;
             }
@@ -506,7 +523,7 @@ module reflect {
         return accessor && accessor.parameter && accessor.parameter.type;
     }
 
-    function getAnnotatedAccessorType(accessor: MemberDeclaration): Type {
+    function getAnnotatedAccessorType(accessor: GetAccessorMemberDeclaration): Type {
         if (accessor) {
             if (accessor.kind === NodeKind.GetAccessor) {
                 var getter = <GetAccessorMemberDeclaration>accessor;
@@ -594,6 +611,9 @@ module reflect {
     }
 
     export function getTypeOfSymbol(symbol: Symbol): Type {
+        if (symbol.flags & SymbolFlags.Instantiated) {
+            return getTypeOfInstantiatedSymbol(symbol);
+        }
         if (symbol.flags & (SymbolFlags.Variable | SymbolFlags.Property)) {
             return getTypeOfVariableOrParameterOrProperty(symbol);
         }
@@ -608,9 +628,6 @@ module reflect {
         }
         if (symbol.flags & SymbolFlags.Import) {
             return getTypeOfImport(symbol);
-        }
-        if (symbol.flags & SymbolFlags.Instantiated) {
-            return getTypeOfInstantiatedSymbol(symbol);
         }
         return unknownType;
     }
@@ -666,8 +683,9 @@ module reflect {
             }
             type.baseTypes = [];
             var declaration = <ClassDeclaration>getDeclarationOfKind(symbol, NodeKind.ClassDeclaration);
-            if (declaration.extends) {
-                var baseType = getTypeFromTypeReferenceNode(declaration.extends);
+            var baseTypeNode = getClassBaseTypeNode(declaration);
+            if (baseTypeNode) {
+                var baseType = getTypeFromTypeReferenceNode(baseTypeNode);
                 if (baseType !== unknownType) {
                     if (getTargetType(baseType).flags & TypeFlags.Class) {
                         if (type !== baseType && !hasBaseType(<InterfaceType>baseType, type)) {
@@ -678,7 +696,7 @@ module reflect {
                         }
                     }
                     else {
-                        error(declaration.extends, Diagnostics.A_class_may_only_extend_another_class);
+                        error(baseTypeNode, Diagnostics.A_class_may_only_extend_another_class);
                     }
                 }
             }
@@ -689,6 +707,14 @@ module reflect {
             type.declaredNumberIndexType = getIndexTypeOfSymbol(symbol, IndexKind.Number);
         }
         return <InterfaceType>links.declaredType;
+    }
+
+    function getClassBaseTypeNode(node: ClassDeclaration): TypeReferenceNode {
+        return node.extends;
+    }
+
+    export function getInterfaceBaseTypeNodes(node: InterfaceDeclaration) {
+        return node.extends;
     }
 
     function getDeclaredTypeOfInterface(symbol: Symbol): InterfaceType {
@@ -706,8 +732,8 @@ module reflect {
             }
             type.baseTypes = [];
             forEach(symbol.declarations, declaration => {
-                if (declaration.kind === NodeKind.InterfaceDeclaration && (<InterfaceDeclaration>declaration).extends) {
-                    forEach((<InterfaceDeclaration>declaration).extends, node => {
+                if (declaration.kind === NodeKind.InterfaceDeclaration && getInterfaceBaseTypeNodes(<InterfaceDeclaration>declaration)) {
+                    forEach(getInterfaceBaseTypeNodes(<InterfaceDeclaration>declaration), node => {
                         var baseType = getTypeFromTypeReferenceNode(node);
                         if (baseType !== unknownType) {
                             if (getTargetType(baseType).flags & (TypeFlags.Class | TypeFlags.Interface)) {
@@ -732,6 +758,24 @@ module reflect {
             type.declaredNumberIndexType = getIndexTypeOfSymbol(symbol, IndexKind.Number);
         }
         return <InterfaceType>links.declaredType;
+    }
+
+    function getDeclaredTypeOfTypeAlias(symbol: Symbol): Type {
+        var links = getSymbolLinks(symbol);
+        if (!links.declaredType) {
+            links.declaredType = resolvingType;
+            var declaration = <TypeAliasDeclaration>getDeclarationOfKind(symbol, NodeKind.TypeAliasDeclaration);
+            var type = getTypeFromTypeNode(declaration.type);
+            if (links.declaredType === resolvingType) {
+                links.declaredType = type;
+            }
+        }
+        else if (links.declaredType === resolvingType) {
+            links.declaredType = unknownType;
+            var declaration = <TypeAliasDeclaration>getDeclarationOfKind(symbol, NodeKind.TypeAliasDeclaration);
+            error(declaration, Diagnostics.Type_alias_0_circularly_references_itself, symbolToString(symbol));
+        }
+        return links.declaredType;
     }
 
     function getDeclaredTypeOfEnum(symbol: Symbol): Type {
@@ -772,6 +816,9 @@ module reflect {
         if (symbol.flags & SymbolFlags.Interface) {
             return getDeclaredTypeOfInterface(symbol);
         }
+        if (symbol.flags & SymbolFlags.TypeAlias) {
+            return getDeclaredTypeOfTypeAlias(symbol);
+        }
         if (symbol.flags & SymbolFlags.Enum) {
             return getDeclaredTypeOfEnum(symbol);
         }
@@ -781,7 +828,6 @@ module reflect {
         if (symbol.flags & SymbolFlags.Import) {
             return getDeclaredTypeOfImport(symbol);
         }
-
         return unknownType;
     }
 
@@ -821,7 +867,7 @@ module reflect {
         if (type.baseTypes.length) {
             members = createSymbolTable(type.declaredProperties);
             forEach(type.baseTypes, baseType => {
-                addInheritedMembers(members, getPropertiesOfType(baseType));
+                addInheritedMembers(members, getPropertiesOfObjectType(baseType));
                 callSignatures = concatenate(callSignatures, getSignaturesOfType(baseType, SignatureKind.Call));
                 constructSignatures = concatenate(constructSignatures, getSignaturesOfType(baseType, SignatureKind.Construct));
                 stringIndexType = stringIndexType || getIndexTypeOfType(baseType, IndexKind.String);
@@ -841,7 +887,7 @@ module reflect {
         var numberIndexType = target.declaredNumberIndexType ? instantiateType(target.declaredNumberIndexType, mapper) : undefined;
         forEach(target.baseTypes, baseType => {
             var instantiatedBaseType = instantiateType(baseType, mapper);
-            addInheritedMembers(members, getPropertiesOfType(instantiatedBaseType));
+            addInheritedMembers(members, getPropertiesOfObjectType(instantiatedBaseType));
             callSignatures = concatenate(callSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Call));
             constructSignatures = concatenate(constructSignatures, getSignaturesOfType(instantiatedBaseType, SignatureKind.Construct));
             stringIndexType = stringIndexType || getIndexTypeOfType(instantiatedBaseType, IndexKind.String);
@@ -851,7 +897,7 @@ module reflect {
     }
 
     function createSignature(declaration: SignatureDeclaration, typeParameters: TypeParameter[], parameters: Symbol[],
-                             resolvedReturnType: Type, minArgumentCount: number, hasRestParameter: boolean, hasStringLiterals: boolean): Signature {
+        resolvedReturnType: Type, minArgumentCount: number, hasRestParameter: boolean, hasStringLiterals: boolean): Signature {
         var sig = new SignatureImpl();
         sig.declaration = declaration;
         sig.typeParameters = typeParameters;
@@ -894,10 +940,70 @@ module reflect {
     }
 
     function resolveTupleTypeMembers(type: TupleType) {
-        var arrayType = resolveObjectTypeMembers(createArrayType(getBestCommonType(type.elementTypes)));
+        var arrayType = resolveObjectOrUnionTypeMembers(createArrayType(getUnionType(type.elementTypes)));
         var members = createTupleTypeMemberSymbols(type.elementTypes);
         addInheritedMembers(members, arrayType.properties);
         setObjectTypeMembers(type, members, arrayType.callSignatures, arrayType.constructSignatures, arrayType.stringIndexType, arrayType.numberIndexType);
+    }
+
+    function signatureListsIdentical(s: Signature[], t: Signature[]): boolean {
+        if (s.length !== t.length) {
+            return false;
+        }
+        for (var i = 0; i < s.length; i++) {
+            if (!compareSignatures(s[i], t[i], /*compareReturnTypes*/ false, compareTypes)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // If the lists of call or construct signatures in the given types are all identical except for return types,
+    // and if none of the signatures are generic, return a list of signatures that has substitutes a union of the
+    // return types of the corresponding signatures in each resulting signature.
+    function getUnionSignatures(types: Type[], kind: SignatureKind): Signature[] {
+        var signatureLists = map(types, t => getSignaturesOfType(t, kind));
+        var signatures = signatureLists[0];
+        for (var i = 0; i < signatures.length; i++) {
+            if (signatures[i].typeParameters) {
+                return emptyArray;
+            }
+        }
+        for (var i = 1; i < signatureLists.length; i++) {
+            if (!signatureListsIdentical(signatures, signatureLists[i])) {
+                return emptyArray;
+            }
+        }
+        var result = map(signatures, cloneSignature);
+        for (var i = 0; i < result.length; i++) {
+            var s = result[i];
+            // Clear resolved return type we possibly got from cloneSignature
+            s.resolvedReturnType = undefined;
+            s.unionSignatures = map(signatureLists, signatures => signatures[i]);
+        }
+        return result;
+    }
+
+    function getUnionIndexType(types: Type[], kind: IndexKind): Type {
+        var indexTypes: Type[] = [];
+        for (var i = 0; i < types.length; i++) {
+            var indexType = getIndexTypeOfType(types[i], kind);
+            if (!indexType) {
+                return undefined;
+            }
+            indexTypes.push(indexType);
+        }
+        return getUnionType(indexTypes);
+    }
+
+    function resolveUnionTypeMembers(type: UnionType) {
+        // The members and properties collections are empty for union types. To get all properties of a union
+        // type use getPropertiesOfType (only the language service uses this).
+        var callSignatures = getUnionSignatures(type.types, SignatureKind.Call);
+        var constructSignatures = getUnionSignatures(type.types, SignatureKind.Construct);
+        var stringIndexType = getUnionIndexType(type.types, IndexKind.String);
+        var numberIndexType = getUnionIndexType(type.types, IndexKind.Number);
+        setObjectTypeMembers(type, emptySymbols, callSignatures, constructSignatures, stringIndexType, numberIndexType);
     }
 
     function resolveAnonymousTypeMembers(type: ObjectType) {
@@ -928,7 +1034,7 @@ module reflect {
                 }
                 if (classType.baseTypes.length) {
                     members = createSymbolTable(getNamedMembers(members));
-                    addInheritedMembers(members, getPropertiesOfType(getTypeOfSymbol(classType.baseTypes[0].symbol)));
+                    addInheritedMembers(members, getPropertiesOfObjectType(getTypeOfSymbol(classType.baseTypes[0].symbol)));
                 }
             }
             var stringIndexType: Type = undefined;
@@ -937,8 +1043,8 @@ module reflect {
         setObjectTypeMembers(type, members, callSignatures, constructSignatures, stringIndexType, numberIndexType);
     }
 
-    function resolveObjectTypeMembers(type: ObjectType): ResolvedObjectType {
-        if (!(<ResolvedObjectType>type).members) {
+    function resolveObjectOrUnionTypeMembers(type: ObjectType): ResolvedType {
+        if (!(<ResolvedType>type).members) {
             if (type.flags & (TypeFlags.Class | TypeFlags.Interface)) {
                 resolveClassOrInterfaceMembers(<InterfaceType>type);
             }
@@ -948,62 +1054,178 @@ module reflect {
             else if (type.flags & TypeFlags.Tuple) {
                 resolveTupleTypeMembers(<TupleType>type);
             }
+            else if (type.flags & TypeFlags.Union) {
+                resolveUnionTypeMembers(<UnionType>type);
+            }
             else {
                 resolveTypeReferenceMembers(<TypeReference>type);
             }
         }
-        return <ResolvedObjectType>type;
+        return <ResolvedType>type;
     }
 
-    export function getPropertiesOfType(type: Type): Symbol[] {
+    // Return properties of an object type or an empty array for other types
+    function getPropertiesOfObjectType(type: Type): Symbol[] {
         if (type.flags & TypeFlags.ObjectType) {
-            return resolveObjectTypeMembers(<ObjectType>type).properties;
+            return resolveObjectOrUnionTypeMembers(<ObjectType>type).properties;
         }
         return emptyArray;
     }
 
+    // If the given type is an object type and that type has a property by the given name, return
+    // the symbol for that property. Otherwise return undefined.
+    function getPropertyOfObjectType(type: Type, name: string): Symbol {
+        if (type.flags & TypeFlags.ObjectType) {
+            var resolved = resolveObjectOrUnionTypeMembers(<ObjectType>type);
+            if (hasProperty(resolved.members, name)) {
+                var symbol = resolved.members[name];
+                if (symbolIsValue(symbol)) {
+                    return symbol;
+                }
+            }
+        }
+    }
+
+    function getPropertiesOfUnionType(type: UnionType): Symbol[] {
+        var result: Symbol[] = [];
+        forEach(getPropertiesOfType(type.types[0]), prop => {
+            var unionProp = getPropertyOfUnionType(type, prop.name);
+            if (unionProp) {
+                result.push(unionProp);
+            }
+        });
+        return result;
+    }
+
+    export function getPropertiesOfType(type: Type): Symbol[] {
+        if (type.flags & TypeFlags.Union) {
+            return getPropertiesOfUnionType(<UnionType>type);
+        }
+        return getPropertiesOfObjectType(getApparentType(type));
+    }
+
+    // For a type parameter, return the base constraint of the type parameter. For the string, number, and
+    // boolean primitive types, return the corresponding object types.Otherwise return the type itself.
+    // Note that the apparent type of a union type is the union type itself.
+    function getApparentType(type: Type): Type {
+        if (type.flags & TypeFlags.TypeParameter) {
+            do {
+                type = getConstraintOfTypeParameter(<TypeParameter>type);
+            } while (type && type.flags & TypeFlags.TypeParameter);
+            if (!type) {
+                type = emptyObjectType;
+            }
+        }
+        if (type.flags & TypeFlags.StringLike) {
+            type = globalStringType;
+        }
+        else if (type.flags & TypeFlags.NumberLike) {
+            type = globalNumberType;
+        }
+        else if (type.flags & TypeFlags.Boolean) {
+            type = globalBooleanType;
+        }
+        return type;
+    }
+
+    function createUnionProperty(unionType: UnionType, name: string): Symbol {
+        var types = unionType.types;
+        var props: Symbol[];
+        for (var i = 0; i < types.length; i++) {
+            var type = getApparentType(types[i]);
+            if (type !== unknownType) {
+                var prop = getPropertyOfType(type, name);
+                if (!prop) {
+                    return undefined;
+                }
+                if (!props) {
+                    props = [prop];
+                }
+                else {
+                    props.push(prop);
+                }
+            }
+        }
+        var propTypes: Type[] = [];
+        var declarations: Declaration[] = [];
+        for (var i = 0; i < props.length; i++) {
+            var prop = props[i];
+            if (prop.declarations) {
+                declarations.push.apply(declarations, prop.declarations);
+            }
+            propTypes.push(getTypeOfSymbol(prop));
+        }
+        var result = <TransientSymbol>createSymbol(SymbolFlags.Property | SymbolFlags.Transient | SymbolFlags.UnionProperty, name);
+        result.unionType = unionType;
+        result.declarations = declarations;
+        result.type = getUnionType(propTypes);
+        return result;
+    }
+
+    function getPropertyOfUnionType(type: UnionType, name: string): Symbol {
+        var properties = type.resolvedProperties || (type.resolvedProperties = {});
+        if (hasProperty(properties, name)) {
+            return properties[name];
+        }
+        var property = createUnionProperty(type, name);
+        if (property) {
+            properties[name] = property;
+        }
+        return property;
+    }
+
+    // Return the symbol for the property with the given name in the given type. Creates synthetic union properties when
+    // necessary, maps primitive types and type parameters are to their apparent types, and augments with properties from
+    // Object and Function as appropriate.
     export function getPropertyOfType(type: Type, name: string): Symbol {
-        if (type.flags & TypeFlags.ObjectType) {
-            var resolved = resolveObjectTypeMembers(<ObjectType>type);
-            if (hasProperty(resolved.members, name)) {
-                var symbol = resolved.members[name];
-                if (symbolIsValue(symbol)) {
-                    return symbol;
-                }
+        if (type.flags & TypeFlags.Union) {
+            return getPropertyOfUnionType(<UnionType>type, name);
+        }
+        if (!(type.flags & TypeFlags.ObjectType)) {
+            type = getApparentType(type);
+            if (!(type.flags & TypeFlags.ObjectType)) {
+                return undefined;
             }
         }
-    }
-
-    function getPropertyOfApparentType(type: ApparentType, name: string): Symbol {
-        if (type.flags & TypeFlags.ObjectType) {
-            var resolved = resolveObjectTypeMembers(<ObjectType>type);
-            if (hasProperty(resolved.members, name)) {
-                var symbol = resolved.members[name];
-                if (symbolIsValue(symbol)) {
-                    return symbol;
-                }
+        var resolved = resolveObjectOrUnionTypeMembers(type);
+        if (hasProperty(resolved.members, name)) {
+            var symbol = resolved.members[name];
+            if (symbolIsValue(symbol)) {
+                return symbol;
             }
-            if (resolved === anyFunctionType || resolved.callSignatures.length || resolved.constructSignatures.length) {
-                var symbol = getPropertyOfType(globalFunctionType, name);
-                if (symbol) return symbol;
-            }
-            return getPropertyOfType(globalObjectType, name);
         }
+        if (resolved === anyFunctionType || resolved.callSignatures.length || resolved.constructSignatures.length) {
+            var symbol = getPropertyOfObjectType(globalFunctionType, name);
+            if (symbol) return symbol;
+        }
+        return getPropertyOfObjectType(globalObjectType, name);
     }
 
-    export function getSignaturesOfType(type: Type, kind: SignatureKind): Signature[] {
-        if (type.flags & TypeFlags.ObjectType) {
-            var resolved = resolveObjectTypeMembers(<ObjectType>type);
+    function getSignaturesOfObjectOrUnionType(type: Type, kind: SignatureKind): Signature[] {
+        if (type.flags & (TypeFlags.ObjectType | TypeFlags.Union)) {
+            var resolved = resolveObjectOrUnionTypeMembers(<ObjectType>type);
             return kind === SignatureKind.Call ? resolved.callSignatures : resolved.constructSignatures;
         }
         return emptyArray;
     }
 
-    export function getIndexTypeOfType(type: Type, kind: IndexKind): Type {
-        if (type.flags & TypeFlags.ObjectType) {
-            var resolved = resolveObjectTypeMembers(<ObjectType>type);
+    // Return the signatures of the given kind in the given type. Creates synthetic union signatures when necessary and
+    // maps primitive types and type parameters are to their apparent types.
+    export function getSignaturesOfType(type: Type, kind: SignatureKind): Signature[] {
+        return getSignaturesOfObjectOrUnionType(getApparentType(type), kind);
+    }
+
+    export function getIndexTypeOfObjectOrUnionType(type: Type, kind: IndexKind): Type {
+        if (type.flags & (TypeFlags.ObjectType | TypeFlags.Union)) {
+            var resolved = resolveObjectOrUnionTypeMembers(<ObjectType>type);
             return kind === IndexKind.String ? resolved.stringIndexType : resolved.numberIndexType;
         }
+    }
+
+    // Return the index type of the given kind in the given type. Creates synthetic union index types when necessary and
+    // maps primitive types and type parameters are to their apparent types.
+    export function getIndexTypeOfType(type: Type, kind: IndexKind): Type {
+        return getIndexTypeOfObjectOrUnionType(getApparentType(type), kind);
     }
 
     // Return list of type parameters with duplicates removed (duplicate identifier errors are generated in the actual
@@ -1081,6 +1303,8 @@ module reflect {
         for (var i = 0, len = symbol.declarations.length; i < len; i++) {
             var node = symbol.declarations[i];
             switch (node.kind) {
+                case NodeKind.FunctionType:
+                case NodeKind.ConstructorType:
                 case NodeKind.FunctionDeclaration:
                 case NodeKind.Method:
                 case NodeKind.Constructor:
@@ -1100,6 +1324,9 @@ module reflect {
             signature.resolvedReturnType = resolvingType;
             if (signature.target) {
                 var type = instantiateType(getReturnTypeOfSignature(signature.target), signature.mapper);
+            }
+            else if (signature.unionSignatures) {
+                var type = getUnionType(map(signature.unionSignatures, getReturnTypeOfSignature));
             }
             if (signature.resolvedReturnType === resolvingType) {
                 signature.resolvedReturnType = type;
@@ -1309,7 +1536,103 @@ module reflect {
         return links.resolvedType;
     }
 
-    function getTypeFromTypeLiteralNode(node: TypeNode): Type {
+    function addTypeToSortedSet(sortedSet: Type[], type: Type) {
+        if (type.flags & TypeFlags.Union) {
+            addTypesToSortedSet(sortedSet, (<UnionType>type).types);
+        }
+        else {
+            var i = 0;
+            var id = type.id;
+            while (i < sortedSet.length && sortedSet[i].id < id) {
+                i++;
+            }
+            if (i === sortedSet.length || sortedSet[i].id !== id) {
+                sortedSet.splice(i, 0, type);
+            }
+        }
+    }
+
+    function addTypesToSortedSet(sortedTypes: Type[], types: Type[]) {
+        for (var i = 0, len = types.length; i < len; i++) {
+            addTypeToSortedSet(sortedTypes, types[i]);
+        }
+    }
+
+    function isSubtypeOfAny(candidate: Type, types: Type[]): boolean {
+        for (var i = 0, len = types.length; i < len; i++) {
+            if (candidate !== types[i] && isTypeSubtypeOf(candidate, types[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function removeSubtypes(types: Type[]) {
+        var i = types.length;
+        while (i > 0) {
+            i--;
+            if (isSubtypeOfAny(types[i], types)) {
+                types.splice(i, 1);
+            }
+        }
+    }
+
+    function containsAnyType(types: Type[]) {
+        for (var i = 0; i < types.length; i++) {
+            if (types[i].flags & TypeFlags.Any) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function removeAllButLast(types: Type[], typeToRemove: Type) {
+        var i = types.length;
+        while (i > 0 && types.length > 1) {
+            i--;
+            if (types[i] === typeToRemove) {
+                types.splice(i, 1);
+            }
+        }
+    }
+
+    function getUnionType(types: Type[], noSubtypeReduction?: boolean): Type {
+        if (types.length === 0) {
+            return emptyObjectType;
+        }
+        var sortedTypes: Type[] = [];
+        addTypesToSortedSet(sortedTypes, types);
+        if (noSubtypeReduction) {
+            if (containsAnyType(sortedTypes)) {
+                return anyType;
+            }
+            removeAllButLast(sortedTypes, undefinedType);
+            removeAllButLast(sortedTypes, nullType);
+        }
+        else {
+            removeSubtypes(sortedTypes);
+        }
+        if (sortedTypes.length === 1) {
+            return sortedTypes[0];
+        }
+        var id = getTypeListId(sortedTypes);
+        var type = unionTypes[id];
+        if (!type) {
+            type = unionTypes[id] = <UnionType>createObjectType(TypeFlags.Union);
+            type.types = sortedTypes;
+        }
+        return type;
+    }
+
+    function getTypeFromUnionTypeNode(node: UnionTypeNode): Type {
+        var links = getNodeLinks(node);
+        if (!links.resolvedType) {
+            links.resolvedType = getUnionType(map(node.types, getTypeFromTypeNode), /*noSubtypeReduction*/ true);
+        }
+        return links.resolvedType;
+    }
+
+    function getTypeFromTypeLiteralOrFunctionOrConstructorTypeNode(node: Node): Type {
         var links = getNodeLinks(node);
         if (!links.resolvedType) {
             // Deferred resolution of members is handled by resolveObjectTypeMembers
@@ -1343,10 +1666,12 @@ module reflect {
                 return getTypeFromArrayTypeNode(<ArrayTypeNode>node);
             case NodeKind.TupleType:
                 return getTypeFromTupleTypeNode(<TupleTypeNode>node);
+            case NodeKind.UnionType:
+                return getTypeFromUnionTypeNode(<UnionTypeNode>node);
             case NodeKind.FunctionType:
             case NodeKind.ConstructorType:
             case NodeKind.ObjectType:
-                return getTypeFromTypeLiteralNode(<TypeNode>node);
+                return getTypeFromTypeLiteralOrFunctionOrConstructorTypeNode(node);
             default:
                 return unknownType;
         }
@@ -1452,7 +1777,7 @@ module reflect {
 
         // Keep the flags from the symbol we're instantiating.  Mark that is instantiated, and
         // also transient so that we can just store data on it directly.
-        var result = <TransientSymbol>createSymbol(SymbolFlags.Instantiated | SymbolFlags.Transient, symbol.name);
+        var result = <TransientSymbol>createSymbol(SymbolFlags.Instantiated | SymbolFlags.Transient | symbol.flags, symbol.name);
         result.declarations = symbol.declarations;
         result.parent = symbol.parent;
         result.target = symbol;
@@ -1465,8 +1790,8 @@ module reflect {
     }
 
     function instantiateAnonymousType(type: ObjectType, mapper: TypeMapper): ObjectType {
-        var result = <ResolvedObjectType>createObjectType(TypeFlags.Anonymous, type.symbol);
-        result.properties = instantiateList(getPropertiesOfType(type), mapper, instantiateSymbol);
+        var result = <ResolvedType>createObjectType(TypeFlags.Anonymous, type.symbol);
+        result.properties = instantiateList(getPropertiesOfObjectType(type), mapper, instantiateSymbol);
         result.members = createSymbolTable(result.properties);
         result.callSignatures = instantiateList(getSignaturesOfType(type, SignatureKind.Call), mapper, instantiateSignature);
         result.constructSignatures = instantiateList(getSignaturesOfType(type, SignatureKind.Construct), mapper, instantiateSignature);
@@ -1491,6 +1816,9 @@ module reflect {
             }
             if (type.flags & TypeFlags.Tuple) {
                 return createTupleType(instantiateList((<TupleType>type).elementTypes, mapper, instantiateType));
+            }
+            if (type.flags & TypeFlags.Union) {
+                return getUnionType(instantiateList((<UnionType>type).types, mapper, instantiateType), /*noSubtypeReduction*/ true);
             }
         }
         return type;
@@ -1553,7 +1881,9 @@ module reflect {
         return name;
     }
 
+
     // TYPE CHECKING
+
     var subtypeRelation: Map<boolean> = {};
     var assignableRelation: Map<boolean> = {};
     var identityRelation: Map<boolean> = {};
@@ -1570,27 +1900,8 @@ module reflect {
         return checkTypeRelatedTo(source, target, assignableRelation, diagnostics);
     }
 
-    function isPropertyIdenticalToRecursive(sourceProp: Symbol, targetProp: Symbol, reportErrors: boolean, relate: (source: Type, target: Type, reportErrors: boolean) => boolean): boolean {
-
-        if (!targetProp) {
-            return false;
-        }
-
-        // Two members are considered identical when
-        // - they are public properties with identical names, optionality, and types,
-        // - they are private properties originating in the same declaration and having identical types
-        var sourcePropIsPrivate = getDeclarationFlagsFromSymbol(sourceProp) & NodeFlags.Private;
-        var targetPropIsPrivate = getDeclarationFlagsFromSymbol(targetProp) & NodeFlags.Private;
-        if (sourcePropIsPrivate !== targetPropIsPrivate) {
-            return false;
-        }
-
-        if (sourcePropIsPrivate) {
-            return (getTargetSymbol(sourceProp).parent === getTargetSymbol(targetProp).parent) && relate(getTypeOfSymbol(sourceProp), getTypeOfSymbol(targetProp), reportErrors);
-        }
-        else {
-            return isOptionalProperty(sourceProp) === isOptionalProperty(targetProp) && relate(getTypeOfSymbol(sourceProp), getTypeOfSymbol(targetProp), reportErrors);
-        }
+    function compareTypes(source: Type, target: Type): Ternary {
+        return checkTypeRelatedTo(source, target, identityRelation, /*errorNode*/ undefined) ? Ternary.True : Ternary.False;
     }
 
     function getTargetSymbol(s: Symbol) {
@@ -1600,16 +1911,18 @@ module reflect {
     }
 
     function checkTypeRelatedTo(source: Type, target: Type, relation: Map<boolean>, diagnostics: Diagnostic[]): boolean {
+
         var errorInfo: DiagnosticMessageChain;
         var sourceStack: ObjectType[];
         var targetStack: ObjectType[];
+        var maybeStack: Map<boolean>[];
         var expandingFlags: number;
         var depth = 0;
         var overflow = false;
 
         var result = isRelatedTo(source, target, true);
         if (overflow) {
-            error(undefined, Diagnostics.Excessive_stack_depth_comparing_types_0_and_1, typeToString(source), typeToString(target));
+            error(undefined, Diagnostics.Excessive_stack_depth_comparing_types_0_and_1, sourceTypeString(), targetTypeString());
         }
         else if (errorInfo && diagnostics) {
 
@@ -1620,7 +1933,7 @@ module reflect {
                 chain = chain.next;
             }
         }
-        return result;
+        return result !== Ternary.False;
 
         function sourceTypeString() {
             return typeToString(source, "source");
@@ -1635,46 +1948,60 @@ module reflect {
             errorInfo = chainDiagnosticMessages(errorInfo, new Diagnostic(undefined, message, arg0, arg1, arg2));
         }
 
-        function isRelatedTo(source: Type, target: Type, reportErrors: boolean): boolean {
+        // Compare two types and return
+        // Ternary.True if they are related with no assumptions,
+        // Ternary.Maybe if they are related with assumptions of other relationships, or
+        // Ternary.False if they are not related.
+        function isRelatedTo(source: Type, target: Type, reportErrors?: boolean): Ternary {
+            var result: Ternary;
             if (relation === identityRelation) {
                 // both types are the same - covers 'they are the same primitive type or both are Any' or the same type parameter cases
-                if (source === target) return true;
+                if (source === target) return Ternary.True;
             }
             else {
-                if (source === target) return true;
-                if (target.flags & TypeFlags.Any) return true;
-                if (source === undefinedType) return true;
-                if (source === nullType && target !== undefinedType) return true;
-                if (source.flags & TypeFlags.Enum && target === numberType) return true;
-                if (source.flags & TypeFlags.StringLiteral && target === stringType) return true;
+                if (source === target) return Ternary.True;
+                if (target.flags & TypeFlags.Any) return Ternary.True;
+                if (source === undefinedType) return Ternary.True;
+                if (source === nullType && target !== undefinedType) return Ternary.True;
+                if (source.flags & TypeFlags.Enum && target === numberType) return Ternary.True;
+                if (source.flags & TypeFlags.StringLiteral && target === stringType) return Ternary.True;
                 if (relation === assignableRelation) {
-                    if (source.flags & TypeFlags.Any) return true;
-                    if (source === numberType && target.flags & TypeFlags.Enum) return true;
+                    if (source.flags & TypeFlags.Any) return Ternary.True;
+                    if (source === numberType && target.flags & TypeFlags.Enum) return Ternary.True;
                 }
             }
-
-            if (source.flags & TypeFlags.TypeParameter && target.flags & TypeFlags.TypeParameter) {
-                if (typeParameterRelatedTo(<TypeParameter>source, <TypeParameter>target, reportErrors)) {
-                    return true;
+            if (source.flags & TypeFlags.Union) {
+                if (result = unionTypeRelatedToType(<UnionType>source, target, reportErrors)) {
+                    return result;
+                }
+            }
+            else if (target.flags & TypeFlags.Union) {
+                if (result = typeRelatedToUnionType(source, <UnionType>target, reportErrors)) {
+                    return result;
+                }
+            }
+            else if (source.flags & TypeFlags.TypeParameter && target.flags & TypeFlags.TypeParameter) {
+                if (result = typeParameterRelatedTo(<TypeParameter>source, <TypeParameter>target, reportErrors)) {
+                    return result;
                 }
             }
             else {
                 var saveErrorInfo = errorInfo;
                 if (source.flags & TypeFlags.Reference && target.flags & TypeFlags.Reference && (<TypeReference>source).target === (<TypeReference>target).target) {
                     // We have type references to same target type, see if relationship holds for all type arguments
-                    if (typesRelatedTo((<TypeReference>source).typeArguments, (<TypeReference>target).typeArguments, reportErrors)) {
-                        return true;
+                    if (result = typesRelatedTo((<TypeReference>source).typeArguments, (<TypeReference>target).typeArguments, reportErrors)) {
+                        return result;
                     }
                 }
                 // Even if relationship doesn't hold for type arguments, it may hold in a structural comparison
                 // Report structural errors only if we haven't reported any errors yet
                 var reportStructuralErrors = reportErrors && errorInfo === saveErrorInfo;
                 // identity relation does not use apparent type
-                var sourceOrApparentType =  relation === identityRelation ? source : getApparentType(source);
+                var sourceOrApparentType = relation === identityRelation ? source : getApparentType(source);
                 if (sourceOrApparentType.flags & TypeFlags.ObjectType && target.flags & TypeFlags.ObjectType &&
-                    objectTypeRelatedTo(sourceOrApparentType, <ObjectType>target, reportStructuralErrors)) {
+                    (result = objectTypeRelatedTo(sourceOrApparentType, <ObjectType>target, reportStructuralErrors))) {
                     errorInfo = saveErrorInfo;
-                    return true;
+                    return result;
                 }
             }
             if (reportErrors) {
@@ -1688,41 +2015,67 @@ module reflect {
 
                 reportError(diagnosticKey, sourceTypeString(), targetTypeString());
             }
-            return false;
+            return Ternary.False;
         }
 
-        function typesRelatedTo(sources: Type[], targets: Type[], reportErrors: boolean): boolean {
-            for (var i = 0, len = sources.length; i < len; i++) {
-                if (!isRelatedTo(sources[i], targets[i], reportErrors)) return false;
+        function typeRelatedToUnionType(source: Type, target: UnionType, reportErrors: boolean): Ternary {
+            var targetTypes = target.types;
+            for (var i = 0, len = targetTypes.length; i < len; i++) {
+                var related = isRelatedTo(source, targetTypes[i], reportErrors && i === len - 1);
+                if (related) {
+                    return related;
+                }
             }
-            return true;
+            return Ternary.False;
         }
 
-        function typeParameterRelatedTo(source: TypeParameter, target: TypeParameter, reportErrors: boolean): boolean {
+        function unionTypeRelatedToType(source: UnionType, target: Type, reportErrors: boolean): Ternary {
+            var result = Ternary.True;
+            var sourceTypes = source.types;
+            for (var i = 0, len = sourceTypes.length; i < len; i++) {
+                var related = isRelatedTo(sourceTypes[i], target, reportErrors);
+                if (!related) {
+                    return Ternary.False;
+                }
+                result &= related;
+            }
+            return result;
+        }
+
+        function typesRelatedTo(sources: Type[], targets: Type[], reportErrors: boolean): Ternary {
+            var result = Ternary.True;
+            for (var i = 0, len = sources.length; i < len; i++) {
+                var related = isRelatedTo(sources[i], targets[i], reportErrors);
+                if (!related) {
+                    return Ternary.False;
+                }
+                result &= related;
+            }
+            return result;
+        }
+
+        function typeParameterRelatedTo(source: TypeParameter, target: TypeParameter, reportErrors: boolean): Ternary {
             if (relation === identityRelation) {
                 if (source.symbol.name !== target.symbol.name) {
-                    return false;
+                    return Ternary.False;
                 }
-
                 // covers case when both type parameters does not have constraint (both equal to noConstraintType)
                 if (source.constraint === target.constraint) {
-                    return true;
+                    return Ternary.True;
                 }
-
                 if (source.constraint === noConstraintType || target.constraint === noConstraintType) {
-                    return false;
+                    return Ternary.False;
                 }
-
                 return isRelatedTo(source.constraint, target.constraint, reportErrors);
             }
             else {
                 while (true) {
                     var constraint = getConstraintOfTypeParameter(source);
-                    if (constraint === target) return true;
+                    if (constraint === target) return Ternary.True;
                     if (!(constraint && constraint.flags & TypeFlags.TypeParameter)) break;
                     source = <TypeParameter>constraint;
                 }
-                return false;
+                return Ternary.False;
             }
         }
 
@@ -1731,41 +2084,73 @@ module reflect {
         // Third, check if both types are part of deeply nested chains of generic type instantiations and if so assume the types are
         // equal and infinitely expanding. Fourth, if we have reached a depth of 100 nested comparisons, assume we have runaway recursion
         // and issue an error. Otherwise, actually compare the structure of the two types.
-        function objectTypeRelatedTo(source: ObjectType, target: ObjectType, reportErrors: boolean): boolean {
-            if (overflow) return false;
-            var result: boolean;
+        function objectTypeRelatedTo(source: ObjectType, target: ObjectType, reportErrors: boolean): Ternary {
+            if (overflow) {
+                return Ternary.False;
+            }
             var id = source.id + "," + target.id;
-            if ((result = relation[id]) !== undefined) return result;
+            var related = relation[id];
+            if (related !== undefined) {
+                return related ? Ternary.True : Ternary.False;
+            }
             if (depth > 0) {
                 for (var i = 0; i < depth; i++) {
-                    if (source === sourceStack[i] && target === targetStack[i]) return true;
+                    // If source and target are already being compared, consider them related with assumptions
+                    if (maybeStack[i][id]) {
+                        return Ternary.Maybe;
+                    }
                 }
                 if (depth === 100) {
                     overflow = true;
-                    return false;
+                    return Ternary.False;
                 }
             }
             else {
                 sourceStack = [];
                 targetStack = [];
+                maybeStack = [];
                 expandingFlags = 0;
             }
             sourceStack[depth] = source;
             targetStack[depth] = target;
+            maybeStack[depth] = {};
+            maybeStack[depth][id] = true;
             depth++;
             var saveExpandingFlags = expandingFlags;
             if (!(expandingFlags & 1) && isDeeplyNestedGeneric(source, sourceStack)) expandingFlags |= 1;
             if (!(expandingFlags & 2) && isDeeplyNestedGeneric(target, targetStack)) expandingFlags |= 2;
-            result = expandingFlags === 3 ||
-            propertiesRelatedTo(source, target, reportErrors) &&
-            signaturesRelatedTo(source, target, SignatureKind.Call, reportErrors) &&
-            signaturesRelatedTo(source, target, SignatureKind.Construct, reportErrors) &&
-            stringIndexTypesRelatedTo(source, target, reportErrors) &&
-            numberIndexTypesRelatedTo(source, target, reportErrors);
+            if (expandingFlags === 3) {
+                var result = Ternary.Maybe;
+            }
+            else {
+                var result = propertiesRelatedTo(source, target, reportErrors);
+                if (result) {
+                    result &= signaturesRelatedTo(source, target, SignatureKind.Call, reportErrors);
+                    if (result) {
+                        result &= signaturesRelatedTo(source, target, SignatureKind.Construct, reportErrors);
+                        if (result) {
+                            result &= stringIndexTypesRelatedTo(source, target, reportErrors);
+                            if (result) {
+                                result &= numberIndexTypesRelatedTo(source, target, reportErrors);
+                            }
+                        }
+                    }
+                }
+            }
             expandingFlags = saveExpandingFlags;
             depth--;
-            if (depth === 0) {
-                relation[id] = result;
+            if (result) {
+                var maybeCache = maybeStack[depth];
+                // If result is definitely true, copy assumptions to global cache, else copy to next level up
+                var destinationCache = result === Ternary.True || depth === 0 ? relation : maybeStack[depth - 1];
+                for (var p in maybeCache) {
+                    destinationCache[p] = maybeCache[p];
+                }
+            }
+            else {
+                // A false result goes straight into global cache (when something is false under assumptions it
+                // will also be false without assumptions)
+                relation[id] = false;
             }
             return result;
         }
@@ -1790,50 +2175,22 @@ module reflect {
             return false;
         }
 
-        function propertiesRelatedTo(source: ObjectType, target: ObjectType, reportErrors: boolean): boolean {
+        function propertiesRelatedTo(source: ObjectType, target: ObjectType, reportErrors: boolean): Ternary {
             if (relation === identityRelation) {
-                return propertiesAreIdenticalTo(source, target, reportErrors);
+                return propertiesIdenticalTo(source, target);
             }
-            else {
-                return propertiesAreSubtypeOrAssignableTo(<ApparentType>source, target, reportErrors);
-            }
-        }
-
-        function propertiesAreIdenticalTo(source: ObjectType, target: ObjectType, reportErrors: boolean): boolean {
-            if (source === target) {
-                return true;
-            }
-
-            var sourceProperties = getPropertiesOfType(source);
-            var targetProperties = getPropertiesOfType(target);
-            if (sourceProperties.length !== targetProperties.length) {
-                return false;
-            }
-
-            for (var i = 0, len = sourceProperties.length; i < len; ++i) {
-                var sourceProp = sourceProperties[i];
-                var targetProp = getPropertyOfType(target, sourceProp.name);
-
-                if (!isPropertyIdenticalToRecursive(sourceProp, targetProp, reportErrors, isRelatedTo)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        function propertiesAreSubtypeOrAssignableTo(source: ApparentType, target: ObjectType, reportErrors: boolean): boolean {
-            var properties = getPropertiesOfType(target);
+            var result = Ternary.True;
+            var properties = getPropertiesOfObjectType(target);
             for (var i = 0; i < properties.length; i++) {
                 var targetProp = properties[i];
-                var sourceProp = getPropertyOfApparentType(source, targetProp.name);
+                var sourceProp = getPropertyOfType(source, targetProp.name);
                 if (sourceProp !== targetProp) {
                     if (!sourceProp) {
-                        if (!isOptionalProperty(targetProp)) {
+                        if (relation === subtypeRelation || !isOptionalProperty(targetProp)) {
                             if (reportErrors) {
                                 reportError(Diagnostics.Property_0_is_missing_in_type_1, symbolToString(targetProp), sourceTypeString());
                             }
-                            return false;
+                            return Ternary.False;
                         }
                     }
                     else if (!(targetProp.flags & SymbolFlags.Prototype)) {
@@ -1849,9 +2206,10 @@ module reflect {
                                         reportError(Diagnostics.Property_0_is_private_in_type_1_but_not_in_type_2, symbolToString(targetProp),
                                             sourceFlags & NodeFlags.Private ? sourceTypeString() : targetTypeString(),
                                             sourceFlags & NodeFlags.Private ? targetTypeString() : sourceTypeString());
+
                                     }
                                 }
-                                return false;
+                                return Ternary.False;
                             }
                         }
                         else if (targetFlags & NodeFlags.Protected) {
@@ -1861,9 +2219,9 @@ module reflect {
                             if (!sourceClass || !hasBaseType(sourceClass, targetClass)) {
                                 if (reportErrors) {
                                     reportError(Diagnostics.Property_0_is_protected_but_type_1_is_not_a_class_derived_from_2,
-                                        symbolToString(targetProp), typeToString(sourceClass || <Type>source, "source"), typeToString(targetClass, "target"));
+                                        symbolToString(targetProp), typeToString(sourceClass || source, "source"), typeToString(targetClass, "target"));
                                 }
-                                return false;
+                                return Ternary.False;
                             }
                         }
                         else if (sourceFlags & NodeFlags.Protected) {
@@ -1871,14 +2229,16 @@ module reflect {
                                 reportError(Diagnostics.Property_0_is_protected_in_type_1_but_public_in_type_2,
                                     symbolToString(targetProp), sourceTypeString(), targetTypeString());
                             }
-                            return false;
+                            return Ternary.False;
                         }
-                        if (!isRelatedTo(getTypeOfSymbol(sourceProp), getTypeOfSymbol(targetProp), reportErrors)) {
+                        var related = isRelatedTo(getTypeOfSymbol(sourceProp), getTypeOfSymbol(targetProp), reportErrors);
+                        if (!related) {
                             if (reportErrors) {
-                                reportError(Diagnostics.Types_of_property_0_are_incompatible_Colon, symbolToString(targetProp));
+                                reportError(Diagnostics.Types_of_property_0_are_incompatible, symbolToString(targetProp));
                             }
-                            return false;
+                            return Ternary.False;
                         }
+                        result &= related;
                         if (isOptionalProperty(sourceProp) && !isOptionalProperty(targetProp)) {
                             // TypeScript 1.0 spec (April 2014): 3.8.3
                             // S is a subtype of a type T, and T is a supertype of S if ...
@@ -1891,91 +2251,46 @@ module reflect {
                                 reportError(Diagnostics.Property_0_is_optional_in_type_1_but_required_in_type_2,
                                     symbolToString(targetProp), sourceTypeString(), targetTypeString());
                             }
-                            return false;
+                            return Ternary.False;
                         }
                     }
                 }
             }
-            return true;
+            return result;
         }
 
-        function signaturesRelatedTo(source: ObjectType, target: ObjectType, kind: SignatureKind, reportErrors: boolean): boolean {
+        function propertiesIdenticalTo(source: ObjectType, target: ObjectType): Ternary {
+            var sourceProperties = getPropertiesOfObjectType(source);
+            var targetProperties = getPropertiesOfObjectType(target);
+            if (sourceProperties.length !== targetProperties.length) {
+                return Ternary.False;
+            }
+            var result = Ternary.True;
+            for (var i = 0, len = sourceProperties.length; i < len; ++i) {
+                var sourceProp = sourceProperties[i];
+                var targetProp = getPropertyOfObjectType(target, sourceProp.name);
+                if (!targetProp) {
+                    return Ternary.False;
+                }
+                var related = compareProperties(sourceProp, targetProp, isRelatedTo);
+                if (!related) {
+                    return Ternary.False;
+                }
+                result &= related;
+            }
+            return result;
+        }
+
+        function signaturesRelatedTo(source: ObjectType, target: ObjectType, kind: SignatureKind, reportErrors: boolean): Ternary {
             if (relation === identityRelation) {
-                return areSignaturesIdenticalTo(source, target, kind, reportErrors);
+                return signaturesIdenticalTo(source, target, kind);
             }
-            else {
-                return areSignaturesSubtypeOrAssignableTo(source, target, kind, reportErrors);
+            if (target === anyFunctionType || source === anyFunctionType) {
+                return Ternary.True;
             }
-        }
-
-        function areSignaturesIdenticalTo(source: ObjectType, target: ObjectType, kind: SignatureKind, reportErrors: boolean): boolean {
             var sourceSignatures = getSignaturesOfType(source, kind);
             var targetSignatures = getSignaturesOfType(target, kind);
-            if (sourceSignatures.length !== targetSignatures.length) {
-                return false;
-            }
-
-            for (var i = 0, len = sourceSignatures.length; i < len; ++i) {
-                if (!isSignatureIdenticalTo(sourceSignatures[i], targetSignatures[i], reportErrors)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        function isSignatureIdenticalTo(source: Signature, target: Signature, reportErrors: boolean): boolean {
-            if (source === target) {
-                return true;
-            }
-
-            if (source.hasRestParameter !== target.hasRestParameter) {
-                return false;
-            }
-
-            if (source.parameters.length !== target.parameters.length) {
-                return false;
-            }
-
-            if (source.minArgumentCount !== target.minArgumentCount) {
-                return false;
-            }
-
-            if (source.typeParameters && target.typeParameters) {
-                if (source.typeParameters.length !== target.typeParameters.length) {
-                    return false;
-                }
-
-                for (var i = 0, len = source.typeParameters.length; i < len; ++i) {
-                    if (!isRelatedTo(source.typeParameters[i], target.typeParameters[i], reportErrors)) {
-                        return false;
-                    }
-                }
-            }
-            else if (source.typeParameters || source.typeParameters) {
-                return false;
-            }
-
-            // Spec 1.0 Section 3.8.3 & 3.8.4:
-            // M and N (the signatures) are instantiated using type Any as the type argument for all type parameters declared by M and N
-            source = getErasedSignature(source);
-            target = getErasedSignature(target);
-            for (var i = 0, len = source.parameters.length; i < len; i++) {
-                var s = source.hasRestParameter && i === len - 1 ? getRestTypeOfSignature(source) : getTypeOfSymbol(source.parameters[i]);
-                var t = target.hasRestParameter && i === len - 1 ? getRestTypeOfSignature(target) : getTypeOfSymbol(target.parameters[i]);
-                if (!isRelatedTo(s, t, reportErrors)) {
-                    return false;
-                }
-            }
-            var t = getReturnTypeOfSignature(target);
-            var s = getReturnTypeOfSignature(source);
-            return isRelatedTo(s, t, reportErrors);
-        }
-
-        function areSignaturesSubtypeOrAssignableTo(source: ObjectType, target: ObjectType, kind: SignatureKind, reportErrors: boolean): boolean {
-            if (target === anyFunctionType || source === anyFunctionType) return true;
-            var sourceSignatures = getSignaturesOfType(source, kind);
-            var targetSignatures = getSignaturesOfType(target, kind);
+            var result = Ternary.True;
             var saveErrorInfo = errorInfo;
             outer: for (var i = 0; i < targetSignatures.length; i++) {
                 var t = targetSignatures[i];
@@ -1984,7 +2299,9 @@ module reflect {
                     for (var j = 0; j < sourceSignatures.length; j++) {
                         var s = sourceSignatures[j];
                         if (!s.hasStringLiterals || source.flags & TypeFlags.FromSignature) {
-                            if (isSignatureSubtypeOrAssignableTo(s, t, localErrors)) {
+                            var related = signatureRelatedTo(s, t, localErrors);
+                            if (related) {
+                                result &= related;
                                 errorInfo = saveErrorInfo;
                                 continue outer;
                             }
@@ -1992,21 +2309,19 @@ module reflect {
                             localErrors = false;
                         }
                     }
-                    return false;
+                    return Ternary.False;
                 }
             }
-            return true;
+            return result;
         }
 
-        function isSignatureSubtypeOrAssignableTo(source: Signature, target: Signature, reportErrors: boolean): boolean {
+        function signatureRelatedTo(source: Signature, target: Signature, reportErrors: boolean): Ternary {
             if (source === target) {
-                return true;
+                return Ternary.True;
             }
-
             if (!target.hasRestParameter && source.minArgumentCount > target.parameters.length) {
-                return false;
+                return Ternary.False;
             }
-
             var sourceMax = source.parameters.length;
             var targetMax = target.parameters.length;
             var checkCount: number;
@@ -2030,103 +2345,186 @@ module reflect {
             // M and N (the signatures) are instantiated using type Any as the type argument for all type parameters declared by M and N
             source = getErasedSignature(source);
             target = getErasedSignature(target);
+            var result = Ternary.True;
             for (var i = 0; i < checkCount; i++) {
                 var s = i < sourceMax ? getTypeOfSymbol(source.parameters[i]) : getRestTypeOfSignature(source);
                 var t = i < targetMax ? getTypeOfSymbol(target.parameters[i]) : getRestTypeOfSignature(target);
                 var saveErrorInfo = errorInfo;
-                if (!isRelatedTo(s, t, reportErrors)) {
-                    if (!isRelatedTo(t, s, false)) {
+                var related = isRelatedTo(s, t, reportErrors);
+                if (!related) {
+                    related = isRelatedTo(t, s, false);
+                    if (!related) {
                         if (reportErrors) {
-                            reportError(Diagnostics.Types_of_parameters_0_and_1_are_incompatible_Colon,
+                            reportError(Diagnostics.Types_of_parameters_0_and_1_are_incompatible,
                                 source.parameters[i < sourceMax ? i : sourceMax].name,
                                 target.parameters[i < targetMax ? i : targetMax].name);
                         }
-                        return false;
+                        return Ternary.False;
                     }
                     errorInfo = saveErrorInfo;
                 }
+                result &= related;
             }
             var t = getReturnTypeOfSignature(target);
-            if (t === voidType) return true;
+            if (t === voidType) return result;
             var s = getReturnTypeOfSignature(source);
-            return isRelatedTo(s, t, reportErrors);
+            return result & isRelatedTo(s, t, reportErrors);
         }
 
-        function stringIndexTypesRelatedTo(source: ObjectType, target: ObjectType, reportErrors: boolean): boolean {
-            if (relation === identityRelation) {
-                return areIndexTypesIdenticalTo(IndexKind.String, source, target, reportErrors);
+        function signaturesIdenticalTo(source: ObjectType, target: ObjectType, kind: SignatureKind): Ternary {
+            var sourceSignatures = getSignaturesOfType(source, kind);
+            var targetSignatures = getSignaturesOfType(target, kind);
+            if (sourceSignatures.length !== targetSignatures.length) {
+                return Ternary.False;
             }
-            else {
-                var targetType = getIndexTypeOfType(target, IndexKind.String);
-                if (targetType) {
-                    var sourceType = getIndexTypeOfType(source, IndexKind.String);
-                    if (!sourceType) {
-                        if (reportErrors) {
-                            reportError(Diagnostics.Index_signature_is_missing_in_type_0, sourceTypeString());
-                        }
-                        return false;
-                    }
-                    if (!isRelatedTo(sourceType, targetType, reportErrors)) {
-                        if (reportErrors) {
-                            reportError(Diagnostics.Index_signatures_are_incompatible_Colon);
-                        }
-                        return false;
-                    }
+            var result = Ternary.True;
+            for (var i = 0, len = sourceSignatures.length; i < len; ++i) {
+                var related = compareSignatures(sourceSignatures[i], targetSignatures[i], /*compareReturnTypes*/ true, isRelatedTo);
+                if (!related) {
+                    return Ternary.False;
                 }
-                return true;
+                result &= related;
             }
+            return result;
         }
 
-        function numberIndexTypesRelatedTo(source: ObjectType, target: ObjectType, reportErrors: boolean): boolean {
+        function stringIndexTypesRelatedTo(source: ObjectType, target: ObjectType, reportErrors: boolean): Ternary {
             if (relation === identityRelation) {
-                return areIndexTypesIdenticalTo(IndexKind.Number, source, target, reportErrors);
+                return indexTypesIdenticalTo(IndexKind.String, source, target);
             }
-            else {
-                var targetType = getIndexTypeOfType(target, IndexKind.Number);
-                if (targetType) {
-                    var sourceStringType = getIndexTypeOfType(source, IndexKind.String);
-                    var sourceNumberType = getIndexTypeOfType(source, IndexKind.Number);
-                    if (!(sourceStringType || sourceNumberType)) {
-                        if (reportErrors) {
-                            reportError(Diagnostics.Index_signature_is_missing_in_type_0, sourceTypeString());
-                        }
-                        return false;
+            var targetType = getIndexTypeOfType(target, IndexKind.String);
+            if (targetType) {
+                var sourceType = getIndexTypeOfType(source, IndexKind.String);
+                if (!sourceType) {
+                    if (reportErrors) {
+                        reportError(Diagnostics.Index_signature_is_missing_in_type_0, sourceTypeString());
                     }
-                    if (sourceStringType && sourceNumberType) {
-                        // If we know for sure we're testing both string and numeric index types then only report errors from the second one
-                        var compatible = isRelatedTo(sourceStringType, targetType, false) || isRelatedTo(sourceNumberType, targetType, reportErrors);
-                    }
-                    else {
-                        var compatible = isRelatedTo(sourceStringType || sourceNumberType, targetType, reportErrors);
-                    }
-                    if (!compatible) {
-                        if (reportErrors) {
-                            reportError(Diagnostics.Index_signatures_are_incompatible_Colon);
-                        }
-                        return false;
-                    }
+                    return Ternary.False;
                 }
-                return true;
+                var related = isRelatedTo(sourceType, targetType, reportErrors);
+                if (!related) {
+                    if (reportErrors) {
+                        reportError(Diagnostics.Index_signatures_are_incompatible);
+                    }
+                    return Ternary.False;
+                }
+                return related;
             }
+            return Ternary.True;
         }
 
-        function areIndexTypesIdenticalTo(indexKind: IndexKind, source: ObjectType, target: ObjectType, reportErrors: boolean): boolean {
+        function numberIndexTypesRelatedTo(source: ObjectType, target: ObjectType, reportErrors: boolean): Ternary {
+            if (relation === identityRelation) {
+                return indexTypesIdenticalTo(IndexKind.Number, source, target);
+            }
+            var targetType = getIndexTypeOfType(target, IndexKind.Number);
+            if (targetType) {
+                var sourceStringType = getIndexTypeOfType(source, IndexKind.String);
+                var sourceNumberType = getIndexTypeOfType(source, IndexKind.Number);
+                if (!(sourceStringType || sourceNumberType)) {
+                    if (reportErrors) {
+                        reportError(Diagnostics.Index_signature_is_missing_in_type_0, sourceTypeString());
+                    }
+                    return Ternary.False;
+                }
+                if (sourceStringType && sourceNumberType) {
+                    // If we know for sure we're testing both string and numeric index types then only report errors from the second one
+                    var related = isRelatedTo(sourceStringType, targetType, false) || isRelatedTo(sourceNumberType, targetType, reportErrors);
+                }
+                else {
+                    var related = isRelatedTo(sourceStringType || sourceNumberType, targetType, reportErrors);
+                }
+                if (!related) {
+                    if (reportErrors) {
+                        reportError(Diagnostics.Index_signatures_are_incompatible);
+                    }
+                    return Ternary.False;
+                }
+                return related;
+            }
+            return Ternary.True;
+        }
+
+        function indexTypesIdenticalTo(indexKind: IndexKind, source: ObjectType, target: ObjectType): Ternary {
             var targetType = getIndexTypeOfType(target, indexKind);
             var sourceType = getIndexTypeOfType(source, indexKind);
-            return (!sourceType && !targetType) || (sourceType && targetType && isRelatedTo(sourceType, targetType, reportErrors));
+            if (!sourceType && !targetType) {
+                return Ternary.True;
+            }
+            if (sourceType && targetType) {
+                return isRelatedTo(sourceType, targetType);
+            }
+            return Ternary.False;
         }
     }
 
-    function isSupertypeOfEach(candidate: Type, types: Type[]): boolean {
-        for (var i = 0, len = types.length; i < len; i++) {
-            if (candidate !== types[i] && !isTypeSubtypeOf(types[i], candidate)) return false;
+    function compareProperties(sourceProp: Symbol, targetProp: Symbol, compareTypes: (source: Type, target: Type) => Ternary): Ternary {
+        // Two members are considered identical when
+        // - they are public properties with identical names, optionality, and types,
+        // - they are private or protected properties originating in the same declaration and having identical types
+        if (sourceProp === targetProp) {
+            return Ternary.True;
         }
-        return true;
+        var sourcePropAccessibility = getDeclarationFlagsFromSymbol(sourceProp) & (NodeFlags.Private | NodeFlags.Protected);
+        var targetPropAccessibility = getDeclarationFlagsFromSymbol(targetProp) & (NodeFlags.Private | NodeFlags.Protected);
+        if (sourcePropAccessibility !== targetPropAccessibility) {
+            return Ternary.False;
+        }
+        if (sourcePropAccessibility) {
+            if (getTargetSymbol(sourceProp) !== getTargetSymbol(targetProp)) {
+                return Ternary.False;
+            }
+        }
+        else {
+            if (isOptionalProperty(sourceProp) !== isOptionalProperty(targetProp)) {
+                return Ternary.False;
+            }
+        }
+        return compareTypes(getTypeOfSymbol(sourceProp), getTypeOfSymbol(targetProp));
     }
 
-    function getBestCommonType(types: Type[], contextualType?: Type, candidatesOnly?: boolean): Type {
-        if (contextualType && isSupertypeOfEach(contextualType, types)) return contextualType;
-        return forEach(types, t => isSupertypeOfEach(t, types) ? t : undefined) || (candidatesOnly ? undefined : emptyObjectType);
+    function compareSignatures(source: Signature, target: Signature, compareReturnTypes: boolean, compareTypes: (s: Type, t: Type) => Ternary): Ternary {
+        if (source === target) {
+            return Ternary.True;
+        }
+        if (source.parameters.length !== target.parameters.length ||
+            source.minArgumentCount !== target.minArgumentCount ||
+            source.hasRestParameter !== target.hasRestParameter) {
+            return Ternary.False;
+        }
+        var result = Ternary.True;
+        if (source.typeParameters && target.typeParameters) {
+            if (source.typeParameters.length !== target.typeParameters.length) {
+                return Ternary.False;
+            }
+            for (var i = 0, len = source.typeParameters.length; i < len; ++i) {
+                var related = compareTypes(source.typeParameters[i], target.typeParameters[i]);
+                if (!related) {
+                    return Ternary.False;
+                }
+                result &= related;
+            }
+        }
+        else if (source.typeParameters || source.typeParameters) {
+            return Ternary.False;
+        }
+        // Spec 1.0 Section 3.8.3 & 3.8.4:
+        // M and N (the signatures) are instantiated using type Any as the type argument for all type parameters declared by M and N
+        source = getErasedSignature(source);
+        target = getErasedSignature(target);
+        for (var i = 0, len = source.parameters.length; i < len; i++) {
+            var s = source.hasRestParameter && i === len - 1 ? getRestTypeOfSignature(source) : getTypeOfSymbol(source.parameters[i]);
+            var t = target.hasRestParameter && i === len - 1 ? getRestTypeOfSignature(target) : getTypeOfSymbol(target.parameters[i]);
+            var related = compareTypes(s, t);
+            if (!related) {
+                return Ternary.False;
+            }
+            result &= related;
+        }
+        if (compareReturnTypes) {
+            result &= compareTypes(getReturnTypeOfSignature(source), getReturnTypeOfSignature(target));
+        }
+        return result;
     }
 
     function getAncestor(node: Node, kind: NodeKind): Node {
@@ -2167,7 +2565,6 @@ module reflect {
     function getDeclarationFlagsFromSymbol(s: Symbol) {
         return s.flags & SymbolFlags.Prototype ? NodeFlags.Public | NodeFlags.Static : s.valueDeclaration.flags;
     }
-
     export function initializeGlobalTypes() {
         // Initialize special symbols
         getSymbolLinks(unknownSymbol).type = unknownType;
@@ -2181,3 +2578,4 @@ module reflect {
         globalBooleanType = getGlobalType("Boolean");
     }
 }
+

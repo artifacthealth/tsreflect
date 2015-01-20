@@ -9,6 +9,7 @@ module reflect {
         mapper?: TypeMapper;           // Type mapper for instantiation alias
         referenced?: boolean;          // True if alias symbol has been referenced as a value
         exportAssignSymbol?: Symbol;   // Symbol exported from external module
+        unionType?: UnionType;         // Containing union type for union property
     }
 
     export interface TransientSymbol extends Symbol, SymbolLinks { }
@@ -18,64 +19,77 @@ module reflect {
         [index: string]: Symbol;
     }
 
+    /* TODO: make this const? We'll have to remove getFlags and change getExported */
     export enum SymbolFlags {
-        Variable           = 0x00000001,  // Variable or parameter
-        Property           = 0x00000002,  // Property or enum member
-        EnumMember         = 0x00000004,  // Enum member
-        Function           = 0x00000008,  // Function
-        Class              = 0x00000010,  // Class
-        Interface          = 0x00000020,  // Interface
-        Enum               = 0x00000040,  // Enum
-        ValueModule        = 0x00000080,  // Instantiated module
-        NamespaceModule    = 0x00000100,  // Uninstantiated module
-        TypeLiteral        = 0x00000200,  // Type Literal
-        ObjectLiteral      = 0x00000400,  // Object Literal
-        Method             = 0x00000800,  // Method
-        Constructor        = 0x00001000,  // Constructor
-        GetAccessor        = 0x00002000,  // Get accessor
-        SetAccessor        = 0x00004000,  // Set accessor
-        CallSignature      = 0x00008000,  // Call signature
-        ConstructSignature = 0x00010000,  // Construct signature
-        IndexSignature     = 0x00020000,  // Index signature
-        TypeParameter      = 0x00040000,  // Type parameter
+        FunctionScopedVariable = 0x00000001,  // Variable (var) or parameter
+        BlockScopedVariable    = 0x00000002,  // A block-scoped variable (let or const)
+        Property               = 0x00000004,  // Property or enum member
+        EnumMember             = 0x00000008,  // Enum member
+        Function               = 0x00000010,  // Function
+        Class                  = 0x00000020,  // Class
+        Interface              = 0x00000040,  // Interface
+        ConstEnum              = 0x00000080,  // Const enum
+        RegularEnum            = 0x00000100,  // Enum
+        ValueModule            = 0x00000200,  // Instantiated module
+        NamespaceModule        = 0x00000400,  // Uninstantiated module
+        TypeLiteral            = 0x00000800,  // Type Literal
+        ObjectLiteral          = 0x00001000,  // Object Literal
+        Method                 = 0x00002000,  // Method
+        Constructor            = 0x00004000,  // Constructor
+        GetAccessor            = 0x00008000,  // Get accessor
+        SetAccessor            = 0x00010000,  // Set accessor
+        CallSignature          = 0x00020000,  // Call signature
+        ConstructSignature     = 0x00040000,  // Construct signature
+        IndexSignature         = 0x00080000,  // Index signature
+        TypeParameter          = 0x00100000,  // Type parameter
+        TypeAlias              = 0x00200000,  // Type alias
 
         // Export markers (see comment in declareModuleMember in binder)
-        ExportValue        = 0x00080000,  // Exported value marker
-        ExportType         = 0x00100000,  // Exported type marker
-        ExportNamespace    = 0x00200000,  // Exported namespace marker
+        ExportValue            = 0x00400000,  // Exported value marker
+        ExportType             = 0x00800000,  // Exported type marker
+        ExportNamespace        = 0x01000000,  // Exported namespace marker
+        Import                 = 0x02000000,  // Import
+        Instantiated           = 0x04000000,  // Instantiated symbol
+        Merged                 = 0x08000000,  // Merged symbol (created during program binding)
+        Transient              = 0x10000000,  // Transient symbol (created during type check)
+        Prototype              = 0x20000000,  // Prototype property (no source representation)
+        UnionProperty          = 0x40000000,  // Property in union type
 
-        Import             = 0x00400000,  // Import
-        Instantiated       = 0x00800000,  // Instantiated symbol
-        Merged             = 0x01000000,  // Merged symbol (created during program binding)
-        Transient          = 0x02000000,  // Transient symbol (created during type check)
-        Prototype          = 0x04000000,  // Symbol for the prototype property (without source code representation
-
+        Enum                   = RegularEnum | ConstEnum,
+        Variable  = FunctionScopedVariable | BlockScopedVariable,
         Value     = Variable | Property | EnumMember | Function | Class | Enum | ValueModule | Method | GetAccessor | SetAccessor,
-        Type      = Class | Interface | Enum | TypeLiteral | ObjectLiteral | TypeParameter,
+        Type      = Class | Interface | Enum | TypeLiteral | ObjectLiteral | TypeParameter | TypeAlias,
         Namespace = ValueModule | NamespaceModule,
         Module    = ValueModule | NamespaceModule,
         Accessor  = GetAccessor | SetAccessor,
         Signature = CallSignature | ConstructSignature | IndexSignature,
 
+        // Variables can be redeclared, but can not redeclare a block-scoped declaration with the
+        // same name, or any other value that is not a variable, e.g. ValueModule or Class
+        FunctionScopedVariableExcludes = Value & ~FunctionScopedVariable,
+
+        // Block-scoped declarations are not allowed to be re-declared
+        // they can not merge with anything in the value space
+        BlockScopedVariableExcludes = Value,
+
         ParameterExcludes       = Value,
-        VariableExcludes        = Value & ~Variable,
         PropertyExcludes        = Value,
         EnumMemberExcludes      = Value,
         FunctionExcludes        = Value & ~(Function | ValueModule),
         ClassExcludes           = (Value | Type) & ~ValueModule,
         InterfaceExcludes       = Type & ~Interface,
-        EnumExcludes            = (Value | Type) & ~(Enum | ValueModule),
-        ValueModuleExcludes     = Value & ~(Function | Class | Enum | ValueModule),
+        RegularEnumExcludes     = (Value | Type) & ~(RegularEnum | ValueModule), // regular enums merge only with regular enums and modules
+        ConstEnumExcludes       = (Value | Type) & ~ConstEnum, // const enums merge only with const enums
+        ValueModuleExcludes     = Value & ~(Function | Class | RegularEnum | ValueModule),
         NamespaceModuleExcludes = 0,
         MethodExcludes          = Value & ~Method,
         GetAccessorExcludes     = Value & ~SetAccessor,
         SetAccessorExcludes     = Value & ~GetAccessor,
         TypeParameterExcludes   = Type & ~TypeParameter,
+        TypeAliasExcludes       = Type,
+        ImportExcludes          = Import,  // Imports collide with all other imports with the same name
 
-        // Imports collide with all other imports with the same name.
-        ImportExcludes          = Import,
-
-        ModuleMember = Variable | Function | Class | Interface | Enum | Module | Import,
+        ModuleMember = Variable | Function | Class | Interface | Enum | Module | TypeAlias | Import,
 
         ExportHasLocal = Function | Class | Enum | ValueModule,
 
@@ -83,10 +97,10 @@ module reflect {
         HasExports = Class | Enum | Module,
         HasMembers = Class | Interface | TypeLiteral | ObjectLiteral,
 
-        IsContainer = HasLocals | HasExports | HasMembers,
-        PropertyOrAccessor      = Property | Accessor,
-        Export                  = ExportNamespace | ExportType | ExportValue,
-    }
+        IsContainer        = HasLocals | HasExports | HasMembers,
+        PropertyOrAccessor = Property | Accessor,
+        Export             = ExportNamespace | ExportType | ExportValue,
+}
 
     export interface Symbol {
         flags: SymbolFlags;            // Symbol flags
@@ -101,6 +115,7 @@ module reflect {
         valueDeclaration?: Declaration // First value declaration of the symbol
     }
 
+    // TODO: make const? will have to remove getFlags
     export enum TypeFlags {
         Any                = 0x00000001,
         String             = 0x00000002,
@@ -116,14 +131,15 @@ module reflect {
         Interface          = 0x00000800,  // Interface
         Reference          = 0x00001000,  // Generic type reference
         Tuple              = 0x00002000,  // Tuple
-        Anonymous          = 0x00004000,  // Anonymous
-        FromSignature      = 0x00008000,  // Created for signature assignment check
+        Union              = 0x00004000,  // Union
+        Anonymous          = 0x00008000,  // Anonymous
+        FromSignature      = 0x00010000,  // Created for signature assignment check
 
-        Intrinsic = Any | String | Number | Boolean | Void | Undefined | Null,
+        Intrinsic  = Any | String | Number | Boolean | Void | Undefined | Null,
         StringLike = String | StringLiteral,
         NumberLike = Number | Enum,
-        ObjectType = Class | Interface | Reference | Tuple | Anonymous
-    }
+        ObjectType = Class | Interface | Reference | Tuple | Anonymous,
+}
 
     // Properties common to all types
     export interface Type {
@@ -144,12 +160,6 @@ module reflect {
 
     // Object types (TypeFlags.ObjectType)
     export interface ObjectType extends Type { }
-
-    export interface ApparentType extends Type {
-        // This property is not used. It is just to make the type system think ApparentType
-        // is a strict subtype of Type.
-        _apparentTypeBrand: any;
-    }
 
     // Class and interface types (TypeFlags.Class and TypeFlags.Interface)
     export interface InterfaceType extends ObjectType {
@@ -180,8 +190,13 @@ module reflect {
         baseArrayType: TypeReference;  // Array<T> where T is best common type of element types
     }
 
-    // Resolved object type
-    export interface ResolvedObjectType extends ObjectType {
+    export interface UnionType extends Type {
+        types: Type[];                    // Constituent types
+        resolvedProperties: SymbolTable;  // Cache of resolved properties
+    }
+
+    // Resolved object or union type
+    export interface ResolvedType extends ObjectType, UnionType {
         members: SymbolTable;              // Properties by name
         properties: Symbol[];              // Properties
         callSignatures: Signature[];       // Call signatures of type
@@ -197,7 +212,7 @@ module reflect {
         mapper?: TypeMapper;     // Instantiation mapper
     }
 
-    export enum SignatureKind {
+    export const enum SignatureKind {
         Call,
         Construct,
     }
@@ -212,11 +227,12 @@ module reflect {
         hasStringLiterals: boolean;         // True if specialized
         target?: Signature;                 // Instantiation target
         mapper?: TypeMapper;                // Instantiation mapper
+        unionSignatures?: Signature[];      // Underlying signatures of a union signature
         erasedSignatureCache?: Signature;   // Erased version of signature (deferred)
         isolatedSignatureType?: ObjectType; // A manufactured type that just contains the signature for purposes of signature comparison
     }
 
-    export enum IndexKind {
+    export const enum IndexKind {
         String,
         Number,
     }

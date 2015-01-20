@@ -140,6 +140,14 @@ describe('Type', () => {
             assert.equal(properties.length, 0);
         });
 
+        it('returns properties that all types have in common for union types', () => {
+
+            var fixture = helpers.requireFixture("unionOfInterfaces");
+            var type = fixture.resolve("C").getDeclaredType();
+            var properties = type.getProperties();
+            assert.lengthOf(properties, 1);
+        });
+
         it.skip('needs tests for private members', () => {
 
             helpers.referenceFixture("classWithPrivateMembers");
@@ -241,6 +249,18 @@ describe('Type', () => {
             assert.isFalse(fixture.resolve("NoIndex").getDeclaredType().isIndex());
         });
 
+    });
+
+    describe('isUnion', () => {
+
+        it('returns true when type is a union type', () => {
+
+            var fixture = helpers.requireFixture("unionOnClassProperties");
+            var type = fixture.getDeclaredType();
+            assert.isTrue(type.getProperty("a").getType().isUnion());
+            assert.isTrue(type.getProperty("b").getType().isUnion());
+            assert.isFalse(type.getProperty("c").getType().isUnion());
+        });
     });
 
     describe('isArray', () => {
@@ -438,30 +458,3 @@ describe('Type', () => {
 
     });
 });
-
-
-/*
- export class ClassA {
-
- }
-
- export class ClassB extends ClassA {
-
- }
-
- export class ClassC extends ClassB {
-
- }
-
- export class GenericA<T> {
-
- }
-
- export class GenericB<T> extends GenericA<T> {
-
- }
-
- export class ConcreteB extends GenericB<string> {
-
- }
- */
