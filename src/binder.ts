@@ -4,12 +4,6 @@
 
 module reflect {
 
-    const enum ModuleInstanceState {
-        NonInstantiated = 0,
-        Instantiated    = 1,
-        ConstEnumOnly   = 2
-    }
-
     export function bindSourceFile(file: SourceFile) {
 
         var parent: Node;
@@ -23,42 +17,24 @@ module reflect {
             bind(file);
         }
 
-        function getModuleInstanceState(node: Node): ModuleInstanceState {
+        // Did not merge in getModuleInstanceState because we are not using the
+        // node.symbol.constEnumOnlyModule flag.
+        function isInstantiated(node: Node): boolean {
             // A module is uninstantiated if it contains only
             // 1. interface declarations
             if (node.kind === NodeKind.InterfaceDeclaration) {
-                return ModuleInstanceState.NonInstantiated;
+                return false;
             }
-            // 2. const enum declarations don't make module instantiated
-            else if (isConstEnumDeclaration(node)) {
-                return ModuleInstanceState.ConstEnumOnly;
-            }
-            // 3. non - exported import declarations
+            // 2. non - exported import declarations
             else if (node.kind === NodeKind.ImportDeclaration && !(node.flags & NodeFlags.Export)) {
-                return ModuleInstanceState.NonInstantiated;
+                return false;
             }
-            // 4. other uninstantiated module declarations.
-            else if (node.kind === NodeKind.ModuleDeclaration) {
-                var state = ModuleInstanceState.NonInstantiated;
-                forEachChild(node, n => {
-                    switch (getModuleInstanceState(n)) {
-                        case ModuleInstanceState.NonInstantiated:
-                            // child is non-instantiated - continue searching
-                            return false;
-                        case ModuleInstanceState.ConstEnumOnly:
-                            // child is const enum only - record state and continue searching
-                            state = ModuleInstanceState.ConstEnumOnly;
-                            return false;
-                        case ModuleInstanceState.Instantiated:
-                            // child is instantiated - record state and stop
-                            state = ModuleInstanceState.Instantiated;
-                            return true;
-                    }
-                });
-                return state;
+            // 3. other uninstantiated module declarations.
+            else if (node.kind === NodeKind.ModuleDeclaration && !forEachChild(node, isInstantiated)) {
+                return false;
             }
             else {
-                return ModuleInstanceState.Instantiated;
+                return true;
             }
         }
 
@@ -254,26 +230,13 @@ module reflect {
             if (node.flags & NodeFlags.ExternalModule) {
                 bindDeclaration(node, SymbolFlags.ValueModule, SymbolFlags.ValueModuleExcludes, /*isBlockScopeContainer*/ true);
             }
-            else {
-                var state = getModuleInstanceState(node);
-                if (state === ModuleInstanceState.NonInstantiated) {
-                    bindDeclaration(node, SymbolFlags.NamespaceModule, SymbolFlags.NamespaceModuleExcludes, /*isBlockScopeContainer*/ true);
-                }
-                else {
-                    bindDeclaration(node, SymbolFlags.ValueModule, SymbolFlags.ValueModuleExcludes, /*isBlockScopeContainer*/ true);
-                    // TODO: revisit this
-                    /*
-                    if (state === ModuleInstanceState.ConstEnumOnly) {
-                        // mark value module as module that contains only enums
-                        node.symbol.constEnumOnlyModule = true;
-                    }
-                     else if (node.symbol.constEnumOnlyModule) {
-                        // const only value module was merged with instantiated module - reset flag
-                        node.symbol.constEnumOnlyModule = false;
-                    }
-                    */
-                }
+            else if (isInstantiated(node)) {
+                bindDeclaration(node, SymbolFlags.ValueModule, SymbolFlags.ValueModuleExcludes, /*isBlockScopeContainer*/ true);
             }
+            else {
+                bindDeclaration(node, SymbolFlags.NamespaceModule, SymbolFlags.NamespaceModuleExcludes, /*isBlockScopeContainer*/ true);
+            }
+
         }
 
         function bindFunctionOrConstructorType(node: SignatureDeclaration) {

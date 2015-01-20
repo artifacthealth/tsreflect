@@ -322,6 +322,8 @@ module reflect {
 
         private _enumNames: string[];
 
+        // TODO: need to decide how to handle const enums
+
         getEnumNames(): string[] {
 
             if(this._enumNames) {
