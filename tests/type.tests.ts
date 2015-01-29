@@ -185,6 +185,12 @@ describe('Type', () => {
             var enumType = helpers.requireFixture("enumInExternalModule").getDeclaredType();
             assert.equal(enumType.getEnumName(1), "value2");
         });
+
+        it('returns the name of the enum constant for the given value for a const enum', () => {
+
+            var enumType = helpers.requireFixture("enumConst").getDeclaredType();
+            assert.equal(enumType.getEnumName(1), "value1");
+        });
     });
 
     describe('getEnumNames', () => {
@@ -198,6 +204,19 @@ describe('Type', () => {
             assert.equal(names[0], "value1");
             assert.equal(names[1], "value2");
             assert.equal(names[2], "value3");
+        });
+
+        it('returns all named enum values for a const enum', () => {
+
+            var enumType = helpers.requireFixture("enumConst").getDeclaredType();
+            var names = enumType.getEnumNames();
+            assert.isArray(names);
+            assert.lengthOf(names, 5);
+            assert.equal(names[0], "value1");
+            assert.equal(names[1], "value2");
+            assert.equal(names[2], "value3");
+            assert.equal(names[3], "value4");
+            assert.equal(names[4], "all");
         });
     });
 
@@ -215,6 +234,20 @@ describe('Type', () => {
 
             assert.isUndefined(enumType.getEnumValue("VALUE3"), "should not have found VALUE3");
             assert.equal(enumType.getEnumValue("VALUE3", true), 2);
+        });
+
+        it('returns the value of the given enum constant name for a const enum', () => {
+
+            var enumType = helpers.requireFixture("enumConst").getDeclaredType();
+            assert.equal(enumType.getEnumValue("value3"), 4);
+        });
+
+        it('should ignore case when ignoreCase parameter is true for a const enum', () => {
+
+            var enumType = helpers.requireFixture("enumConst").getDeclaredType();
+
+            assert.isUndefined(enumType.getEnumValue("VALUE3"), "should not have found VALUE3");
+            assert.equal(enumType.getEnumValue("VALUE3", true), 4);
         });
     });
 

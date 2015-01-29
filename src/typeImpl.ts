@@ -303,18 +303,17 @@ module reflect {
                 throw new Error("Type must be an Enum type.");
             }
 
-            var enumImplementation = this._getImplementation();
-
+            var enumMapping = this._getEnumMapping();
             if(!ignoreCase) {
-                return enumImplementation[value];
+                return enumMapping[value];
             }
 
             value = value.toLowerCase();
 
-            for(var name in enumImplementation) {
-                if(enumImplementation.hasOwnProperty(name) && isNaN(name)) {
+            for(var name in enumMapping) {
+                if(enumMapping.hasOwnProperty(name) && isNaN(name)) {
                     if(name.toLowerCase() === value) {
-                        return enumImplementation[name];
+                        return enumMapping[name];
                     }
                 }
             }
@@ -336,9 +335,9 @@ module reflect {
 
             var names: string[] = [];
 
-            var enumImplementation = this._getImplementation();
-            for(var name in enumImplementation) {
-                if(enumImplementation.hasOwnProperty(name) && isNaN(name)) {
+            var enumMapping = this._getEnumMapping();
+            for(var name in enumMapping) {
+                if(enumMapping.hasOwnProperty(name) && isNaN(name)) {
                     names.push(name);
                 }
             }
@@ -352,9 +351,49 @@ module reflect {
                 throw new Error("Type must be an Enum type.");
             }
 
-            var enumImplementation = this._getImplementation();
-            return enumImplementation[value];
+            var enumMapping = this._getEnumMapping();
+            return enumMapping[value];
         }
+
+        private _enumMapping: any;
+
+        private _getEnumMapping(): any {
+
+            if(this._enumMapping) {
+                return this._enumMapping;
+            }
+
+            var exports = this.symbol.exports;
+
+            // See if the implementation is available
+            var enumImplementation = this._getImplementation();
+            if(enumImplementation) {
+                // check to make sure the implementation is valid
+                var valid = true;
+                for(var name in exports) {
+                    if(enumImplementation[name] === undefined) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if(valid) {
+                    return this._enumMapping = enumImplementation;
+                }
+            }
+
+            // Can't find valid implementation. May be a const enum. Try to build the mapping from the declarations.
+            var mapping: any = {};
+            for(var name in exports) {
+                var value = (<EnumMemberDeclaration>exports[name].valueDeclaration).value;
+                if(value !== undefined) {
+                    mapping[name] = value;
+                    mapping[value] = name;
+                }
+            }
+
+            return this._enumMapping = mapping;
+        }
+
 
         private _elementType: TypeImpl;
 
