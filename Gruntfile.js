@@ -103,24 +103,12 @@ module.exports = function(grunt) {
 
         tsreflect: {
             fixtures: {
-                options: {
-                    noLib: false,
-                    accessors: true,
-                    annotations: true,
-                    typePrivates: true
-                },
                 src: [
                     "tests/fixtures/**/*.ts"
                 ],
                 dest: "build/fixtures/"
             },
             duplicateFixture: {
-                options: {
-                    noLib: false,
-                    accessors: true,
-                    annotations: true,
-                    typePrivates: true
-                },
                 src: [
                     "tests/fixtures/simpleClass.ts"
                 ],
