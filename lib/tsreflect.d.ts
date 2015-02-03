@@ -454,7 +454,7 @@ declare module "tsreflect" {
         getElementType(): Type;
 
         /**
-         * Gets the element types a tuple type.
+         * Gets the element types a union or tuple type.
          */
         getElementTypes(): Type[];
 

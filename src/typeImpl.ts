@@ -1,7 +1,7 @@
 
 module reflect {
 
-    export class TypeImpl implements Type, IntrinsicType, InterfaceType, TypeReference, GenericType, TupleType {
+    export class TypeImpl implements Type, IntrinsicType, InterfaceType, TypeReference, GenericType, TupleType, UnionType {
 
         id: number;
         symbol: SymbolImpl;
@@ -29,7 +29,10 @@ module reflect {
 
         // Implementation of TupleType
         elementTypes: TypeImpl[];          // Element types
+        types: TypeImpl[];                    // Constituent types
         baseArrayType: TypeImpl;  // Array<T> where T is best common type of element types
+
+        resolvedProperties: SymbolTable;  // Cache of resolved properties
 
 
         constructor(public flags: TypeFlags) {
@@ -418,11 +421,15 @@ module reflect {
 
         getElementTypes(): TypeImpl[] {
 
-            if(!this.isTuple()) {
-                throw new Error("Type must be a Tuple type");
+            if(this.isUnion()) {
+                return this.types;
             }
 
-            return this.elementTypes;
+            if(this.isTuple()) {
+                return this.elementTypes;
+            }
+
+            throw new Error("Type must be a Union or Tuple type");
         }
 
         createInstance(args?: any[]): any {
