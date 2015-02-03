@@ -63,13 +63,6 @@ describe('Symbol', () => {
             assert.ok(type.getProperty("0").getType().isString());
             assert.ok(type.getProperty("1").getType().isNumber());
         });
-
-        it('returns type for interface method that includes call signature', () => {
-
-            var type = helpers.requireFixture("interfaceWithMethod").getDeclaredType();
-            var symbol = type.getProperty("b");
-            assert.isTrue(symbol.getType().getCallSignatures().length > 0);
-        });
     });
 
     describe('getValue', () => {

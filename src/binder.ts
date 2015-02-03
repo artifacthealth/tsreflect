@@ -195,6 +195,7 @@ module reflect {
                 case NodeKind.ConstructSignature:
                 case NodeKind.IndexSignature:
                 case NodeKind.Method:
+                case NodeKind.MethodSignature:
                 case NodeKind.Constructor:
                 case NodeKind.GetAccessor:
                 case NodeKind.SetAccessor:
@@ -397,7 +398,7 @@ module reflect {
     }
 
     function isObjectLiteralMethod(node: Node) {
-        return node !== undefined && node.kind === NodeKind.Method && node.parent.kind === NodeKind.ObjectType;
+        return node !== undefined && node.kind === NodeKind.MethodSignature && node.parent.kind === NodeKind.ObjectType;
     }
 
     // Invokes a callback for each child of the given node. The 'cbNode' callback is invoked for all child nodes
