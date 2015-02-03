@@ -199,6 +199,11 @@ module reflect {
     }
 
     function findSourceFileAsync(filename: string, isDefaultLib: boolean, refFile: SourceFile, callback: (err: Error, result: SourceFile) => void): void {
+
+        if (!isRelativePath(filename) && !isAbsolutePath(filename)) {
+            filename = "./" + filename;
+        }
+
         var canonicalName = getCanonicalFileName(filename);
         if (hasProperty(filesByName, canonicalName)) {
             // We've already looked for this file, use cached result
@@ -260,6 +265,11 @@ module reflect {
 
     // Get source file from normalized filename
     function findSourceFile(filename: string, isDefaultLib: boolean, refFile?: SourceFile): SourceFile {
+
+        if (!isRelativePath(filename) && !isAbsolutePath(filename)) {
+            filename = "./" + filename;
+        }
+
         var canonicalName = getCanonicalFileName(filename);
         if (hasProperty(filesByName, canonicalName)) {
             // We've already looked for this file, use cached result
@@ -271,6 +281,7 @@ module reflect {
         }
         else {
             // We haven't looked for this file, do so now and cache result
+
             try {
                 var file = filesByName[canonicalName] = readSourceFile(filename);
             }
@@ -305,10 +316,6 @@ module reflect {
 
                 if (!text) return callback(null, undefined);
 
-                if (!isRelativePath(filename)) {
-                    filename = "./" + filename;
-                }
-
                 var sourceFile = createSourceFile(filename, text);
                 if(hasDiagnosticErrors) {
                     return callback(createDiagnosticError(), null);
@@ -326,9 +333,6 @@ module reflect {
 
         var text = fs.readFileSync(filename, options.charset);
         if (text) {
-            if (!isRelativePath(filename)) {
-                filename = "./" + filename;
-            }
             return createSourceFile(filename, text);
         }
     }

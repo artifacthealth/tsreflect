@@ -40,6 +40,10 @@ module reflect {
         return path.substr(0, 2) === "./" || path.substr(0, 3) === "../" || path.substr(0, 2) === ".\\" || path.substr(0, 3) === "..\\";
     }
 
+    export function isAbsolutePath(path: string): boolean {
+        return path.substr(0, 1) === "/" || path.substr(0, 1) === "\\"
+    }
+
     export function getBaseFilename(path: string) {
         var i = path.lastIndexOf(directorySeparator);
         return i < 0 ? path : path.substring(i + 1);
