@@ -54,7 +54,7 @@ describe('Symbol', () => {
             assert.equal(properties[2].getName(), "value3");
         });
 
-        it('return tuple type when called on symbol with tuple type annotation', () => {
+        it('returns tuple type when called on symbol with tuple type annotation', () => {
 
             helpers.referenceFixture("simpleTuple");
 
@@ -62,6 +62,13 @@ describe('Symbol', () => {
             assert.ok(type.isTuple());
             assert.ok(type.getProperty("0").getType().isString());
             assert.ok(type.getProperty("1").getType().isNumber());
+        });
+
+        it('returns type for interface method that includes call signature', () => {
+
+            var type = helpers.requireFixture("interfaceWithMethod").getDeclaredType();
+            var symbol = type.getProperty("b");
+            assert.isTrue(symbol.getType().getCallSignatures().length > 0);
         });
     });
 

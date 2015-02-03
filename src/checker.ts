@@ -458,6 +458,7 @@ module reflect {
             switch (node.kind) {
                 case NodeKind.Parameter:
                 case NodeKind.Method:
+                case NodeKind.MethodSignature:
                 case NodeKind.Field:
                 case NodeKind.PropertySignature:
                     return (node.flags & NodeFlags.QuestionMark) !== 0;
@@ -1307,6 +1308,7 @@ module reflect {
                 case NodeKind.ConstructorType:
                 case NodeKind.FunctionDeclaration:
                 case NodeKind.Method:
+                case NodeKind.MethodSignature:
                 case NodeKind.Constructor:
                 case NodeKind.CallSignature:
                 case NodeKind.ConstructSignature:
