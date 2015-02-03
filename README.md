@@ -93,22 +93,11 @@ information for. The load method supports [glob](https://github.com/isaacs/node-
 matching. Relative paths are considered to be relative to the current working directory.
 
 Once all declaration files have been loaded, the callback is called with the symbols for any external
-modules. If no external modules were loaded an empty array is passed to the callback. The list of symbols
-does not include any global symbols that were loaded.
+modules and any top level global declarations in the processed files.
 
 __Parameters__
-* path `string`  - A string containing the path to load or an array containing the paths to load. Glob patterns are
-supported.
+* path `string | string[]`  - The path(s) to load. Glob patterns are supported.
 * callback - Called when the load operation completes.
-
-__Returns:__ `void`
-
-
-### load(paths, callback)
-
-__Parameters__
-* paths `string[]`
-* callback
 
 __Returns:__ `void`
 
@@ -116,7 +105,7 @@ __Returns:__ `void`
 <a name=resolve />
 ### resolve(entityName)
 Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot
-be found, undefined is returned.
+be found, an exception is thrown.
 
 __Parameters__
 * entityName `string`  - The global entity name to resolve.
@@ -223,7 +212,7 @@ __Returns:__ `Symbol[]`
 <a name=resolve />
 #### resolve(entityName)
 Finds the symbol for the given entity name relative to the current symbol. If a symbol with the given name
-cannot be found, undefined is returned.
+cannot be found, an exception is thrown.
 
 __Parameters__
 * entityName `string`  - The entity name to resolve.
@@ -233,7 +222,7 @@ __Returns:__ `Symbol`
 
 <a name=getValue />
 #### getValue(obj)
-Gets the value of the property, variable, or accessor represented by the symbol on the given object.
+Gets the value of the symbol on the given object. The symbol must be a property, variable, or accessor.
 
 __Parameters__
 * obj `any`  - The object to get the value for.
@@ -243,7 +232,7 @@ __Returns:__ `any`
 
 <a name=setValue />
 #### setValue(obj, value)
-Sets the value of the property, variable, or accessor represented by the symbol on the given object.
+Sets the value of the symbol on the given object. The symbol must be a property, variable, or accessor.
 
 __Parameters__
 * obj `any`  - The object to set the value on.
@@ -776,7 +765,7 @@ __Returns:__ `Type`
 
 <a name=getElementTypes />
 #### getElementTypes()
-Gets the element types a tuple type.
+Gets the element types a union or tuple type.
 
 __Returns:__ `Type[]`
 

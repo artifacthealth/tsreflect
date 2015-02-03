@@ -34,12 +34,10 @@ declare module "tsreflect" {
      * Once all declaration files have been loaded, the callback is called with the symbols for any external
      * modules and any top level global declarations in the processed files.
      *
-     * @param path A string containing the path to load or an array containing the paths to load. Glob patterns are
-     * supported.
+     * @param path The path(s) to load. Glob patterns are supported.
      * @param callback Called when the load operation completes.
      */
-    function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
-    function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+    function load(path: string | string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
 
     /**
      * Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot
