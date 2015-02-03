@@ -21,13 +21,11 @@ reflect.load("**/*.d.json", (err, symbols) => {
     for(var i = 0, l = symbols.length; i < l; i++) {
         var symbol = symbols[i];
 
-        // if the symbol is an interface, then print it's name
         if(symbol.isInterface()) {
             process.stdout.write(symbol.getName() + '\n');
         }
         else if(symbol.isModule()) {
 
-            // if the symbol is a module, then get all symbols exported by the module
             var moduleExports = symbol.getExports();
             for(var j = 0, k = moduleExports.length; j < k; j++) {
 
