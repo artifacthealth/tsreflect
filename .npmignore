@@ -1,0 +1,9 @@
+.idea
+tsreflect.iml
+build
+node_modules
+tests/fixtures/compiled/
+src
+tests
+typings
+Gruntfile.js

@@ -50,7 +50,7 @@ declare module "tsreflect" {
     function resolve(entityName: string): Symbol;
 
     /**
-     * A named symbol.
+     * Represents a named identifier.
      */
     interface Symbol {
 
@@ -77,7 +77,7 @@ declare module "tsreflect" {
         getAnnotations(name?: string): Annotation[];
 
         /**
-         * Returns true if the symbols has an annotation with the specified name; Otherwise, return false.
+         * Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
          * @param name The name of the annotation to find.
          */
         hasAnnotation(name: string): boolean;
@@ -88,7 +88,8 @@ declare module "tsreflect" {
         getType(): Type;
 
         /**
-         * Gets the declared type of the symbol.
+         * Gets the type declared by the symbol. For a class getType() returns the static side of the class
+         * and getDeclaredType() returns the instance side of the class.
          */
         getDeclaredType(): Type;
 
@@ -119,83 +120,83 @@ declare module "tsreflect" {
         setValue(obj: any, value: any): void;
 
         /**
-         * Returns true if the symbol is a variable; Otherwise, return false.
+         * Returns true if the symbol is a variable; Otherwise, returns false.
          */
         isVariable(): boolean;
 
         /**
-         * Returns true if the symbol is a function; Otherwise, return false.
+         * Returns true if the symbol is a function; Otherwise, returns false.
          */
         isFunction(): boolean;
 
         /**
-         * Returns true if the symbol is a class; Otherwise, return false.
+         * Returns true if the symbol is a class; Otherwise, returns false.
          */
         isClass(): boolean;
 
         /**
-         * Returns true if the symbol is an interface; Otherwise, return false.
+         * Returns true if the symbol is an interface; Otherwise, returns false.
          */
         isInterface(): boolean;
 
         /**
-         * Returns true if the symbol is an enum; Otherwise, return false.
+         * Returns true if the symbol is an enum; Otherwise, returns false.
          */
         isEnum(): boolean;
 
         /**
-         * Returns true if the symbol is a module; Otherwise, return false.
+         * Returns true if the symbol is a module; Otherwise, returns false.
          */
         isModule(): boolean;
 
         /**
-         * Returns true if the symbol is an import; Otherwise, return false.
+         * Returns true if the symbol is an import; Otherwise, returns false.
          */
         isImport(): boolean;
 
         /**
-         * Returns true if the symbol is a type parameter; Otherwise, return false.
+         * Returns true if the symbol is a type parameter; Otherwise, returns false.
          */
         isTypeParameter(): boolean;
 
         /**
-         * Returns true if the symbol is a class or interface property; Otherwise, return false.
+         * Returns true if the symbol is a class or interface property; Otherwise, returns false.
          */
         isProperty(): boolean;
 
         /**
-         * Returns true if the symbol is a class or interface method; Otherwise, return false.
+         * Returns true if the symbol is a class or interface method; Otherwise, returns false.
          */
         isMethod(): boolean;
 
         /**
-         * Returns true if the symbol is an accessor; Otherwise, return false.
+         * Returns true if the symbol is an accessor; Otherwise, returns false.
          */
         isAccessor(): boolean;
 
         /**
-         * Returns true if the symbol is a get accessor; Otherwise, return false.
+         * Returns true if the symbol is a get accessor; Otherwise, returns false.
          */
         isGetAccessor(): boolean;
 
         /**
-         * Returns true if the symbol is a set accessor; Otherwise, return false.
+         * Returns true if the symbol is a set accessor; Otherwise, returns false.
          */
         isSetAccessor(): boolean;
 
         /**
-         * Returns true if the symbol is an enum member; Otherwise, return false.
+         * Returns true if the symbol is an enum member; Otherwise, returns false.
          */
         isEnumMember(): boolean;
 
         /**
-         * Returns true if the symbol is a type alias; Otherwise, return false.
+         * Returns true if the symbol is a type alias; Otherwise, returns false.
          */
         isTypeAlias(): boolean;
     }
 
     /**
-     * A custom annotation.
+     * Represents a custom annotation.
      */
     interface Annotation {
 
@@ -216,7 +217,7 @@ declare module "tsreflect" {
     }
 
     /**
-     * A Type.
+     * Represents a type.
      */
     interface Type {
 
@@ -250,25 +251,76 @@ declare module "tsreflect" {
         getAnnotations(name?: string, inherit?: boolean): Annotation[];
 
         /**
-         * Returns true if the type has an annotation with the specified name; Otherwise, return false.
+         * Returns true if the type has an annotation with the specified name; Otherwise, returns false.
          * @param name The name of the annotation to find.
          * @param inherit True if base types should be checked for the annotation as well.
          */
         hasAnnotation(name: string, inherit?: boolean): boolean;
 
+        /**
+         * Gets a list of all properties of the type. Note that properties include fields, accessors, and
+         * methods.
+         */
         getProperties(): Symbol[];
+
+        /**
+         * Finds a property with the specified name. If no property is found, undefined is returned. Note that
+         * properties include fields, accessors, and methods.
+         * @param name The property name to find.
+         */
         getProperty(name: string): Symbol;
+
+        /**
+         * Gets all call signatures of the type.
+         */
         getCallSignatures(): Signature[];
+
+        /**
+         * Gets all construct signatures of the type.
+         */
         getConstructSignatures(): Signature[];
+
+        /**
+         * Gets the string index type of the type. For example, for { [key: string]: boolean }, getStringIndexType()
+         * will return the intrinsic boolean type.
+         */
         getStringIndexType(): Type;
+
+        /**
+         * Gets the number index type of the type. For example, for { [key: number]: string }, getNumberIndexType()
+         * will return the intrinsic string type.
+         */
         getNumberIndexType(): Type;
 
+        /**
+         * Returns true if the target type is identical to the current type; Otherwise, returns false. If diagnostic
+         * information regarding the differences between the types is desired, any empty array should be passed to
+         * the diagnostics parameter.
+         * @param target The target type.
+         * @param diagnostics Array where diagnostic information regarding the differences between the types is placed.
+         */
         isIdenticalTo(target: Type, diagnostics?: Diagnostic[]): boolean;
+
+        /**
+         * Returns true if the target type is a subtype of the current type; Otherwise, returns false. If diagnostic
+         * information regarding the differences between the types is desired, any empty array should be passed to
+         * the diagnostics parameter.
+         * @param target The target type.
+         * @param diagnostics Array where diagnostic information regarding the differences between the types is placed.
+         */
         isSubtypeOf(target: Type, diagnostics?: Diagnostic[]): boolean;
+
+        /**
+         * Returns true if the target type is assignable to the current type; Otherwise, returns false. If diagnostic
+         * information regarding the differences between the types is desired, any empty array should be passed to
+         * the diagnostics parameter.
+         * @param target The target type.
+         * @param diagnostics Array where diagnostic information regarding the differences between the types is placed.
+         */
         isAssignableTo(target: Type, diagnostics?: Diagnostic[]): boolean;
 
         /**
-         * Returns true if the target type if a subclass of the current type; Otherwise, return false.
+         * Returns true if the target type if a subclass of the current type; Otherwise, returns false.
          * @param target The target type.
          */
         isSubclassOf(target: Type): boolean;
@@ -284,98 +336,98 @@ declare module "tsreflect" {
         getBaseTypes(): Type[];
 
         /**
-         * Returns true if the target type is a base type of the current type; Otherwise, return false.
+         * Returns true if the target type is a base type of the current type; Otherwise, returns false.
          * @param target The target type.
          */
         hasBaseType(target: Type): boolean;
 
         /**
-         * Returns true if the type is a class; Otherwise, return false.
+         * Returns true if the type is a class; Otherwise, returns false.
          */
         isClass(): boolean;
 
         /**
-         * Returns true if the type is an interface; Otherwise, return false.
+         * Returns true if the type is an interface; Otherwise, returns false.
          */
         isInterface(): boolean;
 
         /**
-         * Returns true if the type is a tuple; Otherwise, return false.
+         * Returns true if the type is a tuple; Otherwise, returns false.
          */
         isTuple(): boolean;
 
         /**
-         * Returns true if the type is a union type; Otherwise, return false.
+         * Returns true if the type is a union type; Otherwise, returns false.
          */
         isUnion(): boolean;
 
         /**
-         * Returns true if the type is an array; Otherwise, return false.
+         * Returns true if the type is an array; Otherwise, returns false.
          */
         isArray(): boolean;
 
         /**
-         * Returns true if the type is an index type; Otherwise, return false.
+         * Returns true if the type is an index type; Otherwise, returns false.
          */
         isIndex(): boolean;
 
         /**
-         * Returns true if the type is anonymous; Otherwise, return false.
+         * Returns true if the type is anonymous; Otherwise, returns false.
          */
         isAnonymous(): boolean;
 
         /**
-         * Returns true if the type is a generic reference; Otherwise, return false.
+         * Returns true if the type is a generic reference; Otherwise, returns false.
          */
         isReference(): boolean;
 
         /**
-         * Returns true if the type is an enum; Otherwise, return false.
+         * Returns true if the type is an enum; Otherwise, returns false.
          */
         isEnum(): boolean;
 
         /**
-         * Returns true if the type is a string literal; Otherwise, return false.
+         * Returns true if the type is a string literal; Otherwise, returns false.
          */
         isStringLiteral(): boolean;
 
         /**
-         * Returns true if the type is a type parameter; Otherwise, return false.
+         * Returns true if the type is a type parameter; Otherwise, returns false.
          */
         isTypeParameter(): boolean;
 
         /**
-         * Returns true if the type is the intrinsic any type; Otherwise, return false.
+         * Returns true if the type is the intrinsic any type; Otherwise, returns false.
          */
         isAny(): boolean;
 
         /**
-         * Returns true if the type is the intrinsic string type; Otherwise, return false.
+         * Returns true if the type is the intrinsic string type; Otherwise, returns false.
          */
         isString(): boolean;
 
         /**
-         * Returns true if the type is the intrinsic number type; Otherwise, return false.
+         * Returns true if the type is the intrinsic number type; Otherwise, returns false.
          */
         isNumber(): boolean;
 
         /**
-         * Returns true if the type is the intrinsic boolean type; Otherwise, return false.
+         * Returns true if the type is the intrinsic boolean type; Otherwise, returns false.
          */
         isBoolean(): boolean;
 
         /**
-         * Returns true if the type is the intrinsic void type; Otherwise, return false.
+         * Returns true if the type is the intrinsic void type; Otherwise, returns false.
          */
         isVoid(): boolean;
 
         /**
-         * Returns true if the type is an intrinsic type; Otherwise, return false.
+         * Returns true if the type is an intrinsic type; Otherwise, returns false.
          */
         isIntrinsic(): boolean;
 
         /**
-         * Returns true if the type is an object type; Otherwise, return false.
+         * Returns true if the type is an object type; Otherwise, returns false.
          */
         isObjectType(): boolean;
 
@@ -411,18 +463,25 @@ declare module "tsreflect" {
          * Creates an instance of a class. If arguments are provided then the constructor is called; Otherwise,
          * the object is created without calling the constructor. To call a parameter-less constructor, pass an empty
          * array to args.
+         *
+         * Note that This method assumes that the .d.json file is in the same directory as the .js file that it contains
+         * type information for. For external modules, Node's require method is used to load the JavaScript module.
+         *
          * @param args The constructor arguments.
          */
         createInstance(args?: any[]): any;
 
         /**
          * Gets the JavaScript constructor for a class type.
+         *
+         * Note that This method assumes that the .d.json file is in the same directory as the .js file that it contains
+         * type information for. For external modules, Node's require method is used to load the JavaScript module.
          */
         getConstructor(): Function;
     }
 
     /**
-     * A call signature.
+     * Represents a call signature.
      */
     interface Signature {
 
@@ -440,7 +499,7 @@ declare module "tsreflect" {
         getAnnotations(name?: string): Annotation[];
 
         /**
-         * Returns true if the symbols has an annotation with the specified name; Otherwise, return false.
+         * Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
          * @param name The name of the annotation to find.
          */
         hasAnnotation(name: string): boolean;
@@ -468,8 +527,19 @@ declare module "tsreflect" {
      */
     interface Diagnostic {
 
+        /**
+         * The name of the .d.json file that contained the error
+         */
         filename?: string;
+
+        /**
+         * Message explaining the error.
+         */
         messageText: string;
+
+        /**
+         * Error code.
+         */
         code: number;
     }
 

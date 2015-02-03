@@ -6,15 +6,13 @@
     "name": "Artifact Health, LLC",
     "url": "http://www.artifacthealth.com"
   },
-  "private": true,
   "repository": {
     "type": "git",
     "url": "git+ssh://git@bitbucket.org/mgottlieb/tsreflect.git"
   },
   "licenses": [
     {
-      "type": "Apache-2.0",
-      "url": "https://github.com/palantir/grunt-tslint/blob/master/LICENSE.txt"
+      "type": "Apache-2.0"
     }
   ],
   "main": "lib/tsreflect.js",
@@ -36,7 +34,7 @@
     "grunt-typescript": "0.6.1",
     "mocha": "^2.0.1",
     "typescript": "1.4.1",
-    "grunt-tsreflect": "git+ssh://git@bitbucket.org/mgottlieb/grunt-tsreflect.git"
+    "grunt-tsreflect": "^0.1.1"
   },
   "keywords": [
     "tsreflect",
