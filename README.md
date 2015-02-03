@@ -43,561 +43,538 @@ reflect.load("**/*.d.json", (err, symbols) => {
 
 ## Documentation
 
-```
-declare module "tsreflect" {
-
-    /**
-     * Load type information for an external module. Analogous to Node's require function.
-     *
-     * This method assumes that the .d.json file is in the same directory as the .js file that it contains type
-     * information for. Just like Node's require function, if a relative path is specified, it is considered to be
-     * relative to the source file that called require. Also like Node's require function, files are loaded
-     * synchronously. If you would like to load type information asynchronously, see the load function.
-     *
-     * @param moduleName The name of the module to load.
-     */
-    function require(moduleName: string): Symbol;
-
-    /**
-     * Load type information for an internal module or global declarations. Analogous to TypeScript's reference tags.
-     *
-     * This method assumes that the .d.json file is in the same directory as the .js file that it contains type
-     * information for. Just like TypeScript's /// <reference path="... tags, the path is considered to be relative to
-     * the source file that called reference. Files are loaded synchronously. If you would like to load type information
-     * asynchronously, see the load function.
-     *
-     * @param fileName The name of the file to load.
-     */
-    function reference(fileName: string): void;
-
-    /**
-     * Asynchronously load type information for the given filename pattern(s).
-     *
-     * This method assumes that the .d.json files are in the same directory as the .js file that they contain type
-     * information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
-     * matching. Relative paths are considered to be relative to the current working directory.
-     *
-     * Once all declaration files have been loaded, the callback is called with the symbols for any external
-     * modules. If no external modules were loaded an empty array is passed to the callback. The list of symbols
-     * does not include any global symbols that were loaded.
-     *
-     * @param path A string containing the path to load or an array containing the paths to load. Glob patterns are
-     * supported.
-     * @param callback Called when the load operation completes.
-     */
-    function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
-    function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
-
-    /**
-     * Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot
-     * be found, undefined is returned.
-     * @param entityName The global entity name to resolve.
-     */
-    function resolve(entityName: string): Symbol;
-
-    /**
-     * Represents a named identifier.
-     */
-    interface Symbol {
-
-        /**
-         * Gets the name of the symbol.
-         */
-        getName(): string;
-
-        /**
-         * Gets the qualified name of the symbol.
-         */
-        getFullName(): string;
-
-        /**
-         * Gets the description of the symbol.
-         */
-        getDescription(): string;
-
-        /**
-         * Finds annotations with the specified name. If no name is specified, then all annotations
-         * are returned.
-         * @param name The name of the annotation to find.
-         */
-        getAnnotations(name?: string): Annotation[];
-
-        /**
-         * Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
-         * @param name The name of the annotation to find.
-         */
-        hasAnnotation(name: string): boolean;
-
-        /**
-         * Gets the type of the symbol.
-         */
-        getType(): Type;
-
-        /**
-         * Gets the type declared by the symbol. For a class getType() returns the static side of the class
-         * and getDeclaredType() returns the instance side of the class.
-         */
-        getDeclaredType(): Type;
-
-        /**
-         * Gets all symbols exported by this symbol. This is used to get the members of a module or the static
-         * members of a class.
-         */
-        getExports(): Symbol[];
-
-        /**
-         * Finds the symbol for the given entity name relative to the current symbol. If a symbol with the given name
-         * cannot be found, undefined is returned.
-         * @param entityName The entity name to resolve.
-         */
-        resolve (entityName: string): Symbol;
-
-        /**
-         * Gets the value of the property, variable, or accessor represented by the symbol on the given object.
-         * @param obj The object to get the value for.
-         */
-        getValue(obj: any): any;
-
-        /**
-         * Sets the value of the property, variable, or accessor represented by the symbol on the given object.
-         * @param obj The object to set the value on.
-         * @param value The value to set.
-         */
-        setValue(obj: any, value: any): void;
-
-        /**
-         * Returns true if the symbol is a variable; Otherwise, returns false.
-         */
-        isVariable(): boolean;
-
-        /**
-         * Returns true if the symbol is a function; Otherwise, returns false.
-         */
-        isFunction(): boolean;
-
-        /**
-         * Returns true if the symbol is a class; Otherwise, returns false.
-         */
-        isClass(): boolean;
-
-        /**
-         * Returns true if the symbol is an interface; Otherwise, returns false.
-         */
-        isInterface(): boolean;
-
-        /**
-         * Returns true if the symbol is an enum; Otherwise, returns false.
-         */
-        isEnum(): boolean;
-
-        /**
-         * Returns true if the symbol is a module; Otherwise, returns false.
-         */
-        isModule(): boolean;
-
-        /**
-         * Returns true if the symbol is an import; Otherwise, returns false.
-         */
-        isImport(): boolean;
-
-        /**
-         * Returns true if the symbol is a type parameter; Otherwise, returns false.
-         */
-        isTypeParameter(): boolean;
-
-        /**
-         * Returns true if the symbol is a class or interface property; Otherwise, returns false.
-         */
-        isProperty(): boolean;
-
-        /**
-         * Returns true if the symbol is a class or interface method; Otherwise, returns false.
-         */
-        isMethod(): boolean;
-
-        /**
-         * Returns true if the symbol is an accessor; Otherwise, returns false.
-         */
-        isAccessor(): boolean;
-
-        /**
-         * Returns true if the symbol is a get accessor; Otherwise, returns false.
-         */
-        isGetAccessor(): boolean;
-
-        /**
-         * Returns true if the symbol is a set accessor; Otherwise, returns false.
-         */
-        isSetAccessor(): boolean;
-
-        /**
-         * Returns true if the symbol is an enum member; Otherwise, returns false.
-         */
-        isEnumMember(): boolean;
-
-        /**
-         * Returns true if the symbol is a type alias; Otherwise, returns false.
-         */
-        isTypeAlias(): boolean;
-    }
-
-    /**
-     * Represents a custom annotation.
-     */
-    interface Annotation {
-
-        /**
-         * The name of the annotation.
-         */
-        name: string;
-
-        /**
-         * The value of the annotation.
-         */
-        value: any;
-
-        /**
-         * Returns the name of the file that the annotation was declared in.
-         */
-        getDeclarationFileName(): string;
-    }
-
-    /**
-     * Represents a type.
-     */
-    interface Type {
-
-        /**
-         * Gets the name of the type, if any.
-         */
-        getName(): string;
-
-        /**
-         * Gets the qualified name of the type, if any.
-         */
-        getFullName(): string;
-
-        /**
-         * Gets the description of the type.
-         */
-        getDescription(): string;
-
-        /**
-         * Gets all annotations declared for the type.
-         * @param inherit True if annotations should be inherited from base types.
-         */
-        getAnnotations(inherit: boolean): Annotation[];
-
-        /**
-         * Finds annotations with the specified name. If no name is specified, then all annotations
-         * are returns.
-         * @param name The name of the annotation to find.
-         * @param inherit True if annotations should be inherited from base types.
-         */
-        getAnnotations(name?: string, inherit?: boolean): Annotation[];
-
-        /**
-         * Returns true if the type has an annotation with the specified name; Otherwise, returns false.
-         * @param name The name of the annotation to find.
-         * @param inherit True if base types should be checked for the annotation as well.
-         */
-        hasAnnotation(name: string, inherit?: boolean): boolean;
-
-        /**
-         * Gets a list of all properties of the type. Note that properties include fields, accessors, and
-         * methods.
-         */
-        getProperties(): Symbol[];
-
-        /**
-         * Finds a property with the specified name. If no property is found, undefined is returned. Note that
-         * properties include fields, accessors, and methods.
-         * @param name The property name to find.
-         */
-        getProperty(name: string): Symbol;
-
-        /**
-         * Gets all call signatures of the type.
-         */
-        getCallSignatures(): Signature[];
-
-        /**
-         * Gets all construct signatures of the type.
-         */
-        getConstructSignatures(): Signature[];
-
-        /**
-         * Gets the string index type of the type. For example, for { [key: string]: boolean }, getStringIndexType()
-         * will return the intrinsic boolean type.
-         */
-        getStringIndexType(): Type;
-
-        /**
-         * Gets the number index type of the type. For example, for { [key: number]: string }, getNumberIndexType()
-         * will return the intrinsic string type.
-         */
-        getNumberIndexType(): Type;
-
-        /**
-         * Returns true if the target type is identical to the current type; Otherwise, returns false. If diagnostic
-         * information regarding the differences between the types is desired, any empty array should be passed to
-         * the diagnostics parameter.
-         * @param target The target type.
-         * @param diagnostics Array where diagnostic information regarding the differences between the types is placed.
-         */
-        isIdenticalTo(target: Type, diagnostics?: Diagnostic[]): boolean;
-
-        /**
-         * Returns true if the target type is a subtype of the current type; Otherwise, returns false. If diagnostic
-         * information regarding the differences between the types is desired, any empty array should be passed to
-         * the diagnostics parameter.
-         * @param target The target type.
-         * @param diagnostics Array where diagnostic information regarding the differences between the types is placed.
-         */
-        isSubtypeOf(target: Type, diagnostics?: Diagnostic[]): boolean;
-
-        /**
-         * Returns true if the target type is assignable to the current type; Otherwise, returns false. If diagnostic
-         * information regarding the differences between the types is desired, any empty array should be passed to
-         * the diagnostics parameter.
-         * @param target The target type.
-         * @param diagnostics Array where diagnostic information regarding the differences between the types is placed.
-         */
-        isAssignableTo(target: Type, diagnostics?: Diagnostic[]): boolean;
-
-        /**
-         * Returns true if the target type if a subclass of the current type; Otherwise, returns false.
-         * @param target The target type.
-         */
-        isSubclassOf(target: Type): boolean;
-
-        /**
-         * Gets the base class of a class type.
-         */
-        getBaseClass(): Type;
-
-        /**
-         * Gets the base types of a class or interface type.
-         */
-        getBaseTypes(): Type[];
-
-        /**
-         * Returns true if the target type is a base type of the current type; Otherwise, returns false.
-         * @param target The target type.
-         */
-        hasBaseType(target: Type): boolean;
-
-        /**
-         * Returns true if the type is a class; Otherwise, returns false.
-         */
-        isClass(): boolean;
-
-        /**
-         * Returns true if the type is an interface; Otherwise, returns false.
-         */
-        isInterface(): boolean;
-
-        /**
-         * Returns true if the type is a tuple; Otherwise, returns false.
-         */
-        isTuple(): boolean;
-
-        /**
-         * Returns true if the type is a union type; Otherwise, returns false.
-         */
-        isUnion(): boolean;
-
-        /**
-         * Returns true if the type is an array; Otherwise, returns false.
-         */
-        isArray(): boolean;
-
-        /**
-         * Returns true if the type is an index type; Otherwise, returns false.
-         */
-        isIndex(): boolean;
-
-        /**
-         * Returns true if the type is anonymous; Otherwise, returns false.
-         */
-        isAnonymous(): boolean;
-
-        /**
-         * Returns true if the type is a generic reference; Otherwise, returns false.
-         */
-        isReference(): boolean;
-
-        /**
-         * Returns true if the type is an enum; Otherwise, returns false.
-         */
-        isEnum(): boolean;
-
-        /**
-         * Returns true if the type is a string literal; Otherwise, returns false.
-         */
-        isStringLiteral(): boolean;
-
-        /**
-         * Returns true if the type is a type parameter; Otherwise, returns false.
-         */
-        isTypeParameter(): boolean;
-
-        /**
-         * Returns true if the type is the intrinsic any type; Otherwise, returns false.
-         */
-        isAny(): boolean;
-
-        /**
-         * Returns true if the type is the intrinsic string type; Otherwise, returns false.
-         */
-        isString(): boolean;
-
-        /**
-         * Returns true if the type is the intrinsic number type; Otherwise, returns false.
-         */
-        isNumber(): boolean;
-
-        /**
-         * Returns true if the type is the intrinsic boolean type; Otherwise, returns false.
-         */
-        isBoolean(): boolean;
-
-        /**
-         * Returns true if the type is the intrinsic void type; Otherwise, returns false.
-         */
-        isVoid(): boolean;
-
-        /**
-         * Returns true if the type is an intrinsic type; Otherwise, returns false.
-         */
-        isIntrinsic(): boolean;
-
-        /**
-         * Returns true if the type is an object type; Otherwise, returns false.
-         */
-        isObjectType(): boolean;
-
-        /**
-         * Gets the numeric enum value for the given member name.
-         * @param value The enum member name to get the value for.
-         * @param ignoreCase True if case should be ignored when finding the member name.
-         */
-        getEnumValue(value: string, ignoreCase?: boolean): number;
-
-        /**
-         * Gets the enum member name for the given numeric enum value.
-         * @param value The numeric value to get the name for.
-         */
-        getEnumName(value: number): string;
-
-        /**
-         * Gets a list of enum member names.
-         */
-        getEnumNames(): string[];
-
-        /**
-         * Gets the element type for an array type.
-         */
-        getElementType(): Type;
-
-        /**
-         * Gets the element types a tuple type.
-         */
-        getElementTypes(): Type[];
-
-        /**
-         * Creates an instance of a class. If arguments are provided then the constructor is called; Otherwise,
-         * the object is created without calling the constructor. To call a parameter-less constructor, pass an empty
-         * array to args.
-         *
-         * Note that This method assumes that the .d.json file is in the same directory as the .js file that it contains
-         * type information for. For external modules, Node's require method is used to load the JavaScript module.
-         *
-         * @param args The constructor arguments.
-         */
-        createInstance(args?: any[]): any;
-
-        /**
-         * Gets the JavaScript constructor for a class type.
-         *
-         * Note that This method assumes that the .d.json file is in the same directory as the .js file that it contains
-         * type information for. For external modules, Node's require method is used to load the JavaScript module.
-         */
-        getConstructor(): Function;
-    }
-
-    /**
-     * Represents a call signature.
-     */
-    interface Signature {
-
-        /**
-         * Gets a description of the signature.
-         */
-        getDescription(): string;
-
-
-        /**
-         * Finds annotations with the specified name. If no name is specified, then all annotations
-         * are returned.
-         * @param name The name of the annotation to find.
-         */
-        getAnnotations(name?: string): Annotation[];
-
-        /**
-         * Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
-         * @param name The name of the annotation to find.
-         */
-        hasAnnotation(name: string): boolean;
-
-        /**
-         * Gets a list of all parameters for the call signature.
-         */
-        getParameters(): Symbol[];
-
-        /**
-         * Gets a parameter for the signature with the specified name. If no parameter matches the name then undefined
-         * is returned.
-         * @param name The parameter name to find.
-         */
-        getParameter(name: string): Symbol;
-
-        /**
-         * Gets the return type of the signature.
-         */
-        getReturnType(): Type;
-    }
-
-    /**
-     * Diagnostic information.
-     */
-    interface Diagnostic {
-
-        /**
-         * The name of the .d.json file that contained the error
-         */
-        filename?: string;
-
-        /**
-         * Message explaining the error.
-         */
-        messageText: string;
-
-        /**
-         * Error code.
-         */
-        code: number;
-    }
-
-    /**
-     * Extension of standard Error that includes diagnostic information.
-     */
-    interface DiagnosticError extends Error {
-
-        /**
-         * Array of Diagnostics that provides details on the error that occurred.
-         */
-        diagnostics: Diagnostic[];
-    }
-}
-```
+
+
+# "./build/tests/cases/moduleComplex"
+
+
+## require(moduleName)
+Load type information for an external module. Analogous to Node's require function.
+
+This method assumes that the .d.json file is in the same directory as the .js file that it contains type
+information for. Just like Node's require function, if a relative path is specified, it is considered to be
+relative to the source file that called require. Also like Node's require function, files are loaded
+synchronously. If you would like to load type information asynchronously, see the load function.
+
+Returns: `Symbol`
+
+__Parameters__
+* `moduleName` - The name of the module to load.
+
+
+## reference(fileName)
+Load type information for an internal module or global declarations. Analogous to TypeScript's reference tags.
+
+This method assumes that the .d.json file is in the same directory as the .js file that it contains type
+information for. Just like TypeScript's /// <reference path="... tags, the path is considered to be relative to
+the source file that called reference. Files are loaded synchronously. If you would like to load type information
+asynchronously, see the load function.
+
+__Parameters__
+* `fileName` - The name of the file to load.
+
+
+## load(path, callback)
+Asynchronously load type information for the given filename pattern(s).
+
+This method assumes that the .d.json files are in the same directory as the .js file that they contain type
+information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
+matching. Relative paths are considered to be relative to the current working directory.
+
+Once all declaration files have been loaded, the callback is called with the symbols for any external
+modules. If no external modules were loaded an empty array is passed to the callback. The list of symbols
+does not include any global symbols that were loaded.
+
+__Parameters__
+* `path` - A string containing the path to load or an array containing the paths to load. Glob patterns are
+supported.
+* `callback` __type  - Called when the load operation completes.
+
+
+## load(paths, callback)
+
+__Parameters__
+* `paths` Array
+* `callback` __type
+
+
+## resolve(entityName)
+Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot
+be found, undefined is returned.
+
+Returns: `Symbol`
+
+__Parameters__
+* `entityName`
+
+
+## Symbol
+A named symbol.
+
+
+### getName()
+Gets the name of the symbol.
+
+
+### getFullName()
+Gets the qualified name of the symbol.
+
+
+### getDescription()
+Gets the description of the symbol.
+
+
+### getAnnotations(name)
+Finds annotations with the specified name. If no name is specified, then all annotations
+are returned.
+
+Returns: `Array`
+
+__Parameters__
+* `name` - The name of the annotation to find.
+
+
+### hasAnnotation(name)
+Returns true if the symbols has an annotation with the specified name; Otherwise, return false.
+
+__Parameters__
+* `name` - The name of the annotation to find.
+
+
+### getType()
+Gets the type of the symbol.
+
+Returns: `Type`
+
+
+### getDeclaredType()
+Gets the declared type of the symbol.
+
+Returns: `Type`
+
+
+### getExports()
+Gets all symbols exported by this symbol. This is used to get the members of a module or the static
+members of a class.
+
+Returns: `Array`
+
+
+### resolve(entityName)
+Finds the symbol for the given entity name relative to the current symbol. If a symbol with the given name
+cannot be found, undefined is returned.
+
+Returns: `Symbol`
+
+__Parameters__
+* `entityName`
+
+
+### getValue(obj)
+Gets the value of the property, variable, or accessor represented by the symbol on the given object.
+
+__Parameters__
+* `obj` - The object to get the value for.
+
+
+### setValue(obj, value)
+Sets the value of the property, variable, or accessor represented by the symbol on the given object.
+
+__Parameters__
+* `obj` - The object to set the value on.
+* `value` - The value to set.
+
+
+### isVariable()
+Returns true if the symbol is a variable; Otherwise, return false.
+
+
+### isFunction()
+Returns true if the symbol is a function; Otherwise, return false.
+
+
+### isClass()
+Returns true if the symbol is a class; Otherwise, return false.
+
+
+### isInterface()
+Returns true if the symbol is an interface; Otherwise, return false.
+
+
+### isEnum()
+Returns true if the symbol is an enum; Otherwise, return false.
+
+
+### isModule()
+Returns true if the symbol is a module; Otherwise, return false.
+
+
+### isImport()
+Returns true if the symbol is an import; Otherwise, return false.
+
+
+### isTypeParameter()
+Returns true if the symbol is a type parameter; Otherwise, return false.
+
+
+### isProperty()
+Returns true if the symbol is a class or interface property; Otherwise, return false.
+
+
+### isMethod()
+Returns true if the symbol is a class or interface method; Otherwise, return false.
+
+
+### isAccessor()
+Returns true if the symbol is an accessor; Otherwise, return false.
+
+
+### isGetAccessor()
+Returns true if the symbol is a get accessor; Otherwise, return false.
+
+
+### isSetAccessor()
+Returns true if the symbol is a set accessor; Otherwise, return false.
+
+
+### isEnumMember()
+Returns true if the symbol is an enum member; Otherwise, return false.
+
+
+### isTypeAlias()
+Returns true if the symbol is a type alias; Otherwise, return false.
+
+
+## Annotation
+A custom annotation.
+
+
+### name
+The name of the annotation.
+
+
+### value
+The value of the annotation.
+
+
+### getDeclarationFileName()
+Returns the name of the file that the annotation was declared in.
+
+
+## Type
+A Type.
+
+
+### getName()
+Gets the name of the type, if any.
+
+
+### getFullName()
+Gets the qualified name of the type, if any.
+
+
+### getDescription()
+Gets the description of the type.
+
+
+### getAnnotations(inherit)
+Gets all annotations declared for the type.
+
+Returns: `Array`
+
+__Parameters__
+* `inherit` - True if annotations should be inherited from base types.
+
+
+### getAnnotations(name, inherit)
+Finds annotations with the specified name. If no name is specified, then all annotations
+are returns.
+
+Returns: `Array`
+
+__Parameters__
+* `name` - The name of the annotation to find.
+* `inherit` - True if annotations should be inherited from base types.
+
+
+### hasAnnotation(name, inherit)
+Returns true if the type has an annotation with the specified name; Otherwise, return false.
+
+__Parameters__
+* `name` - The name of the annotation to find.
+* `inherit` - True if base types should be checked for the annotation as well.
+
+
+### getProperties()
+
+Returns: `Array`
+
+
+### getProperty(name)
+
+Returns: `Symbol`
+
+__Parameters__
+* `name`
+
+
+### getCallSignatures()
+
+Returns: `Array`
+
+
+### getConstructSignatures()
+
+Returns: `Array`
+
+
+### getStringIndexType()
+
+Returns: `Type`
+
+
+### getNumberIndexType()
+
+Returns: `Type`
+
+
+### isIdenticalTo(target, diagnostics)
+
+__Parameters__
+* `target` Type
+* `diagnostics` Array
+
+
+### isSubtypeOf(target, diagnostics)
+
+__Parameters__
+* `target` Type
+* `diagnostics` Array
+
+
+### isAssignableTo(target, diagnostics)
+
+__Parameters__
+* `target` Type
+* `diagnostics` Array
+
+
+### isSubclassOf(target)
+Returns true if the target type if a subclass of the current type; Otherwise, return false.
+
+__Parameters__
+* `target` Type  - The target type.
+
+
+### getBaseClass()
+Gets the base class of a class type.
+
+Returns: `Type`
+
+
+### getBaseTypes()
+Gets the base types of a class or interface type.
+
+Returns: `Array`
+
+
+### hasBaseType(target)
+Returns true if the target type is a base type of the current type; Otherwise, return false.
+
+__Parameters__
+* `target` Type  - The target type.
+
+
+### isClass()
+Returns true if the type is a class; Otherwise, return false.
+
+
+### isInterface()
+Returns true if the type is an interface; Otherwise, return false.
+
+
+### isTuple()
+Returns true if the type is a tuple; Otherwise, return false.
+
+
+### isUnion()
+Returns true if the type is a union type; Otherwise, return false.
+
+
+### isArray()
+Returns true if the type is an array; Otherwise, return false.
+
+
+### isIndex()
+Returns true if the type is an index type; Otherwise, return false.
+
+
+### isAnonymous()
+Returns true if the type is anonymous; Otherwise, return false.
+
+
+### isReference()
+Returns true if the type is a generic reference; Otherwise, return false.
+
+
+### isEnum()
+Returns true if the type is an enum; Otherwise, return false.
+
+
+### isStringLiteral()
+Returns true if the type is a string literal; Otherwise, return false.
+
+
+### isTypeParameter()
+Returns true if the type is a type parameter; Otherwise, return false.
+
+
+### isAny()
+Returns true if the type is the intrinsic any type; Otherwise, return false.
+
+
+### isString()
+Returns true if the type is the intrinsic string type; Otherwise, return false.
+
+
+### isNumber()
+Returns true if the type is the intrinsic number type; Otherwise, return false.
+
+
+### isBoolean()
+Returns true if the type is the intrinsic boolean type; Otherwise, return false.
+
+
+### isVoid()
+Returns true if the type is the intrinsic void type; Otherwise, return false.
+
+
+### isIntrinsic()
+Returns true if the type is an intrinsic type; Otherwise, return false.
+
+
+### isObjectType()
+Returns true if the type is an object type; Otherwise, return false.
+
+
+### getEnumValue(value, ignoreCase)
+Gets the numeric enum value for the given member name.
+
+__Parameters__
+* `value` - The enum member name to get the value for.
+* `ignoreCase` - True if case should be ignored when finding the member name.
+
+
+### getEnumName(value)
+Gets the enum member name for the given numeric enum value.
+
+__Parameters__
+* `value` - The numeric value to get the name for.
+
+
+### getEnumNames()
+Gets a list of enum member names.
+
+Returns: `Array`
+
+
+### getElementType()
+Gets the element type for an array type.
+
+Returns: `Type`
+
+
+### getElementTypes()
+Gets the element types a tuple type.
+
+Returns: `Array`
+
+
+### createInstance(args)
+Creates an instance of a class. If arguments are provided then the constructor is called; Otherwise,
+the object is created without calling the constructor. To call a parameter-less constructor, pass an empty
+array to args.
+
+__Parameters__
+* `args` Array  - The constructor arguments.
+
+
+### getConstructor()
+Gets the JavaScript constructor for a class type.
+
+Returns: `Function`
+
+
+## Signature
+A call signature.
+
+
+### getDescription()
+Gets a description of the signature.
+
+
+### getAnnotations(name)
+Finds annotations with the specified name. If no name is specified, then all annotations
+are returned.
+
+Returns: `Array`
+
+__Parameters__
+* `name` - The name of the annotation to find.
+
+
+### hasAnnotation(name)
+Returns true if the symbols has an annotation with the specified name; Otherwise, return false.
+
+__Parameters__
+* `name` - The name of the annotation to find.
+
+
+### getParameters()
+Gets a list of all parameters for the call signature.
+
+Returns: `Array`
+
+
+### getParameter(name)
+Gets a parameter for the signature with the specified name. If no parameter matches the name then undefined
+is returned.
+
+Returns: `Symbol`
+
+__Parameters__
+* `name` - The parameter name to find.
+
+
+### getReturnType()
+Gets the return type of the signature.
+
+Returns: `Type`
+
+
+## Diagnostic
+Diagnostic information.
+
+
+### filename
+
+
+### messageText
+
+
+### code
+
+
+## DiagnosticError
+Extension of standard Error that includes diagnostic information.
+
+
+### diagnostics
+Array of Diagnostics that provides details on the error that occurred.
+Type: `Array`
+
+
+### name
+
+
+### message
