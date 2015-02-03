@@ -43,17 +43,16 @@ reflect.load("**/*.d.json", (err, symbols) => {
 
 ## Documentation
 
-
-[`require`](#require)
-[`reference`](#reference)
-[`load`](#load)
-[`resolve`](#resolve)
-[`Symbol`](#Symbol)
-[`Annotation`](#Annotation)
-[`Type`](#Type)
-[`Signature`](#Signature)
-[`Diagnostic`](#Diagnostic)
-[`DiagnosticError`](#DiagnosticError)
+* [`require`](#require)
+* [`reference`](#reference)
+* [`load`](#load)
+* [`resolve`](#resolve)
+* [`Symbol`](#Symbol)
+* [`Annotation`](#Annotation)
+* [`Type`](#Type)
+* [`Signature`](#Signature)
+* [`Diagnostic`](#Diagnostic)
+* [`DiagnosticError`](#DiagnosticError)
 
 <a name=require />
 ### require(moduleName)
@@ -129,32 +128,32 @@ __Returns:__ `Symbol`
 ### Symbol
 --------------------
 Represents a named identifier.
-[`getName`](#getName)
-[`getFullName`](#getFullName)
-[`getDescription`](#getDescription)
-[`getAnnotations`](#getAnnotations)
-[`hasAnnotation`](#hasAnnotation)
-[`getType`](#getType)
-[`getDeclaredType`](#getDeclaredType)
-[`getExports`](#getExports)
-[`resolve`](#resolve)
-[`getValue`](#getValue)
-[`setValue`](#setValue)
-[`isVariable`](#isVariable)
-[`isFunction`](#isFunction)
-[`isClass`](#isClass)
-[`isInterface`](#isInterface)
-[`isEnum`](#isEnum)
-[`isModule`](#isModule)
-[`isImport`](#isImport)
-[`isTypeParameter`](#isTypeParameter)
-[`isProperty`](#isProperty)
-[`isMethod`](#isMethod)
-[`isAccessor`](#isAccessor)
-[`isGetAccessor`](#isGetAccessor)
-[`isSetAccessor`](#isSetAccessor)
-[`isEnumMember`](#isEnumMember)
-[`isTypeAlias`](#isTypeAlias)
+* [`getName`](#getName)
+* [`getFullName`](#getFullName)
+* [`getDescription`](#getDescription)
+* [`getAnnotations`](#getAnnotations)
+* [`hasAnnotation`](#hasAnnotation)
+* [`getType`](#getType)
+* [`getDeclaredType`](#getDeclaredType)
+* [`getExports`](#getExports)
+* [`resolve`](#resolve)
+* [`getValue`](#getValue)
+* [`setValue`](#setValue)
+* [`isVariable`](#isVariable)
+* [`isFunction`](#isFunction)
+* [`isClass`](#isClass)
+* [`isInterface`](#isInterface)
+* [`isEnum`](#isEnum)
+* [`isModule`](#isModule)
+* [`isImport`](#isImport)
+* [`isTypeParameter`](#isTypeParameter)
+* [`isProperty`](#isProperty)
+* [`isMethod`](#isMethod)
+* [`isAccessor`](#isAccessor)
+* [`isGetAccessor`](#isGetAccessor)
+* [`isSetAccessor`](#isSetAccessor)
+* [`isEnumMember`](#isEnumMember)
+* [`isTypeAlias`](#isTypeAlias)
 
 <a name=getName />
 #### getName()
@@ -364,9 +363,9 @@ __Returns:__ `boolean`
 ### Annotation
 --------------------
 Represents a custom annotation.
-[`name`](#name)
-[`value`](#value)
-[`getDeclarationFileName`](#getDeclarationFileName)
+* [`name`](#name)
+* [`value`](#value)
+* [`getDeclarationFileName`](#getDeclarationFileName)
 
 <a name=name />
 #### name
@@ -395,49 +394,49 @@ __Returns:__ `string`
 ### Type
 --------------------
 Represents a type.
-[`getName`](#getName)
-[`getFullName`](#getFullName)
-[`getDescription`](#getDescription)
-[`getAnnotations`](#getAnnotations)
-[`hasAnnotation`](#hasAnnotation)
-[`getProperties`](#getProperties)
-[`getProperty`](#getProperty)
-[`getCallSignatures`](#getCallSignatures)
-[`getConstructSignatures`](#getConstructSignatures)
-[`getStringIndexType`](#getStringIndexType)
-[`getNumberIndexType`](#getNumberIndexType)
-[`isIdenticalTo`](#isIdenticalTo)
-[`isSubtypeOf`](#isSubtypeOf)
-[`isAssignableTo`](#isAssignableTo)
-[`isSubclassOf`](#isSubclassOf)
-[`getBaseClass`](#getBaseClass)
-[`getBaseTypes`](#getBaseTypes)
-[`hasBaseType`](#hasBaseType)
-[`isClass`](#isClass)
-[`isInterface`](#isInterface)
-[`isTuple`](#isTuple)
-[`isUnion`](#isUnion)
-[`isArray`](#isArray)
-[`isIndex`](#isIndex)
-[`isAnonymous`](#isAnonymous)
-[`isReference`](#isReference)
-[`isEnum`](#isEnum)
-[`isStringLiteral`](#isStringLiteral)
-[`isTypeParameter`](#isTypeParameter)
-[`isAny`](#isAny)
-[`isString`](#isString)
-[`isNumber`](#isNumber)
-[`isBoolean`](#isBoolean)
-[`isVoid`](#isVoid)
-[`isIntrinsic`](#isIntrinsic)
-[`isObjectType`](#isObjectType)
-[`getEnumValue`](#getEnumValue)
-[`getEnumName`](#getEnumName)
-[`getEnumNames`](#getEnumNames)
-[`getElementType`](#getElementType)
-[`getElementTypes`](#getElementTypes)
-[`createInstance`](#createInstance)
-[`getConstructor`](#getConstructor)
+* [`getName`](#getName)
+* [`getFullName`](#getFullName)
+* [`getDescription`](#getDescription)
+* [`getAnnotations`](#getAnnotations)
+* [`hasAnnotation`](#hasAnnotation)
+* [`getProperties`](#getProperties)
+* [`getProperty`](#getProperty)
+* [`getCallSignatures`](#getCallSignatures)
+* [`getConstructSignatures`](#getConstructSignatures)
+* [`getStringIndexType`](#getStringIndexType)
+* [`getNumberIndexType`](#getNumberIndexType)
+* [`isIdenticalTo`](#isIdenticalTo)
+* [`isSubtypeOf`](#isSubtypeOf)
+* [`isAssignableTo`](#isAssignableTo)
+* [`isSubclassOf`](#isSubclassOf)
+* [`getBaseClass`](#getBaseClass)
+* [`getBaseTypes`](#getBaseTypes)
+* [`hasBaseType`](#hasBaseType)
+* [`isClass`](#isClass)
+* [`isInterface`](#isInterface)
+* [`isTuple`](#isTuple)
+* [`isUnion`](#isUnion)
+* [`isArray`](#isArray)
+* [`isIndex`](#isIndex)
+* [`isAnonymous`](#isAnonymous)
+* [`isReference`](#isReference)
+* [`isEnum`](#isEnum)
+* [`isStringLiteral`](#isStringLiteral)
+* [`isTypeParameter`](#isTypeParameter)
+* [`isAny`](#isAny)
+* [`isString`](#isString)
+* [`isNumber`](#isNumber)
+* [`isBoolean`](#isBoolean)
+* [`isVoid`](#isVoid)
+* [`isIntrinsic`](#isIntrinsic)
+* [`isObjectType`](#isObjectType)
+* [`getEnumValue`](#getEnumValue)
+* [`getEnumName`](#getEnumName)
+* [`getEnumNames`](#getEnumNames)
+* [`getElementType`](#getElementType)
+* [`getElementTypes`](#getElementTypes)
+* [`createInstance`](#createInstance)
+* [`getConstructor`](#getConstructor)
 
 <a name=getName />
 #### getName()
@@ -813,12 +812,12 @@ __Returns:__ `Function`
 ### Signature
 --------------------
 Represents a call signature.
-[`getDescription`](#getDescription)
-[`getAnnotations`](#getAnnotations)
-[`hasAnnotation`](#hasAnnotation)
-[`getParameters`](#getParameters)
-[`getParameter`](#getParameter)
-[`getReturnType`](#getReturnType)
+* [`getDescription`](#getDescription)
+* [`getAnnotations`](#getAnnotations)
+* [`hasAnnotation`](#hasAnnotation)
+* [`getParameters`](#getParameters)
+* [`getParameter`](#getParameter)
+* [`getReturnType`](#getReturnType)
 
 <a name=getDescription />
 #### getDescription()
@@ -879,9 +878,9 @@ __Returns:__ `Type`
 ### Diagnostic
 --------------------
 Diagnostic information.
-[`filename`](#filename)
-[`messageText`](#messageText)
-[`code`](#code)
+* [`filename`](#filename)
+* [`messageText`](#messageText)
+* [`code`](#code)
 
 <a name=filename />
 #### filename
@@ -910,9 +909,9 @@ __Type:__ `number`
 ### DiagnosticError
 --------------------
 Extension of standard Error that includes diagnostic information.
-[`diagnostics`](#diagnostics)
-[`name`](#name)
-[`message`](#message)
+* [`diagnostics`](#diagnostics)
+* [`name`](#name)
+* [`message`](#message)
 
 <a name=diagnostics />
 #### diagnostics
@@ -931,3 +930,9 @@ __Type:__ `string`
 #### message
 
 __Type:__ `string`
+
+
+
+
+
+
