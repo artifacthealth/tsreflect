@@ -68,6 +68,18 @@ describe('reflect', () => {
             });
         });
 
+        it('correctly loads an ambient external module', (done) => {
+
+            helpers.loadFixture("ambientExternalModuleForLoad", (err, symbols) => {
+                if(err) return done(err);
+
+                assert.lengthOf(symbols, 0, "The ambient external should be loaded in the global space");
+                var symbol = reflect.resolve("\"testAmbientExternalModuleForLoad\"");
+                assert.isTrue(symbol !== undefined);
+                done();
+            });
+        });
+
         it('should return error in callback if file is not found', (done) => {
 
             helpers.loadFixture("someUnknownModule", (err, symbols) => {

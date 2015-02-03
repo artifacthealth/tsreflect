@@ -490,7 +490,6 @@ declare module "tsreflect" {
          */
         getDescription(): string;
 
-
         /**
          * Finds annotations with the specified name. If no name is specified, then all annotations
          * are returned.

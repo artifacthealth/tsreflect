@@ -90,9 +90,9 @@ module reflect {
                 var symbol = sourceFile.symbol;
                 if (symbol) {
                     symbol = getResolvedExportSymbol(sourceFile.symbol);
-                }
 
-                symbols.push(symbol);
+                    symbols.push(symbol);
+                }
                 callback();
             });
         }
