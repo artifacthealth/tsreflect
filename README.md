@@ -53,7 +53,7 @@ relative to the source file that called require. Also like Node's require functi
 synchronously. If you would like to load type information asynchronously, see the load function.
 
 __Parameters__
-* `moduleName` string  - The name of the module to load.
+* moduleName `string`  - The name of the module to load.
 
 __Returns:__ `Test.Symbol`
 
@@ -67,7 +67,7 @@ the source file that called reference. Files are loaded synchronously. If you wo
 asynchronously, see the load function.
 
 __Parameters__
-* `fileName` string  - The name of the file to load.
+* fileName `string`  - The name of the file to load.
 
 __Returns:__ `void`
 
@@ -84,9 +84,9 @@ modules. If no external modules were loaded an empty array is passed to the call
 does not include any global symbols that were loaded.
 
 __Parameters__
-* `path` string  - A string containing the path to load or an array containing the paths to load. Glob patterns are
+* path `string`  - A string containing the path to load or an array containing the paths to load. Glob patterns are
 supported.
-* `callback` - Called when the load operation completes.
+* callback - Called when the load operation completes.
 
 __Returns:__ `void`
 
@@ -94,8 +94,8 @@ __Returns:__ `void`
 ### load(paths, callback)
 
 __Parameters__
-* `paths` string[]
-* `callback`
+* paths `string[]`
+* callback
 
 __Returns:__ `void`
 
@@ -105,7 +105,7 @@ Finds the symbol for the given entity name in the global scope. If a global symb
 be found, undefined is returned.
 
 __Parameters__
-* `entityName` string  - The global entity name to resolve.
+* entityName `string`  - The global entity name to resolve.
 
 __Returns:__ `Test.Symbol`
 
@@ -137,7 +137,7 @@ Finds annotations with the specified name. If no name is specified, then all ann
 are returned.
 
 __Parameters__
-* `name` string  - The name of the annotation to find.
+* name `string`  - The name of the annotation to find.
 
 __Returns:__ `Test.Annotation[]`
 
@@ -146,7 +146,7 @@ __Returns:__ `Test.Annotation[]`
 Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
 
 __Parameters__
-* `name` string  - The name of the annotation to find.
+* name `string`  - The name of the annotation to find.
 
 __Returns:__ `boolean`
 
@@ -176,7 +176,7 @@ Finds the symbol for the given entity name relative to the current symbol. If a 
 cannot be found, undefined is returned.
 
 __Parameters__
-* `entityName` string  - The entity name to resolve.
+* entityName `string`  - The entity name to resolve.
 
 __Returns:__ `Test.Symbol`
 
@@ -185,7 +185,7 @@ __Returns:__ `Test.Symbol`
 Gets the value of the property, variable, or accessor represented by the symbol on the given object.
 
 __Parameters__
-* `obj` any  - The object to get the value for.
+* obj `any`  - The object to get the value for.
 
 __Returns:__ `any`
 
@@ -194,8 +194,8 @@ __Returns:__ `any`
 Sets the value of the property, variable, or accessor represented by the symbol on the given object.
 
 __Parameters__
-* `obj` any  - The object to set the value on.
-* `value` any  - The value to set.
+* obj `any`  - The object to set the value on.
+* value `any`  - The value to set.
 
 __Returns:__ `void`
 
@@ -338,7 +338,7 @@ __Returns:__ `string`
 Gets all annotations declared for the type.
 
 __Parameters__
-* `inherit` boolean  - True if annotations should be inherited from base types.
+* inherit `boolean`  - True if annotations should be inherited from base types.
 
 __Returns:__ `Test.Annotation[]`
 
@@ -348,8 +348,8 @@ Finds annotations with the specified name. If no name is specified, then all ann
 are returns.
 
 __Parameters__
-* `name` string  - The name of the annotation to find.
-* `inherit` boolean  - True if annotations should be inherited from base types.
+* name `string`  - The name of the annotation to find.
+* inherit `boolean`  - True if annotations should be inherited from base types.
 
 __Returns:__ `Test.Annotation[]`
 
@@ -358,8 +358,8 @@ __Returns:__ `Test.Annotation[]`
 Returns true if the type has an annotation with the specified name; Otherwise, returns false.
 
 __Parameters__
-* `name` string  - The name of the annotation to find.
-* `inherit` boolean  - True if base types should be checked for the annotation as well.
+* name `string`  - The name of the annotation to find.
+* inherit `boolean`  - True if base types should be checked for the annotation as well.
 
 __Returns:__ `boolean`
 
@@ -376,7 +376,7 @@ Finds a property with the specified name. If no property is found, undefined is 
 properties include fields, accessors, and methods.
 
 __Parameters__
-* `name` string  - The property name to find.
+* name `string`  - The property name to find.
 
 __Returns:__ `Test.Symbol`
 
@@ -413,8 +413,8 @@ information regarding the differences between the types is desired, any empty ar
 the diagnostics parameter.
 
 __Parameters__
-* `target` Test.Type  - The target type.
-* `diagnostics` Test.Diagnostic[]  - Array where diagnostic information regarding the differences between the types is placed.
+* target `Test.Type`  - The target type.
+* diagnostics `Test.Diagnostic[]`  - Array where diagnostic information regarding the differences between the types is placed.
 
 __Returns:__ `boolean`
 
@@ -425,8 +425,8 @@ information regarding the differences between the types is desired, any empty ar
 the diagnostics parameter.
 
 __Parameters__
-* `target` Test.Type  - The target type.
-* `diagnostics` Test.Diagnostic[]  - Array where diagnostic information regarding the differences between the types is placed.
+* target `Test.Type`  - The target type.
+* diagnostics `Test.Diagnostic[]`  - Array where diagnostic information regarding the differences between the types is placed.
 
 __Returns:__ `boolean`
 
@@ -437,8 +437,8 @@ information regarding the differences between the types is desired, any empty ar
 the diagnostics parameter.
 
 __Parameters__
-* `target` Test.Type  - The target type.
-* `diagnostics` Test.Diagnostic[]  - Array where diagnostic information regarding the differences between the types is placed.
+* target `Test.Type`  - The target type.
+* diagnostics `Test.Diagnostic[]`  - Array where diagnostic information regarding the differences between the types is placed.
 
 __Returns:__ `boolean`
 
@@ -447,7 +447,7 @@ __Returns:__ `boolean`
 Returns true if the target type if a subclass of the current type; Otherwise, returns false.
 
 __Parameters__
-* `target` Test.Type  - The target type.
+* target `Test.Type`  - The target type.
 
 __Returns:__ `boolean`
 
@@ -468,7 +468,7 @@ __Returns:__ `Test.Type[]`
 Returns true if the target type is a base type of the current type; Otherwise, returns false.
 
 __Parameters__
-* `target` Test.Type  - The target type.
+* target `Test.Type`  - The target type.
 
 __Returns:__ `boolean`
 
@@ -585,8 +585,8 @@ __Returns:__ `boolean`
 Gets the numeric enum value for the given member name.
 
 __Parameters__
-* `value` string  - The enum member name to get the value for.
-* `ignoreCase` boolean  - True if case should be ignored when finding the member name.
+* value `string`  - The enum member name to get the value for.
+* ignoreCase `boolean`  - True if case should be ignored when finding the member name.
 
 __Returns:__ `number`
 
@@ -595,7 +595,7 @@ __Returns:__ `number`
 Gets the enum member name for the given numeric enum value.
 
 __Parameters__
-* `value` number  - The numeric value to get the name for.
+* value `number`  - The numeric value to get the name for.
 
 __Returns:__ `string`
 
@@ -627,7 +627,7 @@ Note that This method assumes that the .d.json file is in the same directory as 
 type information for. For external modules, Node's require method is used to load the JavaScript module.
 
 __Parameters__
-* `args` any[]  - The constructor arguments.
+* args `any[]`  - The constructor arguments.
 
 __Returns:__ `any`
 
@@ -656,7 +656,7 @@ Finds annotations with the specified name. If no name is specified, then all ann
 are returned.
 
 __Parameters__
-* `name` string  - The name of the annotation to find.
+* name `string`  - The name of the annotation to find.
 
 __Returns:__ `Test.Annotation[]`
 
@@ -665,7 +665,7 @@ __Returns:__ `Test.Annotation[]`
 Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
 
 __Parameters__
-* `name` string  - The name of the annotation to find.
+* name `string`  - The name of the annotation to find.
 
 __Returns:__ `boolean`
 
@@ -681,7 +681,7 @@ Gets a parameter for the signature with the specified name. If no parameter matc
 is returned.
 
 __Parameters__
-* `name` string  - The parameter name to find.
+* name `string`  - The parameter name to find.
 
 __Returns:__ `Test.Symbol`
 
