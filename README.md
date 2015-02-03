@@ -43,7 +43,7 @@ reflect.load("**/*.d.json", (err, symbols) => {
 
 ## Documentation
 
-### function require(moduleName: string): Symbol;
+### function require(moduleName): Symbol;
 Load type information for an external module. Analogous to Node's require function.
 
 This method assumes that the .d.json file is in the same directory as the .js file that it contains type
@@ -51,10 +51,11 @@ information for. Just like Node's require function, if a relative path is specif
 relative to the source file that called require. Also like Node's require function, files are loaded
 synchronously. If you would like to load type information asynchronously, see the load function.
 
-```moduleName``` The name of the module to load.
+__Arguments__
+* `moduleName` The name of the module to load.
 
 
-### function reference(fileName: string): void;
+### function reference(fileName): void;
 Load type information for an internal module or global declarations. Analogous to TypeScript's reference tags.
 
 This method assumes that the .d.json file is in the same directory as the .js file that it contains type
@@ -62,11 +63,11 @@ information for. Just like TypeScript's /// <reference path="... tags, the path 
 the source file that called reference. Files are loaded synchronously. If you would like to load type information
 asynchronously, see the load function.
 
-```fileName``` The name of the file to load.
+__Arguments__
+* `fileName` The name of the file to load.
 
 
-### function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
-### function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+### function load(path, callback): void;
 Asynchronously load type information for the given filename pattern(s).
 
 This method assumes that the .d.json files are in the same directory as the .js file that they contain type
@@ -77,14 +78,16 @@ Once all declaration files have been loaded, the callback is called with the sym
 modules. If no external modules were loaded an empty array is passed to the callback. The list of symbols
 does not include any global symbols that were loaded.
 
-```path``` A string containing the path to load or an array containing the paths to load. Glob patterns are supported.
-```callback``` Called when the load operation completes.
+__Arguments__
+* `path` A string containing the path to load or an array containing the paths to load. Glob patterns are supported.
+* `callback` Called when the load operation completes.
 
 
 ### function resolve(entityName: string): Symbol;
 Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot be found, undefined is returned.
 
-```entityName``` The global entity name to resolve.
+__Arguments__
+* `entityName` The global entity name to resolve.
 
 
 ### interface Symbol
@@ -102,12 +105,14 @@ Gets the description of the symbol.
 #### getAnnotations(name?: string): Annotation[];
 Finds annotations with the specified name. If no name is specified, then all annotations are returned.
 
-```name``` The name of the annotation to find.
+__Arguments__
+* `name` The name of the annotation to find.
 
 #### hasAnnotation(name: string): boolean;
 Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
 
-```name``` The name of the annotation to find.
+__Arguments__
+* `name` The name of the annotation to find.
 
 #### getType(): Type;
 Gets the type of the symbol.
@@ -123,18 +128,21 @@ members of a class.
 Finds the symbol for the given entity name relative to the current symbol. If a symbol with the given name
 cannot be found, undefined is returned.
 
-```entityName``` The name of the entity to resolve.
+__Arguments__
+* `entityName` The name of the entity to resolve.
 
 #### getValue(obj: any): any;
 Gets the value of the property, variable, or accessor represented by the symbol on the given object.
 
-```obj``` The object to get the value for.
+__Arguments__
+* `obj` The object to get the value for.
 
 #### setValue(obj: any, value: any): void;
 Sets the value of the property, variable, or accessor represented by the symbol on the given object.
 
-```obj``` The object to set the value on.
-```value``` The value to set.
+__Arguments__
+* `obj` The object to set the value on.
+* `value` The value to set.
 
 #### isVariable(): boolean;
 Returns true if the symbol is a variable; Otherwise, returns false.
