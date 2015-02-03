@@ -32,8 +32,7 @@ declare module "tsreflect" {
      * matching. Relative paths are considered to be relative to the current working directory.
      *
      * Once all declaration files have been loaded, the callback is called with the symbols for any external
-     * modules. If no external modules were loaded an empty array is passed to the callback. The list of symbols
-     * does not include any global symbols that were loaded.
+     * modules and any top level global declarations in the processed files.
      *
      * @param path A string containing the path to load or an array containing the paths to load. Glob patterns are
      * supported.
@@ -107,13 +106,13 @@ declare module "tsreflect" {
         resolve (entityName: string): Symbol;
 
         /**
-         * Gets the value of the property, variable, or accessor represented by the symbol on the given object.
+         * Gets the value of the symbol on the given object. The symbol must be a property, variable, or accessor.
          * @param obj The object to get the value for.
          */
         getValue(obj: any): any;
 
         /**
-         * Sets the value of the property, variable, or accessor represented by the symbol on the given object.
+         * Sets the value of the symbol on the given object. The symbol must be a property, variable, or accessor.
          * @param obj The object to set the value on.
          * @param value The value to set.
          */

@@ -73,7 +73,7 @@ describe('reflect', () => {
             helpers.loadFixture("ambientExternalModuleForLoad", (err, symbols) => {
                 if(err) return done(err);
 
-                assert.lengthOf(symbols, 0, "The ambient external should be loaded in the global space");
+                assert.lengthOf(symbols, 1, "Expected load to return a symbol");
                 var symbol = reflect.resolve("\"testAmbientExternalModuleForLoad\"");
                 assert.isTrue(symbol !== undefined);
                 done();

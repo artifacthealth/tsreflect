@@ -89,10 +89,23 @@ module reflect {
 
                 var symbol = sourceFile.symbol;
                 if (symbol) {
+                    // external module
                     symbol = getResolvedExportSymbol(sourceFile.symbol);
-
                     symbols.push(symbol);
                 }
+                else {
+                    // internal module - add symbols for all declarations at top level of source file
+                    var declares = sourceFile.declares;
+                    if(declares) {
+                        for(var i = 0, l = declares.length; i < l; i++) {
+                            var declaration = declares[i];
+                            if(declaration.symbol) {
+                                symbols.push(declaration.symbol);
+                            }
+                        }
+                    }
+                }
+
                 callback();
             });
         }
