@@ -44,11 +44,7 @@ reflect.load("**/*.d.json", (err, symbols) => {
 ## Documentation
 
 
-
-# "./build/tests/cases/moduleComplex"
-
-
-## require(moduleName)
+### require(moduleName)
 Load type information for an external module. Analogous to Node's require function.
 
 This method assumes that the .d.json file is in the same directory as the .js file that it contains type
@@ -62,7 +58,7 @@ __Parameters__
 * `moduleName` - The name of the module to load.
 
 
-## reference(fileName)
+### reference(fileName)
 Load type information for an internal module or global declarations. Analogous to TypeScript's reference tags.
 
 This method assumes that the .d.json file is in the same directory as the .js file that it contains type
@@ -74,7 +70,7 @@ __Parameters__
 * `fileName` - The name of the file to load.
 
 
-## load(path, callback)
+### load(path, callback)
 Asynchronously load type information for the given filename pattern(s).
 
 This method assumes that the .d.json files are in the same directory as the .js file that they contain type
@@ -91,40 +87,40 @@ supported.
 * `callback` __type  - Called when the load operation completes.
 
 
-## load(paths, callback)
+### load(paths, callback)
 
 __Parameters__
 * `paths` Array
 * `callback` __type
 
 
-## resolve(entityName)
+### resolve(entityName)
 Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot
 be found, undefined is returned.
 
 Returns: `Symbol`
 
 __Parameters__
-* `entityName`
+* `entityName` - The global entity name to resolve.
 
 
-## Symbol
-A named symbol.
+### Symbol
+Represents a named identifier.
 
 
-### getName()
+#### getName()
 Gets the name of the symbol.
 
 
-### getFullName()
+#### getFullName()
 Gets the qualified name of the symbol.
 
 
-### getDescription()
+#### getDescription()
 Gets the description of the symbol.
 
 
-### getAnnotations(name)
+#### getAnnotations(name)
 Finds annotations with the specified name. If no name is specified, then all annotations
 are returned.
 
@@ -134,50 +130,51 @@ __Parameters__
 * `name` - The name of the annotation to find.
 
 
-### hasAnnotation(name)
-Returns true if the symbols has an annotation with the specified name; Otherwise, return false.
+#### hasAnnotation(name)
+Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
 
 __Parameters__
 * `name` - The name of the annotation to find.
 
 
-### getType()
+#### getType()
 Gets the type of the symbol.
 
 Returns: `Type`
 
 
-### getDeclaredType()
-Gets the declared type of the symbol.
+#### getDeclaredType()
+Gets the type declared by the symbol. For a class getType() returns the static side of the class
+and getDeclaredType() returns the instance side of the class.
 
 Returns: `Type`
 
 
-### getExports()
+#### getExports()
 Gets all symbols exported by this symbol. This is used to get the members of a module or the static
 members of a class.
 
 Returns: `Array`
 
 
-### resolve(entityName)
+#### resolve(entityName)
 Finds the symbol for the given entity name relative to the current symbol. If a symbol with the given name
 cannot be found, undefined is returned.
 
 Returns: `Symbol`
 
 __Parameters__
-* `entityName`
+* `entityName` - The entity name to resolve.
 
 
-### getValue(obj)
+#### getValue(obj)
 Gets the value of the property, variable, or accessor represented by the symbol on the given object.
 
 __Parameters__
 * `obj` - The object to get the value for.
 
 
-### setValue(obj, value)
+#### setValue(obj, value)
 Sets the value of the property, variable, or accessor represented by the symbol on the given object.
 
 __Parameters__
@@ -185,99 +182,99 @@ __Parameters__
 * `value` - The value to set.
 
 
-### isVariable()
-Returns true if the symbol is a variable; Otherwise, return false.
+#### isVariable()
+Returns true if the symbol is a variable; Otherwise, returns false.
 
 
-### isFunction()
-Returns true if the symbol is a function; Otherwise, return false.
+#### isFunction()
+Returns true if the symbol is a function; Otherwise, returns false.
 
 
-### isClass()
-Returns true if the symbol is a class; Otherwise, return false.
+#### isClass()
+Returns true if the symbol is a class; Otherwise, returns false.
 
 
-### isInterface()
-Returns true if the symbol is an interface; Otherwise, return false.
+#### isInterface()
+Returns true if the symbol is an interface; Otherwise, returns false.
 
 
-### isEnum()
-Returns true if the symbol is an enum; Otherwise, return false.
+#### isEnum()
+Returns true if the symbol is an enum; Otherwise, returns false.
 
 
-### isModule()
-Returns true if the symbol is a module; Otherwise, return false.
+#### isModule()
+Returns true if the symbol is a module; Otherwise, returns false.
 
 
-### isImport()
-Returns true if the symbol is an import; Otherwise, return false.
+#### isImport()
+Returns true if the symbol is an import; Otherwise, returns false.
 
 
-### isTypeParameter()
-Returns true if the symbol is a type parameter; Otherwise, return false.
+#### isTypeParameter()
+Returns true if the symbol is a type parameter; Otherwise, returns false.
 
 
-### isProperty()
-Returns true if the symbol is a class or interface property; Otherwise, return false.
+#### isProperty()
+Returns true if the symbol is a class or interface property; Otherwise, returns false.
 
 
-### isMethod()
-Returns true if the symbol is a class or interface method; Otherwise, return false.
+#### isMethod()
+Returns true if the symbol is a class or interface method; Otherwise, returns false.
 
 
-### isAccessor()
-Returns true if the symbol is an accessor; Otherwise, return false.
+#### isAccessor()
+Returns true if the symbol is an accessor; Otherwise, returns false.
 
 
-### isGetAccessor()
-Returns true if the symbol is a get accessor; Otherwise, return false.
+#### isGetAccessor()
+Returns true if the symbol is a get accessor; Otherwise, returns false.
 
 
-### isSetAccessor()
-Returns true if the symbol is a set accessor; Otherwise, return false.
+#### isSetAccessor()
+Returns true if the symbol is a set accessor; Otherwise, returns false.
 
 
-### isEnumMember()
-Returns true if the symbol is an enum member; Otherwise, return false.
+#### isEnumMember()
+Returns true if the symbol is an enum member; Otherwise, returns false.
 
 
-### isTypeAlias()
-Returns true if the symbol is a type alias; Otherwise, return false.
+#### isTypeAlias()
+Returns true if the symbol is a type alias; Otherwise, returns false.
 
 
-## Annotation
-A custom annotation.
+### Annotation
+Represents a custom annotation.
 
 
-### name
+#### name
 The name of the annotation.
 
 
-### value
+#### value
 The value of the annotation.
 
 
-### getDeclarationFileName()
+#### getDeclarationFileName()
 Returns the name of the file that the annotation was declared in.
 
 
-## Type
-A Type.
+### Type
+Represents a type.
 
 
-### getName()
+#### getName()
 Gets the name of the type, if any.
 
 
-### getFullName()
+#### getFullName()
 Gets the qualified name of the type, if any.
 
 
-### getDescription()
+#### getDescription()
 Gets the description of the type.
 
 
-### getAnnotations(inherit)
+#### getAnnotations(inherit)
 Gets all annotations declared for the type.
 
 Returns: `Array`
@@ -286,7 +283,7 @@ __Parameters__
 * `inherit` - True if annotations should be inherited from base types.
 
 
-### getAnnotations(name, inherit)
+#### getAnnotations(name, inherit)
 Finds annotations with the specified name. If no name is specified, then all annotations
 are returns.
 
@@ -297,167 +294,186 @@ __Parameters__
 * `inherit` - True if annotations should be inherited from base types.
 
 
-### hasAnnotation(name, inherit)
-Returns true if the type has an annotation with the specified name; Otherwise, return false.
+#### hasAnnotation(name, inherit)
+Returns true if the type has an annotation with the specified name; Otherwise, returns false.
 
 __Parameters__
 * `name` - The name of the annotation to find.
 * `inherit` - True if base types should be checked for the annotation as well.
 
 
-### getProperties()
+#### getProperties()
+Gets a list of all properties of the type. Note that properties include fields, accessors, and
+methods.
 
 Returns: `Array`
 
 
-### getProperty(name)
+#### getProperty(name)
+Finds a property with the specified name. If no property is found, undefined is returned. Note that
+properties include fields, accessors, and methods.
 
 Returns: `Symbol`
 
 __Parameters__
-* `name`
+* `name` - The property name to find.
 
 
-### getCallSignatures()
-
-Returns: `Array`
-
-
-### getConstructSignatures()
+#### getCallSignatures()
+Gets all call signatures of the type.
 
 Returns: `Array`
 
 
-### getStringIndexType()
+#### getConstructSignatures()
+Gets all construct signatures of the type.
+
+Returns: `Array`
+
+
+#### getStringIndexType()
+Gets the string index type of the type. For example, for { [key: string]: boolean }, getStringIndexType()
+will return the intrinsic boolean type.
 
 Returns: `Type`
 
 
-### getNumberIndexType()
+#### getNumberIndexType()
+Gets the number index type of the type. For example, for { [key: number]: string }, getNumberIndexType()
+will return the intrinsic string type.
 
 Returns: `Type`
 
 
-### isIdenticalTo(target, diagnostics)
+#### isIdenticalTo(target, diagnostics)
+Returns true if the target type is identical to the current type; Otherwise, returns false. If diagnostic
+information regarding the differences between the types is desired, any empty array should be passed to
+the diagnostics parameter.
 
 __Parameters__
-* `target` Type
-* `diagnostics` Array
+* `target` Type  - The target type.
+* `diagnostics` Array  - Array where diagnostic information regarding the differences between the types is placed.
 
 
-### isSubtypeOf(target, diagnostics)
-
-__Parameters__
-* `target` Type
-* `diagnostics` Array
-
-
-### isAssignableTo(target, diagnostics)
+#### isSubtypeOf(target, diagnostics)
+Returns true if the target type is a subtype of the current type; Otherwise, returns false. If diagnostic
+information regarding the differences between the types is desired, any empty array should be passed to
+the diagnostics parameter.
 
 __Parameters__
-* `target` Type
-* `diagnostics` Array
+* `target` Type  - The target type.
+* `diagnostics` Array  - Array where diagnostic information regarding the differences between the types is placed.
 
 
-### isSubclassOf(target)
-Returns true if the target type if a subclass of the current type; Otherwise, return false.
+#### isAssignableTo(target, diagnostics)
+Returns true if the target type is assignable to the current type; Otherwise, returns false. If diagnostic
+information regarding the differences between the types is desired, any empty array should be passed to
+the diagnostics parameter.
+
+__Parameters__
+* `target` Type  - The target type.
+* `diagnostics` Array  - Array where diagnostic information regarding the differences between the types is placed.
+
+
+#### isSubclassOf(target)
+Returns true if the target type if a subclass of the current type; Otherwise, returns false.
 
 __Parameters__
 * `target` Type  - The target type.
 
 
-### getBaseClass()
+#### getBaseClass()
 Gets the base class of a class type.
 
 Returns: `Type`
 
 
-### getBaseTypes()
+#### getBaseTypes()
 Gets the base types of a class or interface type.
 
 Returns: `Array`
 
 
-### hasBaseType(target)
-Returns true if the target type is a base type of the current type; Otherwise, return false.
+#### hasBaseType(target)
+Returns true if the target type is a base type of the current type; Otherwise, returns false.
 
 __Parameters__
 * `target` Type  - The target type.
 
 
-### isClass()
-Returns true if the type is a class; Otherwise, return false.
+#### isClass()
+Returns true if the type is a class; Otherwise, returns false.
 
 
-### isInterface()
-Returns true if the type is an interface; Otherwise, return false.
+#### isInterface()
+Returns true if the type is an interface; Otherwise, returns false.
 
 
-### isTuple()
-Returns true if the type is a tuple; Otherwise, return false.
+#### isTuple()
+Returns true if the type is a tuple; Otherwise, returns false.
 
 
-### isUnion()
-Returns true if the type is a union type; Otherwise, return false.
+#### isUnion()
+Returns true if the type is a union type; Otherwise, returns false.
 
 
-### isArray()
-Returns true if the type is an array; Otherwise, return false.
+#### isArray()
+Returns true if the type is an array; Otherwise, returns false.
 
 
-### isIndex()
-Returns true if the type is an index type; Otherwise, return false.
+#### isIndex()
+Returns true if the type is an index type; Otherwise, returns false.
 
 
-### isAnonymous()
-Returns true if the type is anonymous; Otherwise, return false.
+#### isAnonymous()
+Returns true if the type is anonymous; Otherwise, returns false.
 
 
-### isReference()
-Returns true if the type is a generic reference; Otherwise, return false.
+#### isReference()
+Returns true if the type is a generic reference; Otherwise, returns false.
 
 
-### isEnum()
-Returns true if the type is an enum; Otherwise, return false.
+#### isEnum()
+Returns true if the type is an enum; Otherwise, returns false.
 
 
-### isStringLiteral()
-Returns true if the type is a string literal; Otherwise, return false.
+#### isStringLiteral()
+Returns true if the type is a string literal; Otherwise, returns false.
 
 
-### isTypeParameter()
-Returns true if the type is a type parameter; Otherwise, return false.
+#### isTypeParameter()
+Returns true if the type is a type parameter; Otherwise, returns false.
 
 
-### isAny()
-Returns true if the type is the intrinsic any type; Otherwise, return false.
+#### isAny()
+Returns true if the type is the intrinsic any type; Otherwise, returns false.
 
 
-### isString()
-Returns true if the type is the intrinsic string type; Otherwise, return false.
+#### isString()
+Returns true if the type is the intrinsic string type; Otherwise, returns false.
 
 
-### isNumber()
-Returns true if the type is the intrinsic number type; Otherwise, return false.
+#### isNumber()
+Returns true if the type is the intrinsic number type; Otherwise, returns false.
 
 
-### isBoolean()
-Returns true if the type is the intrinsic boolean type; Otherwise, return false.
+#### isBoolean()
+Returns true if the type is the intrinsic boolean type; Otherwise, returns false.
 
 
-### isVoid()
-Returns true if the type is the intrinsic void type; Otherwise, return false.
+#### isVoid()
+Returns true if the type is the intrinsic void type; Otherwise, returns false.
 
 
-### isIntrinsic()
-Returns true if the type is an intrinsic type; Otherwise, return false.
+#### isIntrinsic()
+Returns true if the type is an intrinsic type; Otherwise, returns false.
 
 
-### isObjectType()
-Returns true if the type is an object type; Otherwise, return false.
+#### isObjectType()
+Returns true if the type is an object type; Otherwise, returns false.
 
 
-### getEnumValue(value, ignoreCase)
+#### getEnumValue(value, ignoreCase)
 Gets the numeric enum value for the given member name.
 
 __Parameters__
@@ -465,55 +481,61 @@ __Parameters__
 * `ignoreCase` - True if case should be ignored when finding the member name.
 
 
-### getEnumName(value)
+#### getEnumName(value)
 Gets the enum member name for the given numeric enum value.
 
 __Parameters__
 * `value` - The numeric value to get the name for.
 
 
-### getEnumNames()
+#### getEnumNames()
 Gets a list of enum member names.
 
 Returns: `Array`
 
 
-### getElementType()
+#### getElementType()
 Gets the element type for an array type.
 
 Returns: `Type`
 
 
-### getElementTypes()
+#### getElementTypes()
 Gets the element types a tuple type.
 
 Returns: `Array`
 
 
-### createInstance(args)
+#### createInstance(args)
 Creates an instance of a class. If arguments are provided then the constructor is called; Otherwise,
 the object is created without calling the constructor. To call a parameter-less constructor, pass an empty
 array to args.
+
+Note that This method assumes that the .d.json file is in the same directory as the .js file that it contains
+type information for. For external modules, Node's require method is used to load the JavaScript module.
 
 __Parameters__
 * `args` Array  - The constructor arguments.
 
 
-### getConstructor()
+#### getConstructor()
 Gets the JavaScript constructor for a class type.
+
+Note that This method assumes that the .d.json file is in the same directory as the .js file that it contains
+type information for. For external modules, Node's require method is used to load the JavaScript module.
 
 Returns: `Function`
 
 
-## Signature
-A call signature.
+### Signature
+Represents a call signature.
 
 
-### getDescription()
+#### getDescription()
 Gets a description of the signature.
 
 
-### getAnnotations(name)
+#### getAnnotations(name)
 Finds annotations with the specified name. If no name is specified, then all annotations
 are returned.
 
@@ -523,20 +545,20 @@ __Parameters__
 * `name` - The name of the annotation to find.
 
 
-### hasAnnotation(name)
-Returns true if the symbols has an annotation with the specified name; Otherwise, return false.
+#### hasAnnotation(name)
+Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
 
 __Parameters__
 * `name` - The name of the annotation to find.
 
 
-### getParameters()
+#### getParameters()
 Gets a list of all parameters for the call signature.
 
 Returns: `Array`
 
 
-### getParameter(name)
+#### getParameter(name)
 Gets a parameter for the signature with the specified name. If no parameter matches the name then undefined
 is returned.
 
@@ -546,35 +568,39 @@ __Parameters__
 * `name` - The parameter name to find.
 
 
-### getReturnType()
+#### getReturnType()
 Gets the return type of the signature.
 
 Returns: `Type`
 
 
-## Diagnostic
+### Diagnostic
 Diagnostic information.
 
 
-### filename
+#### filename
+The name of the .d.json file that contained the error
 
 
-### messageText
+#### messageText
+Message explaining the error.
 
 
-### code
+#### code
+Error code.
 
 
-## DiagnosticError
+### DiagnosticError
 Extension of standard Error that includes diagnostic information.
 
 
-### diagnostics
+#### diagnostics
 Array of Diagnostics that provides details on the error that occurred.
 Type: `Array`
 
 
-### name
+#### name
+The name of the error.
 
-
-### message
+#### message
+The error message.
