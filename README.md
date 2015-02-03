@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/artifacthealth/tsreflect.svg?branch=master)](https://travis-ci.org/artifacthealth/tsreflect)
+
 # TsReflect
 
 TsReflect is a CommonJS module for [Node](http://nodejs.org/) applications for working with JSON declaration files
