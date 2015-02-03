@@ -20,7 +20,7 @@ module reflect {
     }
 
     /* TODO: make this const? We'll have to remove getFlags and change getExported */
-    export enum SymbolFlags {
+    export const enum SymbolFlags {
         FunctionScopedVariable = 0x00000001,  // Variable (var) or parameter
         BlockScopedVariable    = 0x00000002,  // A block-scoped variable (let or const)
         Property               = 0x00000004,  // Property or enum member
@@ -116,7 +116,7 @@ module reflect {
     }
 
     // TODO: make const? will have to remove getFlags
-    export enum TypeFlags {
+    export const enum TypeFlags {
         Any                = 0x00000001,
         String             = 0x00000002,
         Number             = 0x00000004,

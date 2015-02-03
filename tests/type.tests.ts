@@ -393,14 +393,14 @@ describe('Type', () => {
         });
     });
 
-    describe('createObject', () => {
+    describe('createInstance', () => {
 
         it('creates object with prototype and constructor matching declared class type', () => {
 
             var moduleSymbol = helpers.requireFixture("classExportedInExternalModule");
             var testClassType = moduleSymbol.resolve("TestClass").getDeclaredType();
 
-            var obj = testClassType.createObject();
+            var obj = testClassType.createInstance();
             assert.equal(3, obj.add(1,2));
             assert.equal(obj.constructor, classExportedInExternalModule.TestClass);
         });
@@ -410,7 +410,7 @@ describe('Type', () => {
             var moduleSymbol = helpers.requireFixture("classAsExportAssignment");
             var testClassType = moduleSymbol.getDeclaredType();
 
-            var obj = testClassType.createObject();
+            var obj = testClassType.createInstance();
             assert.equal(3, obj.add(1,2));
         });
 
@@ -419,7 +419,7 @@ describe('Type', () => {
             var moduleSymbol = helpers.requireFixture("classInInternalModuleAsExportAssignment");
             var testClassType = moduleSymbol.getDeclaredType();
 
-            var obj = testClassType.createObject();
+            var obj = testClassType.createInstance();
             assert.equal(3, obj.add(1,2));
         });
 
@@ -428,7 +428,7 @@ describe('Type', () => {
             var moduleSymbol = helpers.requireFixture("classInExportedInternalModule");
             var testClassType = moduleSymbol.resolve("B.TestClass").getDeclaredType();
 
-            var obj = testClassType.createObject();
+            var obj = testClassType.createInstance();
             assert.equal(3, obj.add(1,2));
         });
 
@@ -437,35 +437,35 @@ describe('Type', () => {
             reflect.reference("../typings/node.d.json");
 
             var bufferType = reflect.require("cluster").resolve("Worker").getDeclaredType();
-            var obj = bufferType.createObject();
+            var obj = bufferType.createInstance();
             assert.ok(obj.kill);
         });
 
         it('creates object for global class', () => {
 
             var dateType = reflect.resolve("Date").getDeclaredType();
-            var obj = dateType.createObject();
+            var obj = dateType.createInstance();
             assert.ok(obj.getHours);
         });
 
         it('does not call the constructor if no arguments are provided', () => {
 
             var type = helpers.requireFixture("classWithConstructor").getDeclaredType();
-            var obj = type.createObject();
+            var obj = type.createInstance();
             assert.isUndefined(obj.constructorCalled);
         });
 
-        it('calls constructor with empty array when empty array is passed to createObject', () => {
+        it('calls constructor with empty array when empty array is passed to createInstance', () => {
 
             var type = helpers.requireFixture("classWithConstructor").getDeclaredType();
-            var obj = type.createObject([]);
+            var obj = type.createInstance([]);
             assert.isTrue(obj.constructorCalled);
         });
 
-        it('calls constructor with arguments in array passed to createObject', () => {
+        it('calls constructor with arguments in array passed to createInstance', () => {
 
             var type = helpers.requireFixture("classWithConstructor").getDeclaredType();
-            var obj = type.createObject([1, "two"]);
+            var obj = type.createInstance([1, "two"]);
             assert.lengthOf(obj.argumentsPassed, 2);
             assert.equal(obj.argumentsPassed[0], 1);
             assert.equal(obj.argumentsPassed[1], "two");

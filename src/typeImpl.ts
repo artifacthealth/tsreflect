@@ -36,10 +36,6 @@ module reflect {
 
         }
 
-        getId(): number {
-            return this.id;
-        }
-
         getFullName(): string {
             if (this.symbol) {
                 return this.symbol.getFullName();
@@ -108,10 +104,6 @@ module reflect {
             }
 
             return false;
-        }
-
-        getFlags(): TypeFlags {
-            return this.flags;
         }
 
         getProperties(): Symbol[] {
@@ -433,7 +425,7 @@ module reflect {
             return this.elementTypes;
         }
 
-        createObject(args?: any[]): any {
+        createInstance(args?: any[]): any {
 
             var constructor = this._getImplementation();
 

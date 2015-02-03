@@ -10,21 +10,6 @@ import helpers = require("./helpers");
 
 describe('Symbol', () => {
 
-    describe('getFlags', () => {
-
-        it('correctly returns SymbolFlags for accessors', () => {
-
-            helpers.referenceFixture("classWithAccessors");
-            var properties = reflect.resolve("ClassWithAccessors").getDeclaredType().getProperties();
-            assert.ok(properties[0].getFlags() & reflect.SymbolFlags.GetAccessor, "GetAccessor flag should be set for property 'a");
-            assert.notOk(properties[0].getFlags() & reflect.SymbolFlags.SetAccessor, "SetAccessor flag should not be set for property 'a");
-            assert.ok(properties[1].getFlags() & reflect.SymbolFlags.GetAccessor, "GetAccessor flag should be set for property 'b");
-            assert.ok(properties[1].getFlags() & reflect.SymbolFlags.SetAccessor, "SetAccessor flag should be set for property 'b");
-            assert.ok(properties[2].getFlags() & reflect.SymbolFlags.SetAccessor, "SetAccessor flag should be set for property 'c");
-            assert.notOk(properties[2].getFlags() & reflect.SymbolFlags.GetAccessor, "GetAccessor flag should not be set for property 'c");
-        });
-    });
-
     describe('resolve', () => {
 
         it('correctly resolves name relative to symbol', () => {
@@ -85,7 +70,7 @@ describe('Symbol', () => {
         it('returns the value of the property represented by the symbol for the given object', () => {
 
             var type = helpers.requireFixture("classExportedInExternalModule").resolve("TestClass").getDeclaredType();
-            var instance = type.createObject();
+            var instance = type.createInstance();
 
             instance.a = 10;
 
@@ -113,7 +98,7 @@ describe('Symbol', () => {
         it('sets the value of the property represented by the symbol for the given object', () => {
 
             var type = helpers.requireFixture("classExportedInExternalModule").resolve("TestClass").getDeclaredType();
-            var instance = type.createObject();
+            var instance = type.createInstance();
 
             // first call to getValue generates the optimized getValue
             type.getProperty("a").setValue(instance, 10)
@@ -223,23 +208,13 @@ describe('Symbol', () => {
             assert.lengthOf(symbols, 3);
         });
 
-        it('returns exported symbols in current symbol matching specified flags', () => {
-
-            helpers.referenceFixture("moduleWithVariables");
-
-            var symbols = reflect.resolve("moduleWithVariables").getExports(reflect.SymbolFlags.Variable);
-            assert.isArray(symbols);
-            assert.lengthOf(symbols, 2);
-        });
-
-
         it('correctly resolves imported module members', () => {
 
             helpers.referenceFixture("moduleWithImportedVariable");
 
-            var symbols = reflect.resolve("moduleWithImportedVariable").getExports(reflect.SymbolFlags.Variable);
+            var symbols = reflect.resolve("moduleWithImportedVariable").getExports();
             assert.isArray(symbols);
-            assert.lengthOf(symbols, 1);
+            assert.lengthOf(symbols, 2);
         });
     });
 

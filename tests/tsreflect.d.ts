@@ -5,37 +5,6 @@ export declare function resolve(entityName: string): Symbol;
 export declare function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
 export declare function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
 
-export declare enum SymbolFlags {
-
-    Variable,
-    Property,
-    EnumMember,
-    Function,
-    Class,
-    Interface,
-    Enum,
-    ValueModule,
-    NamespaceModule,
-    TypeLiteral,
-    Method,
-    Constructor,
-    GetAccessor,
-    SetAccessor,
-    CallSignature,
-    ConstructSignature,
-    IndexSignature,
-    TypeParameter,
-    Import,
-    Value,
-    Type,
-    Namespace,
-    Module,
-    Accessor,
-    Signature,
-    ModuleMember,
-    Descendants
-}
-
 export interface Symbol {
 
     getFullName(): string;
@@ -44,11 +13,9 @@ export interface Symbol {
     getAnnotations(name?: string): Annotation[];
     hasAnnotation(name: string): boolean;
 
-    getFlags(): SymbolFlags;
-
     getType(): Type;
     getDeclaredType(): Type;
-    getExports(flags?: SymbolFlags): Symbol[];
+    getExports(): Symbol[];
 
     resolve (entityName: string): Symbol;
 
@@ -81,29 +48,6 @@ export interface Annotation {
     getDeclarationFileName(): string;
 }
 
-export declare enum TypeFlags {
-    Any,
-    String,
-    Number,
-    Boolean,
-    Void,
-    Undefined,
-    Null,
-    Enum,
-    StringLiteral,
-    TypeParameter,
-    Class,
-    Interface,
-    Reference,
-    Tuple,
-    Anonymous,
-    FromSignature,
-    Intrinsic,
-    StringLike,
-    NumberLike,
-    ObjectType
-}
-
 export interface Type {
 
     getFullName(): string;
@@ -112,8 +56,6 @@ export interface Type {
     getAnnotations(inherit: boolean): Annotation[];
     getAnnotations(name?: string, inherit?: boolean): Annotation[];
     hasAnnotation(name: string, inherit?: boolean): boolean;
-
-    getFlags(): TypeFlags;
 
     getProperties(): Symbol[];
     getProperty(name: string): Symbol;
@@ -156,7 +98,7 @@ export interface Type {
     getElementType(): Type;
     getElementTypes(): Type[];
 
-    createObject(args?: any[]): any;
+    createInstance(args?: any[]): any;
     getConstructor(): Function;
 }
 

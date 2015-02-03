@@ -14,10 +14,6 @@ module reflect {
 
         }
 
-        getId(): number {
-            return this.id;
-        }
-
         resolve(name: string, meaning: SymbolFlags = SymbolFlags.Namespace | SymbolFlags.Type | SymbolFlags.Value): Symbol {
 
             if (!name) {
@@ -73,10 +69,6 @@ module reflect {
             return this.name;
         }
 
-        getFlags(): SymbolFlags {
-            return this.flags;
-        }
-
         getDescription(): string {
 
             var declarations = this.declarations;
@@ -121,9 +113,9 @@ module reflect {
             return ret;
         }
 
-        getExports(flags: SymbolFlags = SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace): Symbol[] {
+        getExports(): Symbol[] {
 
-            var ret = getExportedSymbols(this.exports, flags);
+            var ret = getExportedSymbols(this.exports, SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace);
             if(hasDiagnosticErrors) {
                 throwDiagnosticError();
             }
