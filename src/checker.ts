@@ -1251,9 +1251,6 @@ module reflect {
             var minArgumentCount = -1;
             for (var i = 0, n = declaration.parameters.length; i < n; i++) {
                 var param = declaration.parameters[i];
-                if(param.symbol === undefined) {
-                    console.log("HERE");
-                }
                 parameters.push(param.symbol);
                 if (param.type && param.type.kind === NodeKind.StringLiteral) {
                     hasStringLiterals = true;

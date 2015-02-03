@@ -177,7 +177,7 @@ describe('Type', () => {
             assert.lengthOf(signatures, 0);
         });
 
-        it('returns signatures for interface method', () => {
+        it('returns signature for interface method', () => {
 
             var type = helpers.requireFixture("interfaceWithMethod").getDeclaredType();
             var symbol = type.getProperty("b");
@@ -185,6 +185,16 @@ describe('Type', () => {
             var signatures = methodType.getCallSignatures();
             assert.isTrue(signatures.length > 0);
             assert.isTrue(signatures[0].getParameter("a") !== undefined);
+        });
+
+        it('returns signature for interface method that has empty parameter list', () => {
+
+            var type = helpers.requireFixture("interfaceWithMethod").getDeclaredType();
+            var symbol = type.getProperty("c");
+            var methodType = symbol.getType();
+            var signatures = methodType.getCallSignatures();
+            assert.isTrue(signatures.length > 0);
+            assert.lengthOf(signatures[0].getParameters(), 0)
         });
     });
 

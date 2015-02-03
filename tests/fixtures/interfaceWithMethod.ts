@@ -10,6 +10,8 @@ interface A {
      * @param a Some parameter
      */
     b(a: string): number;
+
+    c(): number;
 }
 
 export = A;

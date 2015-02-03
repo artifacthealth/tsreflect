@@ -689,6 +689,9 @@ module reflect {
             node.kind = kind;
             scanFlags(node);
             scanTypeParameterDeclarations(node.typeParameters);
+            if(node.parameters === undefined) {
+                node.parameters = [];
+            }
             forEach(node.parameters, scanParameterDeclaration);
             scanChildTypeNode(node, "returns");
         }
