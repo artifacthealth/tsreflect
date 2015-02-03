@@ -51,192 +51,136 @@ information for. Just like Node's require function, if a relative path is specif
 relative to the source file that called require. Also like Node's require function, files are loaded
 synchronously. If you would like to load type information asynchronously, see the load function.
 
-#### Arguments
-
 ```moduleName``` The name of the module to load.
 
-/**
- * Load type information for an internal module or global declarations. Analogous to TypeScript's reference tags.
- *
- * This method assumes that the .d.json file is in the same directory as the .js file that it contains type
- * information for. Just like TypeScript's /// <reference path="... tags, the path is considered to be relative to
- * the source file that called reference. Files are loaded synchronously. If you would like to load type information
- * asynchronously, see the load function.
- *
- * @param fileName The name of the file to load.
- */
-function reference(fileName: string): void;
 
-/**
- * Asynchronously load type information for the given filename pattern(s).
- *
- * This method assumes that the .d.json files are in the same directory as the .js file that they contain type
- * information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
- * matching. Relative paths are considered to be relative to the current working directory.
- *
- * Once all declaration files have been loaded, the callback is called with the symbols for any external
- * modules. If no external modules were loaded an empty array is passed to the callback. The list of symbols
- * does not include any global symbols that were loaded.
- *
- * @param path A string containing the path to load or an array containing the paths to load. Glob patterns are
- * supported.
- * @param callback Called when the load operation completes.
- */
-function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
-function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+### function reference(fileName: string): void;
+Load type information for an internal module or global declarations. Analogous to TypeScript's reference tags.
 
-/**
- * Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot
- * be found, undefined is returned.
- * @param entityName
- */
-function resolve(entityName: string): Symbol;
+This method assumes that the .d.json file is in the same directory as the .js file that it contains type
+information for. Just like TypeScript's /// <reference path="... tags, the path is considered to be relative to
+the source file that called reference. Files are loaded synchronously. If you would like to load type information
+asynchronously, see the load function.
 
-/**
- * Represents a named identifier.
- */
-interface Symbol {
+```fileName``` The name of the file to load.
 
-    /**
-     * Gets the name of the symbol.
-     */
-    getName(): string;
 
-    /**
-     * Gets the qualified name of the symbol.
-     */
-    getFullName(): string;
+### function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+### function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+Asynchronously load type information for the given filename pattern(s).
 
-    /**
-     * Gets the description of the symbol.
-     */
-    getDescription(): string;
+This method assumes that the .d.json files are in the same directory as the .js file that they contain type
+information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
+matching. Relative paths are considered to be relative to the current working directory.
 
-    /**
-     * Finds annotations with the specified name. If no name is specified, then all annotations
-     * are returned.
-     * @param name The name of the annotation to find.
-     */
-    getAnnotations(name?: string): Annotation[];
+Once all declaration files have been loaded, the callback is called with the symbols for any external
+modules. If no external modules were loaded an empty array is passed to the callback. The list of symbols
+does not include any global symbols that were loaded.
 
-    /**
-     * Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
-     * @param name The name of the annotation to find.
-     */
-    hasAnnotation(name: string): boolean;
+```path``` A string containing the path to load or an array containing the paths to load. Glob patterns are supported.
+```callback``` Called when the load operation completes.
 
-    /**
-     * Gets the type of the symbol.
-     */
-    getType(): Type;
 
-    /**
-     * Gets the type declared by the symbol. For a class getType() returns the static side of the class
-     * and getDeclaredType() returns the instance side of the class.
-     */
-    getDeclaredType(): Type;
+### function resolve(entityName: string): Symbol;
+Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot be found, undefined is returned.
 
-    /**
-     * Gets all symbols exported by this symbol. This is used to get the members of a module or the static
-     * members of a class.
-     */
-    getExports(): Symbol[];
+```entityName``` The global entity name to resolve.
 
-    /**
-     * Finds the symbol for the given entity name relative to the current symbol. If a symbol with the given name
-     * cannot be found, undefined is returned.
-     * @param entityName
-     */
-    resolve (entityName: string): Symbol;
 
-    /**
-     * Gets the value of the property, variable, or accessor represented by the symbol on the given object.
-     * @param obj The object to get the value for.
-     */
-    getValue(obj: any): any;
+### interface Symbol
+Represents a named identifier.
 
-    /**
-     * Sets the value of the property, variable, or accessor represented by the symbol on the given object.
-     * @param obj The object to set the value on.
-     * @param value The value to set.
-     */
-    setValue(obj: any, value: any): void;
+#### getName(): string;
+Gets the name of the symbol.
 
-    /**
-     * Returns true if the symbol is a variable; Otherwise, returns false.
-     */
-    isVariable(): boolean;
+#### getFullName(): string;
+Gets the qualified name of the symbol.
 
-    /**
-     * Returns true if the symbol is a function; Otherwise, returns false.
-     */
-    isFunction(): boolean;
+#### getDescription(): string;
+Gets the description of the symbol.
 
-    /**
-     * Returns true if the symbol is a class; Otherwise, returns false.
-     */
-    isClass(): boolean;
+#### getAnnotations(name?: string): Annotation[];
+Finds annotations with the specified name. If no name is specified, then all annotations are returned.
 
-    /**
-     * Returns true if the symbol is an interface; Otherwise, returns false.
-     */
-    isInterface(): boolean;
+```name``` The name of the annotation to find.
 
-    /**
-     * Returns true if the symbol is an enum; Otherwise, returns false.
-     */
-    isEnum(): boolean;
+#### hasAnnotation(name: string): boolean;
+Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
 
-    /**
-     * Returns true if the symbol is a module; Otherwise, returns false.
-     */
-    isModule(): boolean;
+```name``` The name of the annotation to find.
 
-    /**
-     * Returns true if the symbol is an import; Otherwise, returns false.
-     */
-    isImport(): boolean;
+#### getType(): Type;
+Gets the type of the symbol.
 
-    /**
-     * Returns true if the symbol is a type parameter; Otherwise, returns false.
-     */
-    isTypeParameter(): boolean;
+#### getDeclaredType(): Type;
+Gets the type declared by the symbol. For a class getType() returns the static side of the class and getDeclaredType() returns the instance side of the class.
 
-    /**
-     * Returns true if the symbol is a class or interface property; Otherwise, returns false.
-     */
-    isProperty(): boolean;
+#### getExports(): Symbol[];
+Gets all symbols exported by this symbol. This is used to get the members of a module or the static
+members of a class.
 
-    /**
-     * Returns true if the symbol is a class or interface method; Otherwise, returns false.
-     */
-    isMethod(): boolean;
+#### resolve (entityName: string): Symbol;
+Finds the symbol for the given entity name relative to the current symbol. If a symbol with the given name
+cannot be found, undefined is returned.
 
-    /**
-     * Returns true if the symbol is an accessor; Otherwise, returns false.
-     */
-    isAccessor(): boolean;
+```entityName``` The name of the entity to resolve.
 
-    /**
-     * Returns true if the symbol is a get accessor; Otherwise, returns false.
-     */
-    isGetAccessor(): boolean;
+#### getValue(obj: any): any;
+Gets the value of the property, variable, or accessor represented by the symbol on the given object.
 
-    /**
-     * Returns true if the symbol is a set accessor; Otherwise, returns false.
-     */
-    isSetAccessor(): boolean;
+```obj``` The object to get the value for.
 
-    /**
-     * Returns true if the symbol is an enum member; Otherwise, returns false.
-     */
-    isEnumMember(): boolean;
+#### setValue(obj: any, value: any): void;
+Sets the value of the property, variable, or accessor represented by the symbol on the given object.
 
-    /**
-     * Returns true if the symbol is a type alias; Otherwise, returns false.
-     */
-    isTypeAlias(): boolean;
-}
+```obj``` The object to set the value on.
+```value``` The value to set.
+
+#### isVariable(): boolean;
+Returns true if the symbol is a variable; Otherwise, returns false.
+
+#### isFunction(): boolean;
+Returns true if the symbol is a function; Otherwise, returns false.
+
+#### isClass(): boolean;
+Returns true if the symbol is a class; Otherwise, returns false.
+
+#### isInterface(): boolean;
+Returns true if the symbol is an interface; Otherwise, returns false.
+
+#### isEnum(): boolean;
+Returns true if the symbol is an enum; Otherwise, returns false.
+
+#### isModule(): boolean;
+Returns true if the symbol is a module; Otherwise, returns false.
+
+#### isImport(): boolean;
+Returns true if the symbol is an import; Otherwise, returns false.
+
+#### isTypeParameter(): boolean;
+Returns true if the symbol is a type parameter; Otherwise, returns false.
+
+#### isProperty(): boolean;
+Returns true if the symbol is a class or interface property; Otherwise, returns false.
+
+#### isMethod(): boolean;
+Returns true if the symbol is a class or interface method; Otherwise, returns false.
+
+#### isAccessor(): boolean;
+Returns true if the symbol is an accessor; Otherwise, returns false.
+
+#### isGetAccessor(): boolean;
+Returns true if the symbol is a get accessor; Otherwise, returns false.
+
+#### isSetAccessor(): boolean;
+Returns true if the symbol is a set accessor; Otherwise, returns false.
+
+#### isEnumMember(): boolean;
+Returns true if the symbol is an enum member; Otherwise, returns false.
+
+#### isTypeAlias(): boolean;
+Returns true if the symbol is a type alias; Otherwise, returns false.
+
 
 /**
  * Represents a custom annotation.

@@ -45,7 +45,7 @@ declare module "tsreflect" {
     /**
      * Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot
      * be found, undefined is returned.
-     * @param entityName
+     * @param entityName The global entity name to resolve.
      */
     function resolve(entityName: string): Symbol;
 
@@ -102,7 +102,7 @@ declare module "tsreflect" {
         /**
          * Finds the symbol for the given entity name relative to the current symbol. If a symbol with the given name
          * cannot be found, undefined is returned.
-         * @param entityName
+         * @param entityName The entity name to resolve.
          */
         resolve (entityName: string): Symbol;
 
