@@ -43,7 +43,8 @@
     "json",
     "declaration",
     "type",
-    "introspection"
+    "introspection",
+    "annotations"
   ]
 }
 
