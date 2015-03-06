@@ -1,7 +1,7 @@
 declare module "tsreflect" {
 
     /**
-     * Load type information for an external module. Analogous to Node's require function.
+     * Load type information for an external module in the global context. Analogous to Node's require function.
      *
      * This method assumes that the .d.json file is in the same directory as the .js file that it contains type
      * information for. Just like Node's require function, if a relative path is specified, it is considered to be
@@ -13,7 +13,8 @@ declare module "tsreflect" {
     function require(moduleName: string): Symbol;
 
     /**
-     * Load type information for an internal module or global declarations. Analogous to TypeScript's reference tags.
+     * Load type information for an internal module or global declarations in the global context. Analogous to
+     * TypeScript's reference tags.
      *
      * This method assumes that the .d.json file is in the same directory as the .js file that it contains type
      * information for. Just like TypeScript's /// <reference path="... tags, the path is considered to be relative to
@@ -25,7 +26,7 @@ declare module "tsreflect" {
     function reference(fileName: string): void;
 
     /**
-     * Asynchronously load type information for the given filename pattern(s).
+     * Asynchronously load type information for the given filename pattern(s) in the global context.
      *
      * This method assumes that the .d.json files are in the same directory as the .js file that they contain type
      * information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
@@ -40,11 +41,70 @@ declare module "tsreflect" {
     function load(path: string | string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
 
     /**
-     * Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot
+     * Finds the symbol for the given entity name in the global context. If a global symbol with the given name cannot
      * be found, an exception is thrown.
      * @param entityName The global entity name to resolve.
      */
     function resolve(entityName: string): Symbol;
+
+    /**
+     * Creates a reflection context.
+     */
+    function createContext(): ReflectContext;
+
+
+    /**
+     * Reflection context.
+     */
+    interface ReflectContext {
+
+        /**
+         * Load type information for an external module in the current context. Analogous to Node's require function.
+         *
+         * This method assumes that the .d.json file is in the same directory as the .js file that it contains type
+         * information for. Just like Node's require function, if a relative path is specified, it is considered to be
+         * relative to the source file that called require. Also like Node's require function, files are loaded
+         * synchronously. If you would like to load type information asynchronously, see the load function.
+         *
+         * @param moduleName The name of the module to load.
+         */
+        require(moduleName: string): Symbol;
+
+        /**
+         * Load type information for an internal module or global declarations in the current context. Analogous to
+         * TypeScript's reference tags.
+         *
+         * This method assumes that the .d.json file is in the same directory as the .js file that it contains type
+         * information for. Just like TypeScript's /// <reference path="... tags, the path is considered to be relative to
+         * the source file that called reference. Files are loaded synchronously. If you would like to load type information
+         * asynchronously, see the load function.
+         *
+         * @param fileName The name of the file to load.
+         */
+        reference(fileName: string): void;
+
+        /**
+         * Asynchronously load type information for the given filename pattern(s) in the current context.
+         *
+         * This method assumes that the .d.json files are in the same directory as the .js file that they contain type
+         * information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
+         * matching. Relative paths are considered to be relative to the current working directory.
+         *
+         * Once all declaration files have been loaded, the callback is called with the symbols for any external
+         * modules and any top level global declarations in the processed files.
+         *
+         * @param path The path(s) to load. Glob patterns are supported.
+         * @param callback Called when the load operation completes.
+         */
+        load(path: string | string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+
+        /**
+         * Finds the symbol for the given entity name in the current context. If a global symbol with the given name cannot
+         * be found, an exception is thrown.
+         * @param entityName The global entity name to resolve.
+         */
+        resolve(entityName: string): Symbol;
+    }
 
     /**
      * Represents a named identifier.

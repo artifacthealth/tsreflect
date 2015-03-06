@@ -47,6 +47,8 @@ reflect.load("**/*.d.json", (err, symbols) => {
 * [`reference`](#reference)
 * [`load`](#load)
 * [`resolve`](#resolve)
+* [`createContext`](#createContext)
+* [`ReflectContext`](#ReflectContext)
 * [`Symbol`](#Symbol)
 * [`Annotation`](#Annotation)
 * [`Type`](#Type)
@@ -54,9 +56,9 @@ reflect.load("**/*.d.json", (err, symbols) => {
 * [`Diagnostic`](#Diagnostic)
 * [`DiagnosticError`](#DiagnosticError)
 
-<a name=require />
+<a name="require" />
 ### require(moduleName)
-Load type information for an external module. Analogous to Node's require function.
+Load type information for an external module in the global context. Analogous to Node's require function.
 
 This method assumes that the .d.json file is in the same directory as the .js file that it contains type
 information for. Just like Node's require function, if a relative path is specified, it is considered to be
@@ -69,9 +71,10 @@ __Parameters__
 __Returns:__ `Symbol`
 
 
-<a name=reference />
+<a name="reference" />
 ### reference(fileName)
-Load type information for an internal module or global declarations. Analogous to TypeScript's reference tags.
+Load type information for an internal module or global declarations in the global context. Analogous to
+TypeScript's reference tags.
 
 This method assumes that the .d.json file is in the same directory as the .js file that it contains type
 information for. Just like TypeScript's /// <reference path="... tags, the path is considered to be relative to
@@ -84,9 +87,9 @@ __Parameters__
 __Returns:__ `void`
 
 
-<a name=load />
+<a name="load" />
 ### load(path, callback)
-Asynchronously load type information for the given filename pattern(s).
+Asynchronously load type information for the given filename pattern(s) in the global context.
 
 This method assumes that the .d.json files are in the same directory as the .js file that they contain type
 information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
@@ -102,9 +105,9 @@ __Parameters__
 __Returns:__ `void`
 
 
-<a name=resolve />
+<a name="resolve" />
 ### resolve(entityName)
-Finds the symbol for the given entity name in the global scope. If a global symbol with the given name cannot
+Finds the symbol for the given entity name in the global context. If a global symbol with the given name cannot
 be found, an exception is thrown.
 
 __Parameters__
@@ -113,8 +116,86 @@ __Parameters__
 __Returns:__ `Symbol`
 
 
-<a name=Symbol />
-### Symbol
+<a name="createContext" />
+### createContext()
+Creates a reflection context.
+
+__Returns:__ `ReflectContext`
+
+
+<a name="ReflectContext" />
+### ReflectContext Interface
+--------------------
+Reflection context.
+* [`require`](#require)
+* [`reference`](#reference)
+* [`load`](#load)
+* [`resolve`](#resolve)
+
+<a name="require" />
+#### require(moduleName)
+Load type information for an external module in the current context. Analogous to Node's require function.
+
+This method assumes that the .d.json file is in the same directory as the .js file that it contains type
+information for. Just like Node's require function, if a relative path is specified, it is considered to be
+relative to the source file that called require. Also like Node's require function, files are loaded
+synchronously. If you would like to load type information asynchronously, see the load function.
+
+__Parameters__
+* moduleName `string`  - The name of the module to load.
+
+__Returns:__ `Symbol`
+
+
+<a name="reference" />
+#### reference(fileName)
+Load type information for an internal module or global declarations in the current context. Analogous to
+TypeScript's reference tags.
+
+This method assumes that the .d.json file is in the same directory as the .js file that it contains type
+information for. Just like TypeScript's /// <reference path="... tags, the path is considered to be relative to
+the source file that called reference. Files are loaded synchronously. If you would like to load type information
+asynchronously, see the load function.
+
+__Parameters__
+* fileName `string`  - The name of the file to load.
+
+__Returns:__ `void`
+
+
+<a name="load" />
+#### load(path, callback)
+Asynchronously load type information for the given filename pattern(s) in the current context.
+
+This method assumes that the .d.json files are in the same directory as the .js file that they contain type
+information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
+matching. Relative paths are considered to be relative to the current working directory.
+
+Once all declaration files have been loaded, the callback is called with the symbols for any external
+modules and any top level global declarations in the processed files.
+
+__Parameters__
+* path `string | string[]`  - The path(s) to load. Glob patterns are supported.
+* callback - Called when the load operation completes.
+
+__Returns:__ `void`
+
+
+<a name="resolve" />
+#### resolve(entityName)
+Finds the symbol for the given entity name in the current context. If a global symbol with the given name cannot
+be found, an exception is thrown.
+
+__Parameters__
+* entityName `string`  - The global entity name to resolve.
+
+__Returns:__ `Symbol`
+
+
+
+
+<a name="Symbol" />
+### Symbol Interface
 --------------------
 Represents a named identifier.
 * [`getName`](#getName)
@@ -144,28 +225,28 @@ Represents a named identifier.
 * [`isEnumMember`](#isEnumMember)
 * [`isTypeAlias`](#isTypeAlias)
 
-<a name=getName />
+<a name="getName" />
 #### getName()
 Gets the name of the symbol.
 
 __Returns:__ `string`
 
 
-<a name=getFullName />
+<a name="getFullName" />
 #### getFullName()
 Gets the qualified name of the symbol.
 
 __Returns:__ `string`
 
 
-<a name=getDescription />
+<a name="getDescription" />
 #### getDescription()
 Gets the description of the symbol.
 
 __Returns:__ `string`
 
 
-<a name=getAnnotations />
+<a name="getAnnotations" />
 #### getAnnotations(name)
 Finds annotations with the specified name. If no name is specified, then all annotations
 are returned.
@@ -176,7 +257,7 @@ __Parameters__
 __Returns:__ `Annotation[]`
 
 
-<a name=hasAnnotation />
+<a name="hasAnnotation" />
 #### hasAnnotation(name)
 Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
 
@@ -186,14 +267,14 @@ __Parameters__
 __Returns:__ `boolean`
 
 
-<a name=getType />
+<a name="getType" />
 #### getType()
 Gets the type of the symbol.
 
 __Returns:__ `Type`
 
 
-<a name=getDeclaredType />
+<a name="getDeclaredType" />
 #### getDeclaredType()
 Gets the type declared by the symbol. For a class getType() returns the static side of the class
 and getDeclaredType() returns the instance side of the class.
@@ -201,7 +282,7 @@ and getDeclaredType() returns the instance side of the class.
 __Returns:__ `Type`
 
 
-<a name=getExports />
+<a name="getExports" />
 #### getExports()
 Gets all symbols exported by this symbol. This is used to get the members of a module or the static
 members of a class.
@@ -209,7 +290,7 @@ members of a class.
 __Returns:__ `Symbol[]`
 
 
-<a name=resolve />
+<a name="resolve" />
 #### resolve(entityName)
 Finds the symbol for the given entity name relative to the current symbol. If a symbol with the given name
 cannot be found, an exception is thrown.
@@ -220,7 +301,7 @@ __Parameters__
 __Returns:__ `Symbol`
 
 
-<a name=getValue />
+<a name="getValue" />
 #### getValue(obj)
 Gets the value of the symbol on the given object. The symbol must be a property, variable, or accessor.
 
@@ -230,7 +311,7 @@ __Parameters__
 __Returns:__ `any`
 
 
-<a name=setValue />
+<a name="setValue" />
 #### setValue(obj, value)
 Sets the value of the symbol on the given object. The symbol must be a property, variable, or accessor.
 
@@ -241,105 +322,105 @@ __Parameters__
 __Returns:__ `void`
 
 
-<a name=isVariable />
+<a name="isVariable" />
 #### isVariable()
 Returns true if the symbol is a variable; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isFunction />
+<a name="isFunction" />
 #### isFunction()
 Returns true if the symbol is a function; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isClass />
+<a name="isClass" />
 #### isClass()
 Returns true if the symbol is a class; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isInterface />
+<a name="isInterface" />
 #### isInterface()
 Returns true if the symbol is an interface; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isEnum />
+<a name="isEnum" />
 #### isEnum()
 Returns true if the symbol is an enum; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isModule />
+<a name="isModule" />
 #### isModule()
 Returns true if the symbol is a module; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isImport />
+<a name="isImport" />
 #### isImport()
 Returns true if the symbol is an import; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isTypeParameter />
+<a name="isTypeParameter" />
 #### isTypeParameter()
 Returns true if the symbol is a type parameter; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isProperty />
+<a name="isProperty" />
 #### isProperty()
 Returns true if the symbol is a class or interface property; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isMethod />
+<a name="isMethod" />
 #### isMethod()
 Returns true if the symbol is a class or interface method; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isAccessor />
+<a name="isAccessor" />
 #### isAccessor()
 Returns true if the symbol is an accessor; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isGetAccessor />
+<a name="isGetAccessor" />
 #### isGetAccessor()
 Returns true if the symbol is a get accessor; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isSetAccessor />
+<a name="isSetAccessor" />
 #### isSetAccessor()
 Returns true if the symbol is a set accessor; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isEnumMember />
+<a name="isEnumMember" />
 #### isEnumMember()
 Returns true if the symbol is an enum member; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isTypeAlias />
+<a name="isTypeAlias" />
 #### isTypeAlias()
 Returns true if the symbol is a type alias; Otherwise, returns false.
 
@@ -348,29 +429,29 @@ __Returns:__ `boolean`
 
 
 
-<a name=Annotation />
-### Annotation
+<a name="Annotation" />
+### Annotation Interface
 --------------------
 Represents a custom annotation.
 * [`name`](#name)
 * [`value`](#value)
 * [`getDeclarationFileName`](#getDeclarationFileName)
 
-<a name=name />
+<a name="name" />
 #### name
 The name of the annotation.
 
 __Type:__ `string`
 
 
-<a name=value />
+<a name="value" />
 #### value
 The value of the annotation.
 
 __Type:__ `any`
 
 
-<a name=getDeclarationFileName />
+<a name="getDeclarationFileName" />
 #### getDeclarationFileName()
 Returns the name of the file that the annotation was declared in.
 
@@ -379,8 +460,8 @@ __Returns:__ `string`
 
 
 
-<a name=Type />
-### Type
+<a name="Type" />
+### Type Interface
 --------------------
 Represents a type.
 * [`getName`](#getName)
@@ -427,28 +508,28 @@ Represents a type.
 * [`createInstance`](#createInstance)
 * [`getConstructor`](#getConstructor)
 
-<a name=getName />
+<a name="getName" />
 #### getName()
 Gets the name of the type, if any.
 
 __Returns:__ `string`
 
 
-<a name=getFullName />
+<a name="getFullName" />
 #### getFullName()
 Gets the qualified name of the type, if any.
 
 __Returns:__ `string`
 
 
-<a name=getDescription />
+<a name="getDescription" />
 #### getDescription()
 Gets the description of the type.
 
 __Returns:__ `string`
 
 
-<a name=getAnnotations />
+<a name="getAnnotations" />
 #### getAnnotations(inherit)
 Gets all annotations declared for the type.
 
@@ -469,7 +550,7 @@ __Parameters__
 __Returns:__ `Annotation[]`
 
 
-<a name=hasAnnotation />
+<a name="hasAnnotation" />
 #### hasAnnotation(name, inherit)
 Returns true if the type has an annotation with the specified name; Otherwise, returns false.
 
@@ -480,7 +561,7 @@ __Parameters__
 __Returns:__ `boolean`
 
 
-<a name=getProperties />
+<a name="getProperties" />
 #### getProperties()
 Gets a list of all properties of the type. Note that properties include fields, accessors, and
 methods.
@@ -488,7 +569,7 @@ methods.
 __Returns:__ `Symbol[]`
 
 
-<a name=getProperty />
+<a name="getProperty" />
 #### getProperty(name)
 Finds a property with the specified name. If no property is found, undefined is returned. Note that
 properties include fields, accessors, and methods.
@@ -499,21 +580,21 @@ __Parameters__
 __Returns:__ `Symbol`
 
 
-<a name=getCallSignatures />
+<a name="getCallSignatures" />
 #### getCallSignatures()
 Gets all call signatures of the type.
 
 __Returns:__ `Signature[]`
 
 
-<a name=getConstructSignatures />
+<a name="getConstructSignatures" />
 #### getConstructSignatures()
 Gets all construct signatures of the type.
 
 __Returns:__ `Signature[]`
 
 
-<a name=getStringIndexType />
+<a name="getStringIndexType" />
 #### getStringIndexType()
 Gets the string index type of the type. For example, for { [key: string]: boolean }, getStringIndexType()
 will return the intrinsic boolean type.
@@ -521,7 +602,7 @@ will return the intrinsic boolean type.
 __Returns:__ `Type`
 
 
-<a name=getNumberIndexType />
+<a name="getNumberIndexType" />
 #### getNumberIndexType()
 Gets the number index type of the type. For example, for { [key: number]: string }, getNumberIndexType()
 will return the intrinsic string type.
@@ -529,7 +610,7 @@ will return the intrinsic string type.
 __Returns:__ `Type`
 
 
-<a name=isIdenticalTo />
+<a name="isIdenticalTo" />
 #### isIdenticalTo(target, diagnostics)
 Returns true if the target type is identical to the current type; Otherwise, returns false. If diagnostic
 information regarding the differences between the types is desired, any empty array should be passed to
@@ -542,7 +623,7 @@ __Parameters__
 __Returns:__ `boolean`
 
 
-<a name=isSubtypeOf />
+<a name="isSubtypeOf" />
 #### isSubtypeOf(target, diagnostics)
 Returns true if the target type is a subtype of the current type; Otherwise, returns false. If diagnostic
 information regarding the differences between the types is desired, any empty array should be passed to
@@ -555,7 +636,7 @@ __Parameters__
 __Returns:__ `boolean`
 
 
-<a name=isAssignableTo />
+<a name="isAssignableTo" />
 #### isAssignableTo(target, diagnostics)
 Returns true if the target type is assignable to the current type; Otherwise, returns false. If diagnostic
 information regarding the differences between the types is desired, any empty array should be passed to
@@ -568,7 +649,7 @@ __Parameters__
 __Returns:__ `boolean`
 
 
-<a name=isSubclassOf />
+<a name="isSubclassOf" />
 #### isSubclassOf(target)
 Returns true if the target type if a subclass of the current type; Otherwise, returns false.
 
@@ -578,21 +659,21 @@ __Parameters__
 __Returns:__ `boolean`
 
 
-<a name=getBaseClass />
+<a name="getBaseClass" />
 #### getBaseClass()
 Gets the base class of a class type.
 
 __Returns:__ `Type`
 
 
-<a name=getBaseTypes />
+<a name="getBaseTypes" />
 #### getBaseTypes()
 Gets the base types of a class or interface type.
 
 __Returns:__ `Type[]`
 
 
-<a name=hasBaseType />
+<a name="hasBaseType" />
 #### hasBaseType(target)
 Returns true if the target type is a base type of the current type; Otherwise, returns false.
 
@@ -602,133 +683,133 @@ __Parameters__
 __Returns:__ `boolean`
 
 
-<a name=isClass />
+<a name="isClass" />
 #### isClass()
 Returns true if the type is a class; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isInterface />
+<a name="isInterface" />
 #### isInterface()
 Returns true if the type is an interface; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isTuple />
+<a name="isTuple" />
 #### isTuple()
 Returns true if the type is a tuple; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isUnion />
+<a name="isUnion" />
 #### isUnion()
 Returns true if the type is a union type; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isArray />
+<a name="isArray" />
 #### isArray()
 Returns true if the type is an array; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isIndex />
+<a name="isIndex" />
 #### isIndex()
 Returns true if the type is an index type; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isAnonymous />
+<a name="isAnonymous" />
 #### isAnonymous()
 Returns true if the type is anonymous; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isReference />
+<a name="isReference" />
 #### isReference()
 Returns true if the type is a generic reference; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isEnum />
+<a name="isEnum" />
 #### isEnum()
 Returns true if the type is an enum; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isStringLiteral />
+<a name="isStringLiteral" />
 #### isStringLiteral()
 Returns true if the type is a string literal; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isTypeParameter />
+<a name="isTypeParameter" />
 #### isTypeParameter()
 Returns true if the type is a type parameter; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isAny />
+<a name="isAny" />
 #### isAny()
 Returns true if the type is the intrinsic any type; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isString />
+<a name="isString" />
 #### isString()
 Returns true if the type is the intrinsic string type; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isNumber />
+<a name="isNumber" />
 #### isNumber()
 Returns true if the type is the intrinsic number type; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isBoolean />
+<a name="isBoolean" />
 #### isBoolean()
 Returns true if the type is the intrinsic boolean type; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isVoid />
+<a name="isVoid" />
 #### isVoid()
 Returns true if the type is the intrinsic void type; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isIntrinsic />
+<a name="isIntrinsic" />
 #### isIntrinsic()
 Returns true if the type is an intrinsic type; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=isObjectType />
+<a name="isObjectType" />
 #### isObjectType()
 Returns true if the type is an object type; Otherwise, returns false.
 
 __Returns:__ `boolean`
 
 
-<a name=getEnumValue />
+<a name="getEnumValue" />
 #### getEnumValue(value, ignoreCase)
 Gets the numeric enum value for the given member name.
 
@@ -739,7 +820,7 @@ __Parameters__
 __Returns:__ `number`
 
 
-<a name=getEnumName />
+<a name="getEnumName" />
 #### getEnumName(value)
 Gets the enum member name for the given numeric enum value.
 
@@ -749,28 +830,28 @@ __Parameters__
 __Returns:__ `string`
 
 
-<a name=getEnumNames />
+<a name="getEnumNames" />
 #### getEnumNames()
 Gets a list of enum member names.
 
 __Returns:__ `string[]`
 
 
-<a name=getElementType />
+<a name="getElementType" />
 #### getElementType()
 Gets the element type for an array type.
 
 __Returns:__ `Type`
 
 
-<a name=getElementTypes />
+<a name="getElementTypes" />
 #### getElementTypes()
 Gets the element types a union or tuple type.
 
 __Returns:__ `Type[]`
 
 
-<a name=createInstance />
+<a name="createInstance" />
 #### createInstance(args)
 Creates an instance of a class. If arguments are provided then the constructor is called; Otherwise,
 the object is created without calling the constructor. To call a parameter-less constructor, pass an empty
@@ -785,7 +866,7 @@ __Parameters__
 __Returns:__ `any`
 
 
-<a name=getConstructor />
+<a name="getConstructor" />
 #### getConstructor()
 Gets the JavaScript constructor for a class type.
 
@@ -797,8 +878,8 @@ __Returns:__ `Function`
 
 
 
-<a name=Signature />
-### Signature
+<a name="Signature" />
+### Signature Interface
 --------------------
 Represents a call signature.
 * [`getDescription`](#getDescription)
@@ -808,14 +889,14 @@ Represents a call signature.
 * [`getParameter`](#getParameter)
 * [`getReturnType`](#getReturnType)
 
-<a name=getDescription />
+<a name="getDescription" />
 #### getDescription()
 Gets a description of the signature.
 
 __Returns:__ `string`
 
 
-<a name=getAnnotations />
+<a name="getAnnotations" />
 #### getAnnotations(name)
 Finds annotations with the specified name. If no name is specified, then all annotations
 are returned.
@@ -826,7 +907,7 @@ __Parameters__
 __Returns:__ `Annotation[]`
 
 
-<a name=hasAnnotation />
+<a name="hasAnnotation" />
 #### hasAnnotation(name)
 Returns true if the symbols has an annotation with the specified name; Otherwise, returns false.
 
@@ -836,14 +917,14 @@ __Parameters__
 __Returns:__ `boolean`
 
 
-<a name=getParameters />
+<a name="getParameters" />
 #### getParameters()
 Gets a list of all parameters for the call signature.
 
 __Returns:__ `Symbol[]`
 
 
-<a name=getParameter />
+<a name="getParameter" />
 #### getParameter(name)
 Gets a parameter for the signature with the specified name. If no parameter matches the name then undefined
 is returned.
@@ -854,7 +935,7 @@ __Parameters__
 __Returns:__ `Symbol`
 
 
-<a name=getReturnType />
+<a name="getReturnType" />
 #### getReturnType()
 Gets the return type of the signature.
 
@@ -863,29 +944,29 @@ __Returns:__ `Type`
 
 
 
-<a name=Diagnostic />
-### Diagnostic
+<a name="Diagnostic" />
+### Diagnostic Interface
 --------------------
 Diagnostic information.
 * [`filename`](#filename)
 * [`messageText`](#messageText)
 * [`code`](#code)
 
-<a name=filename />
+<a name="filename" />
 #### filename
 The name of the .d.json file that contained the error
 
 __Type:__ `string`
 
 
-<a name=messageText />
+<a name="messageText" />
 #### messageText
 Message explaining the error.
 
 __Type:__ `string`
 
 
-<a name=code />
+<a name="code" />
 #### code
 Error code.
 
@@ -894,34 +975,28 @@ __Type:__ `number`
 
 
 
-<a name=DiagnosticError />
-### DiagnosticError
+<a name="DiagnosticError" />
+### DiagnosticError Interface
 --------------------
 Extension of standard Error that includes diagnostic information.
 * [`diagnostics`](#diagnostics)
 * [`name`](#name)
 * [`message`](#message)
 
-<a name=diagnostics />
+<a name="diagnostics" />
 #### diagnostics
 Array of Diagnostics that provides details on the error that occurred.
 
 __Type:__ `Diagnostic[]`
 
 
-<a name=name />
+<a name="name" />
 #### name
 
 __Type:__ `string`
 
 
-<a name=message />
+<a name="message" />
 #### message
 
 __Type:__ `string`
-
-
-
-
-
-

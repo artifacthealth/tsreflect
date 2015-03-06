@@ -4,6 +4,16 @@ export declare function reference(filename: string): void;
 export declare function resolve(entityName: string): Symbol;
 export declare function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
 export declare function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+export declare function createContext(): ReflectContext;
+
+export interface ReflectContext {
+
+    requireModule(moduleName: string): Symbol;
+    reference(filename: string): void;
+    resolve(name: string): Symbol;
+    load(path: string, callback: (err: Error, symbols: Symbol[]) => void): void;
+    load(paths: string[], callback: (err: Error, symbols: Symbol[]) => void): void;
+}
 
 export interface Symbol {
 

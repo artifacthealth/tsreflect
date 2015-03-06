@@ -134,6 +134,9 @@ module reflect {
         filename: string;
         references?: string[];
         noDefaultLib?: boolean;
+
+        // File level diagnostics reported by the binder.
+        errors: Diagnostic[];
     }
 
     export interface Annotation {

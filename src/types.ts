@@ -37,6 +37,54 @@
 
 module reflect {
 
+    export interface ReflectContext {
+
+        requireModule(moduleName: string): Symbol;
+        reference(filename: string): void;
+        resolve(name: string, meaning: SymbolFlags): Symbol;
+        load(path: string, callback: (err: Error, symbols: Symbol[]) => void): void;
+        load(paths: string[], callback: (err: Error, symbols: Symbol[]) => void): void;
+    }
+
+    export interface Loader {
+
+        getLoadedSourceFile(filename: string): SourceFile;
+        processRootFile(filename: string): SourceFile;
+        processRootFileAsync(filename: string, callback: (err: Error, file: SourceFile) => void): void;
+        processExternalModule(moduleName: string, searchPath: string): Symbol;
+        getTypeChecker(): TypeChecker;
+        getErrors(): Diagnostic[];
+    }
+
+    export interface TypeChecker {
+        getSourceFile(node: Node): SourceFile;
+        getSymbol(symbols: SymbolTable, name: string, meaning: SymbolFlags): Symbol;
+        getExportedSymbols(symbols: SymbolTable, flags: SymbolFlags): Symbol[];
+        resolveEntityName(location: Node, name: string, meaning: SymbolFlags): Symbol;
+        resolveEntityName(location: Node, name: string[], meaning: SymbolFlags): Symbol;
+        resolveEntityName(location: Node, name: any, meaning: SymbolFlags): Symbol;
+        isExternalModuleNameRelative(moduleName: string): boolean;
+        getResolvedExportSymbol(moduleSymbol: Symbol): Symbol;
+        getTypeOfSymbol(symbol: Symbol): Type;
+        getInterfaceBaseTypeNodes(node: InterfaceDeclaration): TypeReferenceNode[];
+        getDeclaredTypeOfSymbol(symbol: Symbol): Type;
+        getPropertiesOfType(type: Type): Symbol[];
+        getPropertyOfType(type: Type, name: string): Symbol;
+        getSignaturesOfType(type: Type, kind: SignatureKind): Signature[];
+        getIndexTypeOfObjectOrUnionType(type: Type, kind: IndexKind): Type;
+        getIndexTypeOfType(type: Type, kind: IndexKind): Type;
+        getReturnTypeOfSignature(signature: Signature): Type;
+        symbolToString(symbol: Symbol, containingSymbol?: Symbol): string;
+        isTypeIdenticalTo(source: Type, target: Type, diagnostics?: Diagnostic[]): boolean;
+        isTypeSubtypeOf(source: Type, target: Type, diagnostics?: Diagnostic[]): boolean;
+        isTypeAssignableTo(source: Type, target: Type, diagnostics?: Diagnostic[]): boolean;
+        initializeGlobalTypes(): void;
+        createSymbol(flags: SymbolFlags, name: string): Symbol;
+        getGlobalArrayType(): ObjectType;
+        getErrors(): Diagnostic[];
+        globals: SymbolTable;
+    }
+
     export interface SymbolLinks {
         target?: Symbol;               // Resolved (non-alias) target of an alias
         type?: Type;                   // Type of value symbol

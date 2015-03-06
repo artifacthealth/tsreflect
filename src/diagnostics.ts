@@ -147,4 +147,84 @@ module reflect {
 
         return text.replace(/{(\d+)}/g, (match, index?) => args[+index + baseIndex]);
     }
+
+    export function throwDiagnosticError(errors: Diagnostic[]): void {
+
+        if(errors.length > 0) {
+            throw createDiagnosticError(errors);
+        }
+    }
+
+    export function createDiagnosticError(errors: Diagnostic[]): DiagnosticError {
+
+        var diagnostics = getSortedDiagnostics(errors);
+
+        var error = <DiagnosticError>new Error(getDiagnosticErrorMessage(diagnostics));
+
+        // clone errors
+        error.diagnostics = [].concat(diagnostics);
+
+        // clear errors
+        errors.length = 0;
+
+        return error;
+    }
+
+    function getDiagnosticErrorMessage(diagnostics: Diagnostic[]): string {
+
+        var ret = "";
+
+        forEach(diagnostics, diagnostic => {
+
+            if(diagnostic.filename) {
+                ret += diagnostic.filename + ": ";
+            }
+
+            ret += diagnostic.messageText + "\n";
+
+        });
+
+        return ret;
+    }
+
+    function getSortedDiagnostics(errors: Diagnostic[]): Diagnostic[] {
+
+        errors.sort(compareDiagnostics);
+        errors = deduplicateSortedDiagnostics(errors);
+
+        return errors;
+    }
+
+    function compareDiagnostics(d1: Diagnostic, d2: Diagnostic): number {
+        return compareValues(d1.filename, d2.filename) ||
+            compareValues(d1.code, d2.code) ||
+            compareValues(d1.messageText, d2.messageText) ||
+            0;
+    }
+
+    function compareValues<T>(a: T, b: T): number {
+        if (a === b) return 0;
+        if (a === undefined) return -1;
+        if (b === undefined) return 1;
+        return a < b ? -1 : 1;
+    }
+
+    function deduplicateSortedDiagnostics(diagnostics: Diagnostic[]): Diagnostic[] {
+        if (diagnostics.length < 2) {
+            return diagnostics;
+        }
+
+        var newDiagnostics = [diagnostics[0]];
+        var previousDiagnostic = diagnostics[0];
+        for (var i = 1; i < diagnostics.length; i++) {
+            var currentDiagnostic = diagnostics[i];
+            var isDupe = compareDiagnostics(currentDiagnostic, previousDiagnostic) === 0;
+            if (!isDupe) {
+                newDiagnostics.push(currentDiagnostic);
+                previousDiagnostic = currentDiagnostic;
+            }
+        }
+
+        return newDiagnostics;
+    }
 }

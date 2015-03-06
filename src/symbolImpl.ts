@@ -44,9 +44,10 @@ module reflect {
         annotationsByName: AnnotationMap;
         parent: SymbolImpl;               // Parent symbol
         exports: SymbolTable;         // Module exports
+        private _checker: TypeChecker;
 
-        constructor(public flags: SymbolFlags, public name: string) {
-
+        constructor(checker: TypeChecker, public flags: SymbolFlags, public name: string) {
+            this._checker = checker;
         }
 
         resolve(name: string, meaning: SymbolFlags = SymbolFlags.Namespace | SymbolFlags.Type | SymbolFlags.Value): Symbol {
@@ -59,10 +60,8 @@ module reflect {
                 return undefined;
             }
 
-            var ret = resolveEntityName(this.declarations[0], name, meaning);
-            if(hasDiagnosticErrors) {
-                throwDiagnosticError();
-            }
+            var ret = this._checker.resolveEntityName(this.declarations[0], name, meaning);
+            this._throwIfErrors();
             return ret;
         }
 
@@ -96,7 +95,7 @@ module reflect {
 
         getFullName(): string {
 
-            return symbolToString(this)
+            return this._checker.symbolToString(this)
         }
 
         getName(): string {
@@ -120,40 +119,34 @@ module reflect {
         // TODO: list all symbols in symbol? List all types in symbol? List all symbols with annotation?
         getAnnotations(name?: string): Annotation[] {
 
-            return getAnnotationsFromSymbolOrSignature(name, this);
+            return getAnnotationsFromSymbolOrSignature(this._checker, name, this);
         }
 
         hasAnnotation(name: string): boolean {
 
-            return hasAnnotation(name, this);
+            return hasAnnotation(this._checker, name, this);
         }
 
         getType(): Type {
 
             // TODO:  return unknown type as undefined? or maybe this is better. We can still have a way to check for
             // unknown but code that wants to get properties of type or something can continue without a separate check.
-            var ret = getTypeOfSymbol(this);
-            if(hasDiagnosticErrors) {
-                throwDiagnosticError();
-            }
+            var ret = this._checker.getTypeOfSymbol(this);
+            this._throwIfErrors();
             return ret;
         }
 
         getDeclaredType(): Type {
 
-            var ret = getDeclaredTypeOfSymbol(this);
-            if(hasDiagnosticErrors) {
-                throwDiagnosticError();
-            }
+            var ret = this._checker.getDeclaredTypeOfSymbol(this);
+            this._throwIfErrors();
             return ret;
         }
 
         getExports(): Symbol[] {
 
-            var ret = getExportedSymbols(this.exports, SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace);
-            if(hasDiagnosticErrors) {
-                throwDiagnosticError();
-            }
+            var ret = this._checker.getExportedSymbols(this.exports, SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace);
+            this._throwIfErrors();
             return ret;
         }
 
@@ -232,6 +225,10 @@ module reflect {
             return (this.flags & SymbolFlags.TypeAlias) !== 0;
         }
 
+        private _throwIfErrors(): void {
+            var errors = this._checker.getErrors();
+            throwDiagnosticError(errors);
+        }
     }
 
     export interface AnnotationMap {
@@ -247,15 +244,15 @@ module reflect {
         declarations?: Declaration[];
     }
 
-    export function hasAnnotation(name: string, container: AnnotationContainer): boolean {
+    export function hasAnnotation(checker: TypeChecker, name: string, container: AnnotationContainer): boolean {
 
         if(!container.annotations) {
-            getAnnotationsFromSymbolOrSignature(name, container);
+            getAnnotationsFromSymbolOrSignature(checker, name, container);
         }
         return container.annotationsByName[name] !== undefined;
     }
 
-    export function getAnnotationsFromSymbolOrSignature(name: string, container: AnnotationContainer): Annotation[] {
+    export function getAnnotationsFromSymbolOrSignature(checker: TypeChecker, name: string, container: AnnotationContainer): Annotation[] {
 
         if(!container.annotations) {
 
@@ -276,7 +273,7 @@ module reflect {
                     if (annotations) {
                         for (var j = 0, k = annotations.length; j < k; j++) {
 
-                            var annotation = new AnnotationImpl(annotations[j], declaration);
+                            var annotation = new AnnotationImpl(checker, annotations[j], declaration);
                             var list = container.annotationsByName[annotation.name];
                             if (!list) {
                                 list = container.annotationsByName[annotation.name] = [];
@@ -300,16 +297,18 @@ module reflect {
 
         name: string;
         value: string;
+        private _checker: TypeChecker;
 
-        constructor(annotation: Annotation, private declaration: Declaration) {
+        constructor(checker: TypeChecker, annotation: Annotation, private declaration: Declaration) {
 
+            this._checker = checker;
             this.name = annotation.name;
             this.value = annotation.value;
         }
 
         getDeclarationFileName(): string {
 
-            return getSourceFile(this.declaration).filename;
+            return this._checker.getSourceFile(this.declaration).filename;
         }
     }
 }

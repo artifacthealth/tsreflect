@@ -68,9 +68,11 @@ module reflect {
 
         resolvedProperties: SymbolTable;  // Cache of resolved properties
 
+        private _checker: TypeChecker;
 
-        constructor(public flags: TypeFlags) {
 
+        constructor(checker: TypeChecker, public flags: TypeFlags) {
+            this._checker = checker;
         }
 
         getFullName(): string {
@@ -145,47 +147,47 @@ module reflect {
 
         getProperties(): Symbol[] {
 
-            return getPropertiesOfType(this);
+            return this._checker.getPropertiesOfType(this);
         }
 
         getProperty(name: string): Symbol {
 
-            return getPropertyOfType(this, name);
+            return this._checker.getPropertyOfType(this, name);
         }
 
         getCallSignatures(): Signature[] {
 
-            return getSignaturesOfType(this, SignatureKind.Call);
+            return this._checker.getSignaturesOfType(this, SignatureKind.Call);
         }
 
         getConstructSignatures(): Signature[] {
 
-            return getSignaturesOfType(this, SignatureKind.Construct);
+            return this._checker.getSignaturesOfType(this, SignatureKind.Construct);
         }
 
         getStringIndexType(): Type {
 
-            return getIndexTypeOfType(this, IndexKind.String);
+            return this._checker.getIndexTypeOfType(this, IndexKind.String);
         }
 
         getNumberIndexType(): Type {
 
-            return getIndexTypeOfType(this, IndexKind.Number);
+            return this._checker.getIndexTypeOfType(this, IndexKind.Number);
         }
 
         isIdenticalTo(target: Type, diagnostics?: Diagnostic[]): boolean {
 
-            return isTypeIdenticalTo(this, target, diagnostics);
+            return this._checker.isTypeIdenticalTo(this, target, diagnostics);
         }
 
         isSubtypeOf(target: Type, diagnostics?: Diagnostic[]): boolean {
 
-            return isTypeSubtypeOf(this, target, diagnostics);
+            return this._checker.isTypeSubtypeOf(this, target, diagnostics);
         }
 
         isAssignableTo(target: Type, diagnostics?: Diagnostic[]): boolean {
 
-            return isTypeAssignableTo(this, target, diagnostics);
+            return this._checker.isTypeAssignableTo(this, target, diagnostics);
         }
 
         hasBaseType(target: Type): boolean {
@@ -313,7 +315,7 @@ module reflect {
         }
 
         isArray(): boolean {
-            return this.hasBaseType(globalArrayType);
+            return this.hasBaseType(this._checker.getGlobalArrayType());
         }
 
         private _isIndex: boolean;
@@ -437,6 +439,7 @@ module reflect {
             }
 
             var elementType: TypeImpl = null;
+            var globalArrayType = this._checker.getGlobalArrayType();
 
             var reference = getArrayReference(this);
             if(reference) {
@@ -504,12 +507,12 @@ module reflect {
                 // class is in the global namespace
                 var obj = global;
                 var moduleName = "globals"; // for error reporting
-                var name = symbolToString(this.symbol);
+                var name = this._checker.symbolToString(this.symbol);
             }
             else {
                 // class is in an external module, load the javascript module
                 var moduleName = moduleSymbol.name.replace(/^"|"$/g, "");
-                if (isExternalModuleNameRelative(moduleName)) {
+                if (this._checker.isExternalModuleNameRelative(moduleName)) {
                     var obj = module.require(absolutePath(moduleName));
                 }
                 else {
@@ -517,7 +520,7 @@ module reflect {
                 }
 
                 // find the name of the symbol in the module
-                var name = symbolToString(this.symbol, getResolvedExportSymbol(moduleSymbol));
+                var name = this._checker.symbolToString(this.symbol, this._checker.getResolvedExportSymbol(moduleSymbol));
             }
             if(name) {
                 var path = name.split('.');

@@ -12,6 +12,11 @@ export function referenceFixture(filename: string): void {
     reflect.reference(fixtureDir + filename);
 }
 
+export function referenceFixtureInContext(context: reflect.ReflectContext, filename: string): void {
+
+    context.reference(fixtureDir + filename);
+}
+
 export function getRelativeExternalModuleName(filename: string): string {
 
     return '"' + getRelativeFixturePath(filename) + '"';

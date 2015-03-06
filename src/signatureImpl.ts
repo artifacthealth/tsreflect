@@ -47,6 +47,12 @@ module reflect {
         annotations: Annotation[];
         annotationsByName: AnnotationMap;
 
+        private _checker: TypeChecker;
+
+        constructor(checker: TypeChecker) {
+            this._checker = checker;
+        }
+
         getDescription(): string {
 
             return this.declaration.description;
@@ -74,17 +80,17 @@ module reflect {
 
         getReturnType(): Type {
 
-            return getReturnTypeOfSignature(this);
+            return this._checker.getReturnTypeOfSignature(this);
         }
 
         getAnnotations(name?: string): Annotation[] {
 
-            return getAnnotationsFromSymbolOrSignature(name, this);
+            return getAnnotationsFromSymbolOrSignature(this._checker, name, this);
         }
 
         hasAnnotation(name: string): boolean {
 
-            return hasAnnotation(name, this);
+            return hasAnnotation(this._checker, name, this);
         }
     }
 }
