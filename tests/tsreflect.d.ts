@@ -82,6 +82,7 @@ export interface Type {
     getBaseClass(): Type;
     getBaseTypes(): Type[];
     hasBaseType(target: Type): boolean;
+    getBaseType(name: string): Type;
 
     isClass(): boolean;
     isInterface(): boolean;

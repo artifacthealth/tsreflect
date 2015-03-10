@@ -280,6 +280,15 @@ describe('Type', () => {
             var type = fixture.resolve("ArrayAsGeneric").getDeclaredType();
             assert.ok(type.hasBaseType(reflect.resolve("Array").getDeclaredType()));
         });
+
+        it('should return true for class that implements interface', () => {
+
+            var fixture = helpers.requireFixture("classInheritance");
+            var InterfaceA = fixture.resolve("InterfaceA").getDeclaredType();
+            var ClassC = fixture.resolve("ClassC").getDeclaredType();
+
+            assert.isTrue(ClassC.hasBaseType(InterfaceA));
+        });
     });
 
     describe('isIndex', () => {
@@ -509,5 +518,32 @@ describe('Type', () => {
             assert.equal(fixture.resolve("ClassA").getDeclaredType().getBaseClass(), null);
         });
 
+    });
+
+    describe("getBaseType", () => {
+
+        it('returns undefined if a base type with the given name cannot be found', () => {
+
+            var fixture = helpers.requireFixture("classInheritance");
+            assert.isUndefined(fixture.resolve("ClassA").getDeclaredType().getBaseType("blah"));
+        });
+
+        it('returns the base class type if a match is found for the name', () => {
+
+            var fixture = helpers.requireFixture("classInheritance");
+            var ClassA = fixture.resolve("ClassA").getDeclaredType();
+            var ClassC = fixture.resolve("ClassC").getDeclaredType();
+
+            assert.equal(ClassC.getBaseType("ClassA"), ClassA, "Unable to find base type 'ClassA'");
+        });
+
+        it('returns the base interface type for a class if a match is found for the name', () => {
+
+            var fixture = helpers.requireFixture("classInheritance");
+            var InterfaceA = fixture.resolve("InterfaceA").getDeclaredType();
+            var ClassC = fixture.resolve("ClassC").getDeclaredType();
+
+            assert.equal(ClassC.getBaseType("InterfaceA"), InterfaceA, "Unable to find base type 'InterfaceA'");
+        });
     });
 });

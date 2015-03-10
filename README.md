@@ -481,6 +481,7 @@ Represents a type.
 * [`isSubclassOf`](#isSubclassOf)
 * [`getBaseClass`](#getBaseClass)
 * [`getBaseTypes`](#getBaseTypes)
+* [`getBaseType`](#getBaseType)
 * [`hasBaseType`](#hasBaseType)
 * [`isClass`](#isClass)
 * [`isInterface`](#isInterface)
@@ -671,6 +672,16 @@ __Returns:__ `Type`
 Gets the base types of a class or interface type.
 
 __Returns:__ `Type[]`
+
+
+<a name="getBaseType" />
+#### getBaseTypes()
+Gets the base type that matches the specified name or `undefined` if no match is found.
+
+__Parameters__
+* name `string`  - The name of the base type to find.
+
+__Returns:__ `Type`
 
 
 <a name="hasBaseType" />

@@ -350,7 +350,7 @@ declare module "tsreflect" {
         getNumberIndexType(): Type;
 
         /**
-         * Returns true if the target type is identical to the current type; Otherwise, returns false. If diagnostic
+         * Returns true if the current type is identical to the target type; Otherwise, returns false. If diagnostic
          * information regarding the differences between the types is desired, any empty array should be passed to
          * the diagnostics parameter.
          * @param target The target type.
@@ -359,7 +359,7 @@ declare module "tsreflect" {
         isIdenticalTo(target: Type, diagnostics?: Diagnostic[]): boolean;
 
         /**
-         * Returns true if the target type is a subtype of the current type; Otherwise, returns false. If diagnostic
+         * Returns true if the current type is a subtype of the target type; Otherwise, returns false. If diagnostic
          * information regarding the differences between the types is desired, any empty array should be passed to
          * the diagnostics parameter.
          * @param target The target type.
@@ -368,7 +368,7 @@ declare module "tsreflect" {
         isSubtypeOf(target: Type, diagnostics?: Diagnostic[]): boolean;
 
         /**
-         * Returns true if the target type is assignable to the current type; Otherwise, returns false. If diagnostic
+         * Returns true if the current type is assignable to the target type; Otherwise, returns false. If diagnostic
          * information regarding the differences between the types is desired, any empty array should be passed to
          * the diagnostics parameter.
          * @param target The target type.
@@ -377,7 +377,7 @@ declare module "tsreflect" {
         isAssignableTo(target: Type, diagnostics?: Diagnostic[]): boolean;
 
         /**
-         * Returns true if the target type if a subclass of the current type; Otherwise, returns false.
+         * Returns true if the current type if a subclass of the target type; Otherwise, returns false.
          * @param target The target type.
          */
         isSubclassOf(target: Type): boolean;
@@ -391,6 +391,12 @@ declare module "tsreflect" {
          * Gets the base types of a class or interface type.
          */
         getBaseTypes(): Type[];
+
+        /**
+         * Gets the base type that matches the specified name or `undefined` if no match is found.
+         * @param name The name of the base type to find.
+         */
+        getBaseType(name: string): Type;
 
         /**
          * Returns true if the target type is a base type of the current type; Otherwise, returns false.

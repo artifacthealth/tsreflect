@@ -204,6 +204,19 @@ module reflect {
             return this.baseTypes;
         }
 
+        getBaseType(name: string): TypeImpl {
+
+            // TODO: cache?
+            return check(this);
+            function check(type: TypeImpl): TypeImpl {
+                var type = type._getTargetType();
+                if(type.getName() == name) {
+                    return type;
+                }
+                return forEach(type.baseTypes, check);
+            }
+        }
+
         private _getTargetType(): TypeImpl {
             return this.flags & TypeFlags.Reference ? this.target : this;
         }

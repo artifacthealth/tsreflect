@@ -774,6 +774,25 @@ module reflect {
                             error(baseTypeNode, Diagnostics.A_class_may_only_extend_another_class);
                         }
                     }
+
+                    // Add interfaces to baseTypes array. This is different than what TypeScript does but I want to be able to
+                    // check for explicitly implemented interfaces.
+                    forEach(declaration.implements, node => {
+                        var baseType = getTypeFromTypeReferenceNode(node);
+                        if (baseType !== unknownType) {
+                            if (getTargetType(baseType).flags & (TypeFlags.Class | TypeFlags.Interface)) {
+                                if (type !== baseType && !hasBaseType(<InterfaceType>baseType, type)) {
+                                    type.baseTypes.push(baseType);
+                                }
+                                else {
+                                    error(declaration, Diagnostics.Type_0_recursively_references_itself_as_a_base_type, typeToString(type));
+                                }
+                            }
+                            else {
+                                error(node, Diagnostics.An_interface_may_only_extend_a_class_or_another_interface);
+                            }
+                        }
+                    });
                 }
                 type.declaredProperties = getNamedMembers(symbol.members);
                 type.declaredCallSignatures = emptyArray;

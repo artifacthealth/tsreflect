@@ -4,6 +4,7 @@ export class ClassA {
 
 export class ClassB extends ClassA implements InterfaceA {
 
+    a: string;
 }
 
 export class ClassC extends ClassB {
@@ -26,4 +27,5 @@ export var ReferenceB: GenericB<string>
 
 export interface InterfaceA {
 
+    a: string;
 }
