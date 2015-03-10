@@ -11,6 +11,11 @@ export class ClassC extends ClassB {
 
 }
 
+export class ClassD implements InterfaceA {
+
+    a: string;
+}
+
 export class GenericA<T> {
 
 }

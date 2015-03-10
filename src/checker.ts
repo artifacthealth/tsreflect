@@ -774,7 +774,9 @@ module reflect {
                             error(baseTypeNode, Diagnostics.A_class_may_only_extend_another_class);
                         }
                     }
+                }
 
+                if(declaration.implements) {
                     // Add interfaces to baseTypes array. This is different than what TypeScript does but I want to be able to
                     // check for explicitly implemented interfaces.
                     forEach(declaration.implements, node => {
@@ -794,6 +796,7 @@ module reflect {
                         }
                     });
                 }
+
                 type.declaredProperties = getNamedMembers(symbol.members);
                 type.declaredCallSignatures = emptyArray;
                 type.declaredConstructSignatures = emptyArray;
