@@ -675,8 +675,8 @@ __Returns:__ `Type[]`
 
 
 <a name="getBaseType" />
-#### getBaseTypes()
-Gets the base type that matches the specified name or `undefined` if no match is found.
+#### getBaseType(name)
+Gets the base type that matches the specified name or undefined if no match is found.
 
 __Parameters__
 * name `string`  - The name of the base type to find.
