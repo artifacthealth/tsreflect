@@ -64,6 +64,35 @@ module reflect {
 
     export function createTypeChecker(loader: Loader): TypeChecker {
 
+        var globals: SymbolTable = {};
+
+        var checker = {
+            getSourceFile,
+            getSymbol,
+            getExportedSymbols,
+            resolveEntityName,
+            isExternalModuleNameRelative,
+            getResolvedExportSymbol,
+            getTypeOfSymbol,
+            getInterfaceBaseTypeNodes,
+            getDeclaredTypeOfSymbol,
+            getPropertiesOfType,
+            getPropertyOfType,
+            getSignaturesOfType,
+            getIndexTypeOfObjectOrUnionType,
+            getIndexTypeOfType,
+            getReturnTypeOfSignature,
+            symbolToString,
+            isTypeIdenticalTo,
+            isTypeSubtypeOf,
+            isTypeAssignableTo,
+            initializeGlobalTypes,
+            createSymbol,
+            getGlobalArrayType,
+            getErrors,
+            globals
+        }
+
         var typeCount = 0;
 
         var emptyArray: any[] = [];
@@ -90,8 +119,6 @@ module reflect {
         var anySignature = createSignature(undefined, undefined, emptyArray, anyType, 0, false, false);
         var unknownSignature = createSignature(undefined, undefined, emptyArray, unknownType, 0, false, false);
 
-        var globals: SymbolTable = {};
-
         var globalArraySymbol: Symbol;
 
         var globalObjectType: ObjectType;
@@ -108,33 +135,6 @@ module reflect {
         var symbolLinks: SymbolLinks[] = [];
         var nodeLinks: NodeLinks[] = [];
         var errors: Diagnostic[] = [];
-
-        var checker = {
-            getSourceFile,
-            getSymbol,
-            getExportedSymbols,
-            resolveEntityName,
-            isExternalModuleNameRelative,
-            getResolvedExportSymbol,
-            getTypeOfSymbol,
-            getInterfaceBaseTypeNodes,
-            getDeclaredTypeOfSymbol,
-            getPropertiesOfType,
-            getPropertyOfType,
-            getSignaturesOfType,
-            getIndexTypeOfObjectOrUnionType,
-            getIndexTypeOfType,
-            getReturnTypeOfSignature,
-            symbolToString,
-            isTypeIdenticalTo,
-            isTypeSubtypeOf,
-            isTypeAssignableTo,
-            initializeGlobalTypes,
-            createSymbol,
-            getGlobalArrayType,
-            getErrors,
-            globals,
-        }
 
         return checker;
 

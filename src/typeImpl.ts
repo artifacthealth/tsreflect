@@ -72,6 +72,9 @@ module reflect {
 
 
         constructor(checker: TypeChecker, public flags: TypeFlags) {
+            if(!checker) {
+                throw new Error("Missing required parameter 'checker'.");
+            }
             this._checker = checker;
         }
 
