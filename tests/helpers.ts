@@ -24,11 +24,7 @@ export function getRelativeExternalModuleName(filename: string): string {
 
 export function getRelativeFixturePath(filename: string): string {
 
-    var filePath = relativePath(getAbsolutePath(filename));
-    if(!isRelativePath(filePath)) {
-        filePath = "./" + filePath;
-    }
-    return filePath;
+    return relativePath(getAbsolutePath(filename));
 }
 
 function getAbsolutePath(filename: string): string {

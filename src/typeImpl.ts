@@ -507,7 +507,8 @@ module reflect {
 
         private _cachedImplementation: any;
 
-        private _getImplementation(): any {
+        private
+        _getImplementation(): any {
 
             var obj = this._cachedImplementation;
             if(obj) {
@@ -525,7 +526,10 @@ module reflect {
             else {
                 // class is in an external module, load the javascript module
                 var moduleName = moduleSymbol.name.replace(/^"|"$/g, "");
-                if (this._checker.isExternalModuleNameRelative(moduleName)) {
+                if(moduleSymbol.valueDeclaration.kind == NodeKind.SourceFile) {
+                    if (!isRelativePath(moduleName) && !isAbsolutePath(moduleName)) {
+                        moduleName = "./" + moduleName;
+                    }
                     var obj = module.require(absolutePath(moduleName));
                 }
                 else {

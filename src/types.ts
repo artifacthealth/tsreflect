@@ -323,4 +323,9 @@ module reflect {
     export interface TypeMapper {
         (t: Type): Type;
     }
+
+    export interface FoundImport {
+        topLevel?: boolean;
+        node: ImportDeclaration;
+    }
 }

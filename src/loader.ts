@@ -97,8 +97,7 @@ module reflect {
 
         function getLoadedSourceFile(filename: string): SourceFile {
 
-            // TODO: do I need to normalize this?
-            filename = getCanonicalFileName(filename);
+            filename = normalizePath(getCanonicalFileName(filename));
             return hasProperty(filesByName, filename) ? filesByName[filename] : undefined;
         }
 
@@ -265,10 +264,6 @@ module reflect {
 
         function findSourceFileAsync(filename: string, isDefaultLib: boolean, refFile: SourceFile, callback: (err: Error, result: SourceFile) => void): void {
 
-            if (!isRelativePath(filename) && !isAbsolutePath(filename)) {
-                filename = "./" + filename;
-            }
-
             var canonicalName = getCanonicalFileName(filename);
             if (hasProperty(filesByName, canonicalName)) {
                 // We've already looked for this file, use cached result
@@ -330,10 +325,6 @@ module reflect {
 
         // Get source file from normalized filename
         function findSourceFile(filename: string, isDefaultLib: boolean, refFile?: SourceFile): SourceFile {
-
-            if (!isRelativePath(filename) && !isAbsolutePath(filename)) {
-                filename = "./" + filename;
-            }
 
             var canonicalName = getCanonicalFileName(filename);
             if (hasProperty(filesByName, canonicalName)) {
@@ -418,9 +409,10 @@ module reflect {
 
         function processImportedModulesAsync(file: SourceFile, basePath: string, callback: (err: Error) => void): void {
 
-            async.each(getExternalImportDeclarations(file), (node: ImportDeclaration, callback: (err?: Error) => void) => {
+            async.each(getExternalImportDeclarations(file), (found: FoundImport, callback: (err?: Error) => void) => {
 
-                if (node.parent !== file) {
+                var node = found.node;
+                if (!found.topLevel) {
                     // TypeScript 1.0 spec (April 2014): 12.1.6
                     // An ExternalImportDeclaration in anAmbientExternalModuleDeclaration may reference other external modules
                     // only through top - level external module names. Relative external module names are not permitted.
@@ -455,9 +447,10 @@ module reflect {
 
         function processImportedModules(file: SourceFile, basePath: string): void {
 
-            forEach(getExternalImportDeclarations(file), node => {
+            forEach(getExternalImportDeclarations(file), found => {
 
-                if (node.parent === file) {
+                var node = found.node;
+                if (found.topLevel) {
                     var moduleName = node.require;
                     var searchPath = basePath;
                     while (true) {
@@ -483,15 +476,15 @@ module reflect {
             });
         }
 
-        function getExternalImportDeclarations(file: SourceFile): ImportDeclaration[] {
+        function getExternalImportDeclarations(file: SourceFile): FoundImport[] {
 
-            var nodes: ImportDeclaration[] = [];
+            var nodes: FoundImport[] = [];
 
             forEach(file.declares, node => {
                 if (node.kind === NodeKind.ImportDeclaration && (<ImportDeclaration>node).require) {
                     var moduleName = (<ImportDeclaration>node).require;
                     if (moduleName) {
-                        nodes.push(<ImportDeclaration>node);
+                        nodes.push({ topLevel: true, node: <ImportDeclaration>node });
                     }
                 }
                 else if (node.kind === NodeKind.ModuleDeclaration && (node.flags & NodeFlags.ExternalModule)) {
@@ -504,7 +497,7 @@ module reflect {
                         if (node.kind === NodeKind.ImportDeclaration && (<ImportDeclaration>node).require) {
                             var moduleName = (<ImportDeclaration>node).require;
                             if (moduleName) {
-                                nodes.push(<ImportDeclaration>node);
+                                nodes.push({node: <ImportDeclaration>node });
                             }
                         }
                     });

@@ -65,6 +65,15 @@ describe('Symbol', () => {
         });
     });
 
+    describe('getDeclaredType', () => {
+
+        it('correctly returns class that references imported interface', () => {
+
+            var declaredType = helpers.requireFixture("calculatorService").getDeclaredType();
+            assert.ok(declaredType);
+        });
+    });
+
     describe('getValue', () => {
 
         it('returns the value of the property represented by the symbol for the given object', () => {

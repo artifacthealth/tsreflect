@@ -99,7 +99,7 @@ module reflect {
         Modifier = Export | Ambient | Public | Private | Protected | Static,
         AccessibilityModifier = Public | Private | Protected,
         BlockScoped = Let | Const
-}
+    }
 
     export interface Node {
 

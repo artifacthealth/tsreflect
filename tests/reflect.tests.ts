@@ -63,7 +63,6 @@ describe('reflect', () => {
                 if(err) return done(err);
 
                 assert.lengthOf(symbols, 1, "Expected load to return a symbol");
-                assert.equal(symbols[0].getName(), helpers.getRelativeExternalModuleName("simpleExternalModule"));
                 done();
             });
         });
