@@ -67,10 +67,25 @@ describe('Symbol', () => {
 
     describe('getDeclaredType', () => {
 
-        it('correctly returns class that references imported interface', () => {
+        it('correctly returns class that uses imported interface', () => {
 
             var declaredType = helpers.requireFixture("calculatorService").getDeclaredType();
             assert.ok(declaredType);
+        });
+
+        it('correctly returns class that uses imported interface in parent directory', () => {
+
+            var declaredType = helpers.requireFixture("someOtherDirectory/importsExternalModuleInParentDirectory").getDeclaredType();
+            assert.ok(declaredType);
+        });
+
+        it('correctly returns class that uses referenced interface in parent directory', () => {
+
+            helpers.referenceFixture("someOtherDirectory/referencesInternalModuleInParentDirectory");
+            var declaredType = reflect.resolve("ReferencesInternalModuleInParentDirectory").getDeclaredType();
+            assert.ok(declaredType);
+            var propertyType = declaredType.getProperty("a").getType();
+            assert.ok(propertyType);
         });
     });
 
