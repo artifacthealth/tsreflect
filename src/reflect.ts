@@ -21,6 +21,10 @@ module reflect {
         return ensureGlobalContext().load(paths, callback);
     }
 
+    function getSymbol(ctr: Constructor): SymbolImpl {
+        return ensureGlobalContext().getSymbol(ctr);
+    }
+
     function ensureGlobalContext(): ReflectContext {
         if(!globalContext) {
             globalContext = createContext();
@@ -33,6 +37,7 @@ module reflect {
     exports.resolve = resolve;
     exports.require = requireModule;
     exports.createContext = createContext;
+    exports.getSymbol = getSymbol;
 }
 
 

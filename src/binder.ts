@@ -224,7 +224,7 @@ module reflect {
                             break;
                         }
                         else {
-                            declareSymbol(checker.globals, undefined, node, symbolKind, symbolExcludes);
+                            declareSymbol(checker.getGlobals(), undefined, node, symbolKind, symbolExcludes);
                         }
                         break;
                     case NodeKind.FunctionType:

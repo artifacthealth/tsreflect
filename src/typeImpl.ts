@@ -46,6 +46,7 @@ module reflect {
         // Implementation of InterfaceType
         typeParameters: TypeParameter[];           // Type parameters (undefined if non-generic)
         baseTypes: TypeImpl[];                   // Base types
+        implementedTypes: TypeImpl[];               // Implemented interfaces
         declaredProperties: Symbol[];              // Declared members
         declaredCallSignatures: Signature[];       // Declared call signatures
         declaredConstructSignatures: Signature[];  // Declared construct signatures
@@ -217,6 +218,58 @@ module reflect {
                     return type;
                 }
                 return forEach(type.baseTypes, check);
+            }
+        }
+
+        hasInterface(target: Type): boolean {
+            // TODO: cache?
+            if(this.isClass()) {
+                var type = this;
+                while (type) {
+                    for (var i = 0; i < type.implementedTypes.length; i++) {
+                        if (target == type.implementedTypes[i]._getTargetType()) {
+                            return true;
+                        }
+                    }
+                    type = type.getBaseClass();
+                }
+            }
+
+            return false;
+        }
+
+        getInterfaces(): TypeImpl[] {
+            var ret: TypeImpl[] = [];
+
+            if(this.isClass()) {
+                var type = this;
+                while (type) {
+                    for (var i = 0; i < type.implementedTypes.length; i++) {
+                        var interfaceType = type.implementedTypes[i]._getTargetType();
+                        if(ret.indexOf(interfaceType) == -1) {
+                            ret.push(interfaceType);
+                        }
+                    }
+                    type = type.getBaseClass();
+                }
+            }
+
+            return ret;
+        }
+
+        getInterface(name: string): TypeImpl {
+            // TODO: cache?
+            if(this.isClass()) {
+                var type = this;
+                while (type) {
+                    for (var i = 0; i < type.implementedTypes.length; i++) {
+                        var interfaceType = type.implementedTypes[i]._getTargetType();
+                        if (interfaceType.getName() == name) {
+                            return interfaceType;
+                        }
+                    }
+                    type = type.getBaseClass();
+                }
             }
         }
 
@@ -510,8 +563,7 @@ module reflect {
 
         private _cachedImplementation: any;
 
-        private
-        _getImplementation(): any {
+        private _getImplementation(): any {
 
             var obj = this._cachedImplementation;
             if(obj) {

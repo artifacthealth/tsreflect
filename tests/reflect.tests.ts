@@ -8,7 +8,31 @@ import assert = chai.assert;
 import reflect = require("./tsreflect");
 import helpers = require("./helpers");
 
+import TestClass = require("./fixtures/classAsExportAssignment");
+import classInExportedInternalModule = require("./fixtures/classInExportedInternalModule");
+
 describe('reflect', () => {
+
+
+    describe('getSymbol', () => {
+
+        it('returns the symbol for the specified constructor for an external module where class is the export assignment', () => {
+
+           var symbol = helpers.requireFixture("classAsExportAssignment");
+           assert.equal(reflect.getSymbol(TestClass), symbol);
+        });
+
+        it('returns the symbol for the specified constructor for an external module where class is exported in a nested module', () => {
+
+            var symbol = helpers.requireFixture("classInExportedInternalModule").resolve("B.TestClass")
+            assert.equal(reflect.getSymbol(classInExportedInternalModule.B.TestClass), symbol);
+        });
+
+        it('returns the symbol for the specified constructor for a global symbol', () => {
+
+            assert.equal(reflect.getSymbol(Error), reflect.resolve("Error"));
+        });
+    });
 
     describe('require', () => {
 

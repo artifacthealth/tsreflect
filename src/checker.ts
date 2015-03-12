@@ -64,8 +64,6 @@ module reflect {
 
     export function createTypeChecker(loader: Loader): TypeChecker {
 
-        var globals: SymbolTable = {};
-
         var checker = {
             getSourceFile,
             getSymbol,
@@ -90,13 +88,15 @@ module reflect {
             createSymbol,
             getGlobalArrayType,
             getErrors,
-            globals
+            getGlobals
         }
 
         var typeCount = 0;
+        var globals: SymbolTable = {};
 
         var emptyArray: any[] = [];
         var emptySymbols: SymbolTable = {};
+
 
         var unknownSymbol = createSymbol(SymbolFlags.Property | SymbolFlags.Transient, "unknown");
         var resolvingSymbol = createSymbol(SymbolFlags.Transient, "__resolving__");
@@ -137,6 +137,14 @@ module reflect {
         var errors: Diagnostic[] = [];
 
         return checker;
+
+        function getAllSymbolLinks(): SymbolLinks[] {
+            return symbolLinks;
+        }
+
+        function getGlobals(): SymbolTable {
+            return globals;
+        }
 
         function getGlobalArrayType(): ObjectType {
             return globalArrayType;
@@ -719,6 +727,14 @@ module reflect {
             }
         }
 
+        function hasInterface(type: InterfaceType, checkBase: InterfaceType) {
+            return check(type);
+            function check(type: InterfaceType): boolean {
+                var target = <InterfaceType>getTargetType(type);
+                return target === checkBase || forEach(target.implementedTypes, check);
+            }
+        }
+
         // Return combined list of type parameters from all declarations of a class or interface. Elsewhere we check they're all
         // the same, but even if they're not we still need the complete list to ensure instantiations supply type arguments
         // for all type parameters.
@@ -776,15 +792,16 @@ module reflect {
                     }
                 }
 
+                type.implementedTypes = [];
                 if(declaration.implements) {
                     // Add interfaces to baseTypes array. This is different than what TypeScript does but I want to be able to
                     // check for explicitly implemented interfaces.
                     forEach(declaration.implements, node => {
-                        var baseType = getTypeFromTypeReferenceNode(node);
-                        if (baseType !== unknownType) {
-                            if (getTargetType(baseType).flags & (TypeFlags.Class | TypeFlags.Interface)) {
-                                if (type !== baseType && !hasBaseType(<InterfaceType>baseType, type)) {
-                                    type.baseTypes.push(baseType);
+                        var implementedType = getTypeFromTypeReferenceNode(node);
+                        if (implementedType !== unknownType) {
+                            if (getTargetType(implementedType).flags & (TypeFlags.Class | TypeFlags.Interface)) {
+                                if (type !== implementedType && !hasInterface(<InterfaceType>implementedType, type)) {
+                                    type.implementedTypes.push(implementedType);
                                 }
                                 else {
                                     error(declaration, Diagnostics.Type_0_recursively_references_itself_as_a_base_type, typeToString(type));

@@ -52,12 +52,14 @@ module reflect {
     export function createContext(): ReflectContext {
 
         var loader = createLoader();
+        var checker = loader.getTypeChecker();
 
         return {
             requireModule,
             reference,
             resolve,
-            load
+            load,
+            getSymbol
         }
 
         function requireModule(moduleName: string): Symbol {
@@ -87,7 +89,7 @@ module reflect {
 
             var symbols: Symbol[] = [];
 
-            if(!Array.isArray(paths)) {
+            if (!Array.isArray(paths)) {
                 paths = [paths];
             }
 
@@ -101,12 +103,12 @@ module reflect {
                 var relativePath = path.relative(process.cwd(), filePath);
 
                 glob(relativePath, (err: Error, matches: string[]) => {
-                    if(err) return callback(err);
+                    if (err) return callback(err);
 
                     // If there were not any matches then filePath was probably a path to a single file
                     // without an extension. Pass in the original path and let processRootFileAsync figure
                     // it out.
-                    if(!matches || matches.length == 0) {
+                    if (!matches || matches.length == 0) {
                         matches = [relativePath];
                     }
 
@@ -120,21 +122,21 @@ module reflect {
             function processFile(filePath: string, callback: (err?: Error) => void): void {
 
                 loader.processRootFileAsync(filePath, (err, sourceFile) => {
-                    if(err) return callback(err);
+                    if (err) return callback(err);
 
                     var symbol = sourceFile.symbol;
                     if (symbol) {
                         // external module
-                        symbol = loader.getTypeChecker().getResolvedExportSymbol(sourceFile.symbol);
+                        symbol = checker.getResolvedExportSymbol(sourceFile.symbol);
                         symbols.push(symbol);
                     }
                     else {
                         // internal module - add symbols for all declarations at top level of source file
                         var declares = sourceFile.declares;
-                        if(declares) {
-                            for(var i = 0, l = declares.length; i < l; i++) {
+                        if (declares) {
+                            for (var i = 0, l = declares.length; i < l; i++) {
                                 var declaration = declares[i];
-                                if(declaration.symbol) {
+                                if (declaration.symbol) {
                                     symbols.push(declaration.symbol);
                                 }
                             }
@@ -161,6 +163,53 @@ module reflect {
             var ret = loader.getTypeChecker().resolveEntityName(undefined, name, meaning);
             throwIfErrors();
             return ret;
+        }
+
+        /**
+         * Searches all loaded symbol information in the current context for the given constructor and returns the
+         * symbol if found. Note this does not work for global symbols.
+         * @param ctr The constructor to search for.
+         */
+        function getSymbol(ctr: Constructor): SymbolImpl {
+
+            // check all loaded files for the constructor
+            var files = loader.getFiles();
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+
+                // only check external modules. we won't be able to load the constructor for internal modules anyways
+                var symbol = file.symbol;
+                if (symbol) {
+                    // external module
+                    var match = checkSymbolForConstructor(checker.getResolvedExportSymbol(symbol), ctr);
+                    if(match) return match;
+                }
+            }
+        }
+
+        function checkSymbolForConstructor(symbol: Symbol, ctr: Constructor): SymbolImpl {
+
+            if(symbol.name === ctr.name && (symbol.flags & SymbolFlags.Class) != 0) {
+
+                var declaredType = <TypeImpl>checker.getDeclaredTypeOfSymbol(symbol);
+                if (declaredType.getConstructor() === ctr) {
+                    return <SymbolImpl>symbol;
+                }
+            }
+
+            var match = checkSymbolTableForConstructor(symbol.exports, ctr);
+            if (match) return match;
+        }
+
+        function checkSymbolTableForConstructor(table: SymbolTable, ctr: Constructor): SymbolImpl {
+
+            for (var name in table) {
+                if (table.hasOwnProperty(name)) {
+
+                    var match = checkSymbolForConstructor(table[name], ctr);
+                    if(match) return match;
+                }
+            }
         }
 
         function throwIfErrors(): void {

@@ -52,6 +52,11 @@ declare module "tsreflect" {
      */
     function createContext(): ReflectContext;
 
+    /**
+     * Searches all loaded symbol information for the given constructor and returns the symbol if found.
+     * @param ctr The constructor to search for. Note this does not work for global symbols.
+     */
+    function getSymbol(ctr: Constructor): Symbol;
 
     /**
      * Reflection context.
@@ -104,6 +109,12 @@ declare module "tsreflect" {
          * @param entityName The global entity name to resolve.
          */
         resolve(entityName: string): Symbol;
+
+        /**
+         * Searches all loaded symbol information in the current context for the given constructor and returns the symbol if found.
+         * @param ctr The constructor to search for. Note this does not work for global symbols.
+         */
+        getSymbol(ctr: Constructor): Symbol;
     }
 
     /**
@@ -383,26 +394,43 @@ declare module "tsreflect" {
         isSubclassOf(target: Type): boolean;
 
         /**
-         * Gets the base class of a class type.
-         */
-        getBaseClass(): Type;
-
-        /**
-         * Gets the base types of a class or interface type.
+         * Gets a list of types that this class or interface extends.
          */
         getBaseTypes(): Type[];
 
         /**
-         * Gets the base type that matches the specified name or `undefined` if no match is found.
+         * Gets the type that this class or interface extends that matches the specified name or undefined if no match is found.
          * @param name The name of the base type to find.
          */
         getBaseType(name: string): Type;
 
         /**
-         * Returns true if the target type is a base type of the current type; Otherwise, returns false.
+         * Returns true if the target type is extended by the current type; Otherwise, returns false.
          * @param target The target type.
          */
         hasBaseType(target: Type): boolean;
+
+        /**
+         * Gets the base class of a class type.
+         */
+        getBaseClass(): Type;
+
+        /**
+         * Gets a list of interface that this class implements.
+         */
+        getInterfaces(): Type[];
+
+        /**
+         * Gets the interface that is implemented or inherited by the current class that matches the specified name.
+         * @param name The name of the base type to find.
+         */
+        getInterface(name: string): Type;
+
+        /**
+         * Returns true if the target interface is implemented or inherited by the current class; Otherwise, returns false.
+         * @param target The target type.
+         */
+        hasInterface(target: Type): boolean;
 
         /**
          * Returns true if the type is a class; Otherwise, returns false.
@@ -614,5 +642,14 @@ declare module "tsreflect" {
          * Array of Diagnostics that provides details on the error that occurred.
          */
         diagnostics: Diagnostic[];
+    }
+
+    /**
+     * A Constructor.
+     */
+    interface Constructor {
+
+        name?: string;
+        new(...args: any[]): any;
     }
 }

@@ -51,6 +51,7 @@ module reflect {
         }
 
         var files: SourceFile[] = [];
+        var loadedFiles: SourceFile[] = [];
         var filesByName: Map<SourceFile> = {};
         var seenNoDefaultLib = options.noLib;
         var initializedGlobals = false;
@@ -79,13 +80,18 @@ module reflect {
             processRootFileAsync,
             processExternalModule,
             getTypeChecker,
-            getErrors
+            getErrors,
+            getFiles
         }
 
         checker = createTypeChecker(loader);
         var bindSourceFile = createBinder(checker);
 
         return loader;
+
+        function getFiles(): SourceFile[] {
+            return loadedFiles;
+        }
 
         function getTypeChecker(): TypeChecker {
             return checker;
@@ -125,7 +131,7 @@ module reflect {
 
             var isRelative = checker.isExternalModuleNameRelative(moduleName);
             if (!isRelative) {
-                var symbol = checker.getSymbol(checker.globals, '"' + moduleName + '"', SymbolFlags.ValueModule);
+                var symbol = checker.getSymbol(checker.getGlobals(), '"' + moduleName + '"', SymbolFlags.ValueModule);
                 if (symbol) {
                     return checker.getResolvedExportSymbol(symbol);
                 }
@@ -189,6 +195,7 @@ module reflect {
                 // propagate errors
                 forEach(file.errors, (error) => errors.push(error));
             });
+            loadedFiles = loadedFiles.concat(files);
             files = [];
 
             if (!initializedGlobals) {

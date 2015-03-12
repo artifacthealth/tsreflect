@@ -5,6 +5,7 @@ export declare function resolve(entityName: string): Symbol;
 export declare function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
 export declare function load(paths: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
 export declare function createContext(): ReflectContext;
+export declare function getSymbol(ctr: Constructor): Symbol;
 
 export interface ReflectContext {
 
@@ -13,6 +14,7 @@ export interface ReflectContext {
     resolve(name: string): Symbol;
     load(path: string, callback: (err: Error, symbols: Symbol[]) => void): void;
     load(paths: string[], callback: (err: Error, symbols: Symbol[]) => void): void;
+    getSymbol(ctr: Constructor): Symbol;
 }
 
 export interface Symbol {
@@ -79,10 +81,15 @@ export interface Type {
     isAssignableTo(target: Type, diagnostics?: Diagnostic[]): boolean;
     isSubclassOf(target: Type): boolean;
 
-    getBaseClass(): Type;
     getBaseTypes(): Type[];
     hasBaseType(target: Type): boolean;
     getBaseType(name: string): Type;
+
+    getBaseClass(): Type;
+
+    getInterfaces(): Type[];
+    getInterface(name: string): Type;
+    hasInterface(target: Type): boolean;
 
     isClass(): boolean;
     isInterface(): boolean;
@@ -134,4 +141,10 @@ export interface Diagnostic {
 export interface DiagnosticError extends Error {
 
     diagnostics: Diagnostic[];
+}
+
+export interface Constructor {
+
+    name?: string;
+    new(...args: any[]): any;
 }

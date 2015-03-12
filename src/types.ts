@@ -44,6 +44,7 @@ module reflect {
         resolve(name: string, meaning: SymbolFlags): Symbol;
         load(path: string, callback: (err: Error, symbols: Symbol[]) => void): void;
         load(paths: string[], callback: (err: Error, symbols: Symbol[]) => void): void;
+        getSymbol(ctr: Constructor): SymbolImpl;
     }
 
     export interface Loader {
@@ -54,6 +55,7 @@ module reflect {
         processExternalModule(moduleName: string, searchPath: string): Symbol;
         getTypeChecker(): TypeChecker;
         getErrors(): Diagnostic[];
+        getFiles(): SourceFile[];
     }
 
     export interface TypeChecker {
@@ -82,7 +84,7 @@ module reflect {
         createSymbol(flags: SymbolFlags, name: string): Symbol;
         getGlobalArrayType(): ObjectType;
         getErrors(): Diagnostic[];
-        globals: SymbolTable;
+        getGlobals(): SymbolTable;
     }
 
     export interface SymbolLinks {
@@ -248,6 +250,7 @@ module reflect {
     export interface InterfaceType extends ObjectType {
         typeParameters: TypeParameter[];           // Type parameters (undefined if non-generic)
         baseTypes: ObjectType[];                   // Base types
+        implementedTypes: ObjectType[];            // Implemented types
         declaredProperties: Symbol[];              // Declared members
         declaredCallSignatures: Signature[];       // Declared call signatures
         declaredConstructSignatures: Signature[];  // Declared construct signatures
@@ -327,5 +330,14 @@ module reflect {
     export interface FoundImport {
         topLevel?: boolean;
         node: ImportDeclaration;
+    }
+
+    /**
+     * A Constructor.
+     */
+    export interface Constructor {
+
+        name?: string;
+        new(...args: any[]): any;
     }
 }
