@@ -41,6 +41,7 @@ export interface Symbol {
 
     getValue(obj: any): any;
     setValue(obj: any, value: any): void;
+    invoke(obj: any, args?: any[]): any;
 
     isVariable(): boolean;
     isFunction(): boolean;

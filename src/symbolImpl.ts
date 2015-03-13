@@ -96,6 +96,20 @@ module reflect {
             obj[this.name] = value;
         }
 
+        invoke(obj: any, args?: any[]): any {
+
+            if(!this.name || (this.flags & SymbolFlags.Method) === 0) {
+                throw new Error("Symbol must be a method.");
+            }
+
+            this.invoke = <any>(new Function("o, a", "var m = o['" + this.name + "']; if(!m) throw new Error(\"Cannot invoke method '" + this.name + "'.\"); return m.apply(o, a)"));
+            var method = obj[this.name];
+            if(!method) {
+                throw new Error("Cannot invoke method '" + this.name + "'.");
+            }
+            return method.apply(obj, args);
+        }
+
         getFullName(): string {
 
             return this._checker.symbolToString(this)

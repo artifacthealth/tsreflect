@@ -8,6 +8,8 @@ import assert = chai.assert;
 import reflect = require("./tsreflect");
 import helpers = require("./helpers");
 
+import CalculatorService = require("./fixtures/calculatorService");
+
 describe('Symbol', () => {
 
     describe('resolve', () => {
@@ -143,6 +145,25 @@ describe('Symbol', () => {
 
             symbol.setValue({}, 1);
             assert.notEqual(symbol.setValue, saved);
+        });
+    });
+
+    describe('invoke', () => {
+
+        it('calls the method represented by the symbol on the given object', () => {
+
+            var addMethod = helpers.requireFixture("calculatorService").getDeclaredType().getProperty("add");
+            var service = new CalculatorService();
+            assert.equal(addMethod.invoke(service, [1, 2]), 3, "Failed on call to 'invoke'");
+            assert.equal(addMethod.invoke(service, [1, 2]), 3, "Failed on call to generated 'invoke'");
+        });
+
+        it('throws and error if target object does not have a property with the expected name', () => {
+
+            var addMethod = helpers.requireFixture("calculatorService").getDeclaredType().getProperty("add");
+            assert.throws(() => {
+                addMethod.invoke({}, [1, 2]);
+            }, Error);
         });
     });
 

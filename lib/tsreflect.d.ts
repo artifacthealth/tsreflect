@@ -231,6 +231,13 @@ declare module "tsreflect" {
         setValue(obj: any, value: any): void;
 
         /**
+         * Invokes the method described by the symbol on the given object. The symbol must be a method.
+         * @param obj The object to call the method on.
+         * @param args The arguments to pass to the method.
+         */
+        invoke(obj: any, args?: any[]): any;
+
+        /**
          * Returns true if the symbol is a variable; Otherwise, returns false.
          */
         isVariable(): boolean;
