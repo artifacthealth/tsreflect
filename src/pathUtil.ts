@@ -49,9 +49,17 @@ module reflect {
 
     var supportedExtensions = [".d.json"];
 
-    export function removeFileExtension(path: string): string {
+    export function removeFileExtension(path: string, ext?: string): string {
+
+        if(ext) {
+            if (fileExtensionIs(path, ext)) {
+                return path.substr(0, path.length - ext.length);
+            }
+            return path;
+        }
+
         for (var i = 0; i < supportedExtensions.length; i++) {
-            var ext = supportedExtensions[i];
+            ext = supportedExtensions[i];
 
             if (fileExtensionIs(path, ext)) {
                 return path.substr(0, path.length - ext.length);

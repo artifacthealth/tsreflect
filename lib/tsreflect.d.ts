@@ -26,7 +26,8 @@ declare module "tsreflect" {
     function reference(fileName: string): void;
 
     /**
-     * Asynchronously load type information for the given filename pattern(s) in the global context.
+     * Asynchronously load type information for the given filename pattern(s) in the global context. If the path is not
+     * specified then symbol information is loaded, if available, for all required modules.
      *
      * This method assumes that the .d.json files are in the same directory as the .js file that they contain type
      * information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
@@ -35,10 +36,31 @@ declare module "tsreflect" {
      * Once all declaration files have been loaded, the callback is called with the symbols for any external
      * modules and any top level global declarations in the processed files.
      *
-     * @param path The path(s) to load. Glob patterns are supported.
+     * @param path Optional. The path(s) to load. Glob patterns are supported. If not specified symbol information is
+     * loaded, if available, for all required modules.
      * @param callback Called when the load operation completes.
      */
-    function load(path: string | string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+    function load(callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+    function load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+    function load(path: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+
+    /**
+     * Synchronously load type information for the given filename pattern(s) in the global context.  If the path is not
+     * specified then symbol information is loaded, if available, for all required modules.
+     *
+     * This method assumes that the .d.json files are in the same directory as the .js file that they contain type
+     * information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
+     * matching. Relative paths are considered to be relative to the current working directory.
+     *
+     * Once all declaration files have been loaded, a list of symbols is returned any external modules and any top
+     * level global declarations in the processed files.
+     *
+     * @param path Optional. The path(s) to load. Glob patterns are supported. If not specified symbol information is
+     * loaded, if available, for all required modules.
+     */
+    function loadSync(): Symbol[];
+    function loadSync(path: string): Symbol[];
+    function loadSync(path: string[]): Symbol[];
 
     /**
      * Finds the symbol for the given entity name in the global context. If a global symbol with the given name cannot
@@ -101,7 +123,28 @@ declare module "tsreflect" {
          * @param path The path(s) to load. Glob patterns are supported.
          * @param callback Called when the load operation completes.
          */
-        load(path: string | string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+        load(callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+        load(path: string, callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+        load(path: string[], callback: (err: DiagnosticError, symbols: Symbol[]) => void): void;
+
+        /**
+         * Synchronously load type information for the given filename pattern(s) in the global context.  If the path is not
+         * specified then symbol information is loaded, if available, for all required modules.
+         *
+         * This method assumes that the .d.json files are in the same directory as the .js file that they contain type
+         * information for. The load method supports [glob](https://github.com/isaacs/node-glob) patterns for filename
+         * matching. Relative paths are considered to be relative to the current working directory.
+         *
+         * Once all declaration files have been loaded, a list of symbols is returned any external modules and any top
+         * level global declarations in the processed files.
+         *
+         * @param path Optional. The path(s) to load. Glob patterns are supported. If not specified symbol information is
+         * loaded, if available, for all required modules.
+         */
+        loadSync(): Symbol[];
+        loadSync(path: string): Symbol[];
+        loadSync(path: string[]): Symbol[];
+
 
         /**
          * Finds the symbol for the given entity name in the current context. If a global symbol with the given name cannot

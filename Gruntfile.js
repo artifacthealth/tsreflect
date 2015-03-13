@@ -113,6 +113,12 @@ module.exports = function(grunt) {
                     "tests/fixtures/simpleClass.ts"
                 ],
                 dest: "build/fixtures/simpleClassDuplicate.d.json"
+            },
+            duplicateFixture2: {
+                src: [
+                    "tests/fixtures/simpleClass.ts"
+                ],
+                dest: "build/fixtures/simpleClassDuplicate2.d.json"
             }
         },
 
@@ -130,5 +136,5 @@ module.exports = function(grunt) {
     grunt.registerTask("default", [ "build", "lib", "tests" ]);
     grunt.registerTask("build", [ "clean:build", "typescript:build", "copy:build" ]);
     grunt.registerTask("lib", [ "clean:lib", "concat:lib" ]);
-    grunt.registerTask("tests", [ "typescript:tests", "typescript:fixtures", "tsreflect:fixtures", "tsreflect:duplicateFixture", "mochaTest:tests" ]);
+    grunt.registerTask("tests", [ "typescript:tests", "typescript:fixtures", "tsreflect:fixtures", "tsreflect:duplicateFixture", "tsreflect:duplicateFixture2", "mochaTest:tests" ]);
 };

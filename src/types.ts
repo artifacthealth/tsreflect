@@ -42,8 +42,12 @@ module reflect {
         requireModule(moduleName: string): Symbol;
         reference(filename: string): void;
         resolve(name: string, meaning: SymbolFlags): Symbol;
+        load(callback: (err: Error, symbols: Symbol[]) => void): void;
         load(path: string, callback: (err: Error, symbols: Symbol[]) => void): void;
         load(paths: string[], callback: (err: Error, symbols: Symbol[]) => void): void;
+        loadSync(): Symbol[];
+        loadSync(path: string): Symbol[];
+        loadSync(path: string[]): Symbol[];
         getSymbol(ctr: Constructor): SymbolImpl;
     }
 

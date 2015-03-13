@@ -28,7 +28,7 @@ describe('reflect', () => {
             assert.equal(reflect.getSymbol(classInExportedInternalModule.B.TestClass), symbol);
         });
 
-        it('returns the symbol for the specified constructor for a global symbol', () => {
+        it.skip('returns the symbol for the specified constructor for a global symbol', () => {
 
             assert.equal(reflect.getSymbol(Error), reflect.resolve("Error"));
         });
@@ -158,6 +158,85 @@ describe('reflect', () => {
 
                 done();
             });
+        });
+
+        it('loads the declaration files for all required modules if path is not specified', (done) => {
+
+            reflect.load((err, symbols) => {
+                if (err) return done(err);
+
+                assert.isTrue(symbols.length > 0);
+                done();
+            });
+        });
+    });
+
+    describe('loadSync', () => {
+
+        it('correctly loads an external module using path relative to cwd', () => {
+
+            var symbols = helpers.loadFixtureSync("simpleExternalModule");
+            assert.lengthOf(symbols, 1, "Expected load to return a symbol");
+        });
+
+        it('correctly loads an ambient external module', () => {
+
+            var symbols = helpers.loadFixtureSync("ambientExternalModuleForLoad");
+
+            assert.lengthOf(symbols, 1, "Expected load to return a symbol");
+            var symbol = reflect.resolve("\"testAmbientExternalModuleForLoad\"");
+            assert.isTrue(symbol !== undefined);
+        });
+
+        it('should throw error if file is not found', () => {
+
+            var symbols: reflect.Symbol[];
+            assert.throw(() => {
+                symbols = helpers.loadFixtureSync("someUnknownModule");
+            }, Error);
+
+            assert.equal(symbols, null);
+        });
+
+        it('should throw error if loaded duplicate symbol', () => {
+
+            helpers.referenceFixture("simpleClass");
+
+            var symbols: reflect.Symbol[];
+            assert.throw(() => {
+                symbols = helpers.loadFixtureSync("simpleClassDuplicate2");
+            }, Error);
+
+            assert.equal(symbols, null);
+        });
+
+        it('can load multiple declaration files based on wildcard search', () => {
+
+            var symbols = helpers.loadFixtureSync("someDirectory/*.d.json");
+
+            assert.lengthOf(symbols, 3);
+
+            var names = symbols.map(x => x.getName());
+            assert.include(names, "ClassA");
+            assert.include(names, "ClassB");
+            assert.include(names, "ClassC");
+        });
+
+        it('can load multiple declaration files when passed an array of files', () => {
+
+            var symbols = helpers.loadFixtureSync(["someDirectory/classA", "someDirectory/classB"]);
+
+            assert.lengthOf(symbols, 2);
+
+            var names = symbols.map(x => x.getName());
+            assert.include(names, "ClassA");
+            assert.include(names, "ClassB");
+        });
+
+        it('loads the declaration files for all required modules if path is not specified', () => {
+
+            var symbols = reflect.loadSync();
+            assert.isTrue(symbols.length > 0);
         });
     });
 

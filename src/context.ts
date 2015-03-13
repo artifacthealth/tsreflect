@@ -48,6 +48,7 @@ module reflect {
     var path = require("path");
     var glob = require("glob");
     var async = require("async");
+    var fs = require("fs");
 
     export function createContext(): ReflectContext {
 
@@ -59,6 +60,7 @@ module reflect {
             reference,
             resolve,
             load,
+            loadSync,
             getSymbol
         }
 
@@ -83,16 +85,21 @@ module reflect {
             throwIfErrors();
         }
 
+        function load(callback: (err: Error, symbols: Symbol[]) => void): void;
         function load(path: string, callback: (err: Error, symbols: Symbol[]) => void): void;
         function load(paths: string[], callback: (err: Error, symbols: Symbol[]) => void): void;
-        function load(paths: any, callback: (err: Error, symbols: Symbol[]) => void): void {
+        function load(paths: any, callback?: (err?: Error, symbols?: Symbol[]) => void): void {
 
-            var symbols: Symbol[] = [];
-
-            if (!Array.isArray(paths)) {
+            if(typeof paths === "function") {
+                callback = paths;
+                paths = findAllModulePaths();
+                // TODO: skip glob search?
+            }
+            else if (!Array.isArray(paths)) {
                 paths = [paths];
             }
 
+            var symbols: Symbol[] = [];
             async.each(paths, processPath, (err: Error) => {
                 if (err) return callback(err, null);
                 callback(null, symbols);
@@ -101,7 +108,6 @@ module reflect {
             function processPath(filePath: string, callback: (err?: Error) => void): void {
 
                 var relativePath = path.relative(process.cwd(), filePath);
-
                 glob(relativePath, (err: Error, matches: string[]) => {
                     if (err) return callback(err);
 
@@ -123,29 +129,69 @@ module reflect {
 
                 loader.processRootFileAsync(filePath, (err, sourceFile) => {
                     if (err) return callback(err);
-
-                    var symbol = sourceFile.symbol;
-                    if (symbol) {
-                        // external module
-                        symbol = checker.getResolvedExportSymbol(sourceFile.symbol);
-                        symbols.push(symbol);
-                    }
-                    else {
-                        // internal module - add symbols for all declarations at top level of source file
-                        var declares = sourceFile.declares;
-                        if (declares) {
-                            for (var i = 0, l = declares.length; i < l; i++) {
-                                var declaration = declares[i];
-                                if (declaration.symbol) {
-                                    symbols.push(declaration.symbol);
-                                }
-                            }
-                        }
-                    }
-
+                    getSymbolsFromSourceFile(sourceFile, symbols);
                     callback();
                 });
             }
+        }
+
+        function loadSync(): Symbol[];
+        function loadSync(path: string): Symbol[];
+        function loadSync(paths: string[]): Symbol[];
+        function loadSync(paths?: any): Symbol[] {
+
+            if(paths === undefined) {
+                paths = findAllModulePaths();
+                // TODO: skip glob search?
+            }
+            else if (!Array.isArray(paths)) {
+                paths = [paths];
+            }
+
+            var symbols: Symbol[] = [];
+            forEach(paths, processPath);
+            throwIfErrors();
+            return symbols;
+
+            function processPath(filePath: string): void {
+
+                var relativePath = path.relative(process.cwd(), filePath);
+                var matches = glob.sync(relativePath);
+                if (!matches || matches.length == 0) {
+                    matches = [relativePath];
+                }
+
+                forEach(matches, processFile);
+            }
+
+            function processFile(filePath: string): void {
+                getSymbolsFromSourceFile(loader.processRootFile(filePath), symbols);
+            }
+        }
+
+        function getSymbolsFromSourceFile(sourceFile: SourceFile, symbols: Symbol[]): Symbol[] {
+
+            if(!sourceFile) return;
+
+            var symbol = sourceFile.symbol;
+            if (symbol) {
+                // external module
+                symbol = checker.getResolvedExportSymbol(sourceFile.symbol);
+                symbols.push(symbol);
+            }
+            else {
+                // internal module - add symbols for all declarations at top level of source file
+                var declares = sourceFile.declares;
+                if (declares) {
+                    for (var i = 0, l = declares.length; i < l; i++) {
+                        var declaration = declares[i];
+                        if (declaration.symbol) {
+                            symbols.push(declaration.symbol);
+                        }
+                    }
+                }
+            }
+            return symbols;
         }
 
         /**
@@ -212,6 +258,37 @@ module reflect {
             }
         }
 
+        function findAllModulePaths(): string[] {
+
+            var filenames: string[] = [];
+            findDescendantModulePaths(findTopModule(), filenames);
+            return filenames;
+        }
+
+        function findDescendantModulePaths(node: Module, filenames: string[]): void {
+
+            var filename = removeFileExtension(node.filename, ".js") + ".d.json";
+            if(fs.existsSync(filename)) {
+                filenames.push(filename);
+            }
+
+            for(var i = 0; i < node.children.length; i++) {
+                findDescendantModulePaths(node.children[i], filenames);
+            }
+        }
+
+        function findTopModule(): Module {
+
+            var parent: Module = module,
+                top: Module;
+
+            while(parent) {
+                top = parent;
+                parent = parent.parent;
+            }
+            return top;
+        }
+
         function throwIfErrors(): void {
             var errors = loader.getErrors();
             if(errors.length == 0) {
@@ -227,4 +304,13 @@ module reflect {
         return getDirectoryPath(relativePath(module.parent.filename));
     }
 
+    interface Module {
+        exports: any;
+        id: string;
+        filename: string;
+        loaded: boolean;
+        parent: Module;
+        children: Module[];
+    }
 }
+

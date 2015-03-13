@@ -42,7 +42,7 @@ export function requireFixture(filename: string): reflect.Symbol {
 
 export function loadFixture(filePath: string, callback: (err: reflect.DiagnosticError, symbols: reflect.Symbol[]) => void): void;
 export function loadFixture(filePaths: string[], callback: (err: reflect.DiagnosticError, symbols: reflect.Symbol[]) => void): void;
-export function loadFixture(filePaths: any, callback: (err: reflect.DiagnosticError, symbols: reflect.Symbol[]) => void): void {
+export function loadFixture(filePaths: any, callback?: (err: reflect.DiagnosticError, symbols: reflect.Symbol[]) => void): void {
 
     // path passed to load is relative to cwd
     if(Array.isArray(filePaths)) {
@@ -54,6 +54,22 @@ export function loadFixture(filePaths: any, callback: (err: reflect.DiagnosticEr
 
     return reflect.load(filePaths, callback);
 }
+
+export function loadFixtureSync(filePath: string): reflect.Symbol[];
+export function loadFixtureSync(filePaths: string[]): reflect.Symbol[];
+export function loadFixtureSync(filePaths: any): reflect.Symbol[] {
+
+    // path passed to load is relative to cwd
+    if(Array.isArray(filePaths)) {
+        filePaths = filePaths.map((x: string) => path.resolve(__dirname, fixtureDir, x));
+    }
+    else {
+        filePaths = path.resolve(__dirname, fixtureDir, filePaths);
+    }
+
+    return reflect.loadSync(filePaths);
+}
+
 
 function relativePath(to: string): string {
     return path.relative(process.cwd(), to);
