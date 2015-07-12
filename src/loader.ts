@@ -402,7 +402,7 @@ module reflect {
 
         function processReferencedFilesAsync(file: SourceFile, basePath: string, callback: (err: Error) => void): void {
 
-            async.each(file.references || [], (filename: string, callback: (err?: Error) => void) => {
+            async.eachSeries(file.references || [], (filename: string, callback: (err?: Error) => void) => {
                 processSourceFileAsync(normalizePath(combinePaths(basePath, filename)), /* isDefaultLib */ false, file, callback);
             }, callback);
         }
@@ -416,7 +416,7 @@ module reflect {
 
         function processImportedModulesAsync(file: SourceFile, basePath: string, callback: (err: Error) => void): void {
 
-            async.each(getExternalImportDeclarations(file), (found: FoundImport, callback: (err?: Error) => void) => {
+            async.eachSeries(getExternalImportDeclarations(file), (found: FoundImport, callback: (err?: Error) => void) => {
 
                 var node = found.node;
                 if (!found.topLevel) {

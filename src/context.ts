@@ -100,7 +100,7 @@ module reflect {
             }
 
             var symbols: Symbol[] = [];
-            async.each(paths, processPath, (err: Error) => {
+            async.eachSeries(paths, processPath, (err: Error) => {
                 if (err) return callback(err, null);
                 callback(null, symbols);
             });
@@ -118,7 +118,7 @@ module reflect {
                         matches = [relativePath];
                     }
 
-                    async.each(matches, processFile, (err: Error) => {
+                    async.eachSeries(matches, processFile, (err: Error) => {
                         if (err) return callback(err);
                         callback();
                     });
