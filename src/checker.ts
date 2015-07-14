@@ -114,10 +114,6 @@ module reflect {
         var emptyObjectType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
         var anyFunctionType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
         var noConstraintType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
-        var inferenceFailureType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
-
-        var anySignature = createSignature(undefined, undefined, emptyArray, anyType, 0, false, false);
-        var unknownSignature = createSignature(undefined, undefined, emptyArray, unknownType, 0, false, false);
 
         var globalArraySymbol: Symbol;
 
@@ -477,6 +473,7 @@ module reflect {
         function createIntrinsicType(kind: TypeFlags, intrinsicName: string): IntrinsicType {
             var type = <IntrinsicType>createType(kind);
             type.intrinsicName = intrinsicName;
+            type.symbol = globals[intrinsicName] = createSymbol(SymbolFlags.Type, intrinsicName);
             return type;
         }
 

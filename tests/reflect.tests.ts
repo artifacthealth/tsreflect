@@ -77,6 +77,11 @@ describe('reflect', () => {
                 moduleSymbol.resolve("C")
             }, Error, "Cannot find name 'C'.");
         });
+
+        it('can find intrinsic types', () => {
+
+            assert.equal(reflect.resolve("string").getName(), "string");
+        });
     });
 
     describe('load', () => {

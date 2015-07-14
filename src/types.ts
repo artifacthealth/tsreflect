@@ -48,7 +48,7 @@ module reflect {
         loadSync(): Symbol[];
         loadSync(path: string): Symbol[];
         loadSync(path: string[]): Symbol[];
-        getSymbol(ctr: Constructor): SymbolImpl;
+        getSymbol(ctr: Constructor): Symbol;
     }
 
     export interface Loader {

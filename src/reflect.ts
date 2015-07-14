@@ -25,7 +25,7 @@ module reflect {
         return ensureGlobalContext().loadSync(paths);
     }
 
-    function getSymbol(ctr: Constructor): SymbolImpl {
+    function getSymbol(ctr: Constructor): Symbol {
         return ensureGlobalContext().getSymbol(ctr);
     }
 
